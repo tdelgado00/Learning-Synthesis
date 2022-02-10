@@ -1,11 +1,9 @@
 import pickle
 
-from sklearn.linear_model import LinearRegression
-
 from agent import Agent
 
 from environment import DCSSolverEnv
-from src.train import models
+from train import models
 from util import filename
 import itertools
 
@@ -103,29 +101,6 @@ def save_all_random_states():
     for problem, n, k in [(problem, 2, 2) for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]]:
         get_random_states(problem, n, k, 3, 100, "experiments/results/"+filename([problem, n, k])+"/random_states.pkl")
 
-if __name__ == "__main__":
-    problem = "AT"
-    with open("experiments/results/"+filename([problem, 2, 2])+"/random_states.pkl", "rb") as f:
-        states = pickle.load(f)
-    actions = np.array([a for s in states for a in s])
-    with open("experiments/results/"+filename([problem, 2, 2])+"/60m/1.pkl", "rb") as f:
-        agent, time, steps = pickle.load(f)
-    values = agent.eval(actions)
-    values = (values - np.mean(values)) / np.std(values)
-    model = LinearRegression().fit(actions, values)
-    feature_names = [
-        "controllable",
-        "depth",
-        "state unexplorability",
-        "state marked",
-        "child goal",
-        "child error",
-        "child none",
-        "child marked",
-        "child deadlock",
-        "uncontrollability child",
-        "unexplorability child",
-    ]
-    for i in range(len(feature_names)):
-        print(feature_names[i], model.coef_[i])
 
+if __name__ == "__main__":
+    pass

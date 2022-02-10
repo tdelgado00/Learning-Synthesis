@@ -7,7 +7,7 @@ from agent import Agent
 from environment import DCSSolverEnv
 from util import filename, get_problem_data
 
-from sklearn.linear_model import SGDRegressor
+from sklearn.linear_model import SGDRegressor, LinearRegression
 from sklearn.neural_network import MLPRegressor
 
 import pandas as pd
@@ -69,6 +69,7 @@ def test_agents(problem, n, k, file, problems):
         with open(dir+"/"+files[i], "rb") as f:
             agent, time, steps = pickle.load(f)
         avg_q = np.mean([np.max(agent.eval(s)) for s in random_states])
+        coefs = eval_agents_coefs(agent, problem, n, k)
         for problem2, n2, k2 in problems:
             env = DCSSolverEnv(problem2, n2, k2, max_actions=max_actions[problem2, n2, k2])
             print("Testing", problem2, n2, k2)
@@ -79,6 +80,7 @@ def test_agents(problem, n, k, file, problems):
             result["training steps"] = steps
             result["avg_q"] = avg_q
             result["idx"] = i
+            result.update(coefs)
             df.append(result)
 
     df = pd.DataFrame(df)
@@ -141,12 +143,33 @@ def exp_high_generalization(problem, file, up_to=4):
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/high_generalization.csv")
 
 
+def eval_agents_coefs(agent, problem, n, k):
+    with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
+        states = pickle.load(f)
+    actions = np.array([a for s in states for a in s])
+    values = agent.eval(actions)
+    values = (values - np.mean(values)) / np.std(values)
+    model = LinearRegression().fit(actions, values)
+    feature_names = [
+        "controllable",
+        "depth",
+        "state unexplorability",
+        "state marked",
+        "child goal",
+        "child error",
+        "child none",
+        "child marked",
+        "child deadlock",
+        "uncontrollability child",
+        "unexplorability child",
+    ]
+    coefs = {}
+    for i in range(len(feature_names)):
+        coefs[feature_names[i]] = model.coef_[i]
+    return coefs
+
 if __name__ == "__main__":
-    #for problem in ["AT", "BW", "TL", "DP", "CM", "TA"]:
-    #    train_agent(problem, 2, 2, 60, "60m", copy_freq=50000)
-    #    test_agents(problem, 2, 2, "60m", [(problem, 2, 2), (problem, 3, 3)])
-    train_agent("AT", 3, 3, 60*4, "4h", epsilon=0.05, eta=1e-5)
-    test_agents("AT", 3, 3, "4h", [("AT", 2, 2), ("AT", 3, 3)])
-    train_agent("AT", 2, 2, 60*4, "4h", epsilon=0.05, eta=1e-5)
-    test_agents("AT", 2, 2, "4h", [("AT", 2, 2), ("AT", 3, 3)])
+    for problem in ["AT", "BW", "TL", "DP", "CM", "TA"]:
+        #train_agent(problem, 2, 2, 60, "60m", copy_freq=50000)
+        test_agents(problem, 2, 2, "60m", [(problem, 2, 2), (problem, 3, 3)])
 
