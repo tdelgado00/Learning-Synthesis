@@ -5,7 +5,7 @@ import numpy as np
 from stable_baselines3 import DQN
 from agent import Agent
 from environment import DCSSolverEnv
-from util import filename, get_problem_data
+from util import filename, get_problem_data, feature_names
 
 from sklearn.linear_model import SGDRegressor, LinearRegression
 from sklearn.neural_network import MLPRegressor
@@ -72,19 +72,19 @@ def test_agents(problem, n, k, file, problems):
         coefs = eval_agents_coefs(agent, problem, n, k)
         for problem2, n2, k2 in problems:
             env = DCSSolverEnv(problem2, n2, k2, max_actions=max_actions[problem2, n2, k2])
-            print("Testing", problem2, n2, k2)
+            print("Testing", problem2, n2, k2, file)
             result = agent.test(env)
             if result == "timeout":
-                result = {}
+                result = {"problem": problem2, "n": n2, "k": k2}
             result["training time"] = time
             result["training steps"] = steps
-            result["avg_q"] = avg_q
+            result["avg q"] = avg_q
             result["idx"] = i
             result.update(coefs)
             df.append(result)
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
+    #df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
 
 
 def exp_iterations(problem, n, k):
@@ -94,7 +94,9 @@ def exp_iterations(problem, n, k):
 
 def exp_eta(problem, n, k, minutes):
     for eta in [1e-3, 1e-4, 1e-5, 1e-6]:
-        train_agent(problem, n, k, minutes, "eta_"+str(eta), eta=eta)
+        for eps in [0.05, 0.1, 0.2]:
+            for it in range(3):
+                train_agent(problem, n, k, minutes, "eta_"+str(eta), eta=eta, epsilon=0.1)
 
 
 def exp_epsilon(problem, n, k, minutes):
@@ -150,26 +152,14 @@ def eval_agents_coefs(agent, problem, n, k):
     values = agent.eval(actions)
     values = (values - np.mean(values)) / np.std(values)
     model = LinearRegression().fit(actions, values)
-    feature_names = [
-        "controllable",
-        "depth",
-        "state unexplorability",
-        "state marked",
-        "child goal",
-        "child error",
-        "child none",
-        "child marked",
-        "child deadlock",
-        "uncontrollability child",
-        "unexplorability child",
-    ]
+
     coefs = {}
     for i in range(len(feature_names)):
         coefs[feature_names[i]] = model.coef_[i]
     return coefs
 
-if __name__ == "__main__":
-    for problem in ["AT", "BW", "TL", "DP", "CM", "TA"]:
-        #train_agent(problem, 2, 2, 60, "60m", copy_freq=50000)
-        test_agents(problem, 2, 2, "60m", [(problem, 2, 2), (problem, 3, 3)])
 
+if __name__ == "__main__":
+    for problem in ["AT", "BW", "TL", "DP", "TA", "CM"]:
+        train_agent(problem, 2, 2, 60, "60m", copy_freq=50000, epsilon=0.1, eta=1e-5)
+        test_agents(problem, 2, 2, "60m", [(problem, 2, 2), (problem, 3, 3)])

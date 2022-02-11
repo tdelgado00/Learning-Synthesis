@@ -1,5 +1,18 @@
 import pandas as pd
 
+feature_names = [
+    "controllable",
+    "depth",
+    "state unexplorability",
+    "state marked",
+    "child marked",
+    "child goal",
+    "child error",
+    "child none",
+    "child deadlock",
+    "uncontrollability child",
+    "unexplorability child",
+]
 
 def filename(parameters):
     return "_".join(list(map(str, parameters)))

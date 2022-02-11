@@ -103,4 +103,4 @@ def save_all_random_states():
 
 
 if __name__ == "__main__":
-    pass
+    save_all_random_states()
