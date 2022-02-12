@@ -1,9 +1,9 @@
+import os
 import pickle
 
 from agent import Agent
 
 from environment import DCSSolverEnv
-from train import models
 from util import filename
 import itertools
 
@@ -11,12 +11,9 @@ import numpy as np
 import pandas as pd
 
 
-def get_random_states(problem, n, k, eps, size, file):
-    nn_size = 20
-    eta = 1e-6
+def get_random_states(problem, n, k):
 
     env = DCSSolverEnv(problem, n, k, max_actions=10000)
-    agent = Agent(models["M"](eta, nn_size))
 
     idxs = np.random.choice(range(10000), 100)
 
@@ -31,6 +28,8 @@ def get_random_states(problem, n, k, eps, size, file):
         action = np.random.randint(len(obs))
         obs, reward, done, info = env.step(action)
 
+    file = "experiments/results/"+filename([problem, n, k])+"/random_states.pkl"
+    os.makedirs(os.path.dirname(file), exist_ok=True)
     with open(file, "wb") as f:
         pickle.dump(states, f)
 
@@ -99,7 +98,7 @@ def save_q_values():
 
 def save_all_random_states():
     for problem, n, k in [(problem, 2, 2) for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]]:
-        get_random_states(problem, n, k, 3, 100, "experiments/results/"+filename([problem, n, k])+"/random_states.pkl")
+        get_random_states(problem, n, k)
 
 
 if __name__ == "__main__":

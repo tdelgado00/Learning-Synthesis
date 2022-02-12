@@ -1,20 +1,17 @@
+import json
 import os
 import pickle
 
 import numpy as np
-from stable_baselines3 import DQN
-from agent import Agent
-from environment import DCSSolverEnv
-from util import filename, get_problem_data, feature_names
-
-from sklearn.linear_model import SGDRegressor, LinearRegression
-from sklearn.neural_network import MLPRegressor
-
+import onnx
 import pandas as pd
+from onnxruntime import InferenceSession
+from sklearn.linear_model import LinearRegression
 
-
+from agent import Agent, test_onnx
+from environment import DCSSolverEnv
 from test import test_old
-
+from util import filename, get_problem_data, feature_names
 max_actions = {}
 
 
@@ -31,19 +28,6 @@ def get_max_actions():
 
 get_max_actions()
 
-models = {
-    "M": lambda eta, nn_size: MLPRegressor(
-        hidden_layer_sizes=(nn_size,),
-        solver="sgd",
-        learning_rate="constant",
-        learning_rate_init=eta),
-    "L": lambda eta: SGDRegressor(
-        learning_rate="constant",
-        eta0=eta
-    ),
-    "DQN": lambda eta, env: DQN("MultiInputPolicy", env=env, learning_rate=eta)
-}
-
 
 def experiment_file(problem, n, k, experiment, params):
     name = filename([experiment]+params)
@@ -53,31 +37,42 @@ def experiment_file(problem, n, k, experiment, params):
 def train_agent(problem, n, k, minutes, dir, eta=1e-6, epsilon=0.1, nnsize=20, copy_freq=200000):
     env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
 
-    dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir
+    dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
 
-    agent = Agent(models["M"](eta, nnsize), dir=dir)
-    agent.train(env, minutes * 60, copy_freq=copy_freq, epsilon=epsilon)
+    agent = Agent(eta=eta, nnsize=nnsize, epsilon=epsilon, dir=dir)
+    agent.train(env, minutes * 60, copy_freq=copy_freq)
+
+    return agent
+
+
+def eval_agent_q(agent, random_states):
+    sess = InferenceSession(agent.SerializeToString())
+    return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
 def test_agents(problem, n, k, file, problems):
     with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
         random_states = pickle.load(f)
+
     df = []
     dir = "experiments/results/"+filename([problem, n, k])+"/"+file
-    files = os.listdir(dir)
-    for i in range(len(files)):
-        with open(dir+"/"+files[i], "rb") as f:
-            agent, time, steps = pickle.load(f)
-        avg_q = np.mean([np.max(agent.eval(s)) for s in random_states])
+    for i in range(len(os.listdir(dir))//2):
+        agent = onnx.load(dir+"/"+str(i)+".onnx")
+
+        with open(dir+"/"+str(i)+".json", "r") as f:
+            info = json.load(f)
+
+        avg_q = eval_agent_q(agent, random_states)
+
         coefs = eval_agents_coefs(agent, problem, n, k)
+
         for problem2, n2, k2 in problems:
             env = DCSSolverEnv(problem2, n2, k2, max_actions=max_actions[problem2, n2, k2])
-            print("Testing", problem2, n2, k2, file)
-            result = agent.test(env)
+            print("Testing", i, "with", problem2, n2, k2)
+            result = test_onnx(agent, env)
             if result == "timeout":
                 result = {"problem": problem2, "n": n2, "k": k2}
-            result["training time"] = time
-            result["training steps"] = steps
+            result.update(info)
             result["avg q"] = avg_q
             result["idx"] = i
             result.update(coefs)
@@ -105,7 +100,7 @@ def exp_epsilon(problem, n, k, minutes):
         test_agents(problem, n, k, "epsilon_"+str(eps), [(problem, 2, 2), (problem, 3, 3)])
 
 
-def exp_nn_size(problem, n, k, minutes):
+def exp_nnsize(problem, n, k, minutes):
     for nnsize in [5, 10, 20, 50, 100]:
         train_agent(problem, n, k, minutes, "nnsize_"+str(nnsize), nnsize=nnsize)
 
@@ -149,17 +144,23 @@ def eval_agents_coefs(agent, problem, n, k):
     with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
         states = pickle.load(f)
     actions = np.array([a for s in states for a in s])
-    values = agent.eval(actions)
+
+    sess = InferenceSession(agent.SerializeToString())
+
+    values = sess.run(None, {'X': actions})[0]
     values = (values - np.mean(values)) / np.std(values)
     model = LinearRegression().fit(actions, values)
-
     coefs = {}
     for i in range(len(feature_names)):
-        coefs[feature_names[i]] = model.coef_[i]
+        coefs[feature_names[i]] = model.coef_[0][i]
     return coefs
 
 
 if __name__ == "__main__":
-    for problem in ["BW", "TL", "DP", "TA", "CM"]:
-        train_agent(problem, 2, 2, 60, "60m", copy_freq=50000, epsilon=0.1, eta=1e-5)
-        test_agents(problem, 2, 2, "60m", [(problem, 2, 2), (problem, 3, 3)])
+    for problem in ["AT", "BW", "TL", "DP", "TA"]:
+        train_agent(problem, 2, 2, 3, "10m", copy_freq=2000, epsilon=0.1, eta=1e-5)
+        test_agents(problem, 2, 2, "10m", [(problem, 2, 2), (problem, 3, 3)])
+
+
+
+
