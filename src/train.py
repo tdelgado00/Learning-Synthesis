@@ -84,7 +84,7 @@ def test_agents(problem, n, k, file, problems):
             df.append(result)
 
     df = pd.DataFrame(df)
-    #df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
+    df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
 
 
 def exp_iterations(problem, n, k):
@@ -160,6 +160,6 @@ def eval_agents_coefs(agent, problem, n, k):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "BW", "TL", "DP", "TA", "CM"]:
+    for problem in ["BW", "TL", "DP", "TA", "CM"]:
         train_agent(problem, 2, 2, 60, "60m", copy_freq=50000, epsilon=0.1, eta=1e-5)
         test_agents(problem, 2, 2, "60m", [(problem, 2, 2), (problem, 3, 3)])
