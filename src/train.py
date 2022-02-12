@@ -158,8 +158,9 @@ def eval_agents_coefs(agent, problem, n, k):
 
 if __name__ == "__main__":
     for problem in ["AT", "BW", "TL", "DP", "TA"]:
-        train_agent(problem, 2, 2, 3, "10m", copy_freq=2000, epsilon=0.1, eta=1e-5)
-        test_agents(problem, 2, 2, "10m", [(problem, 2, 2), (problem, 3, 3)])
+        for it in range(3):
+            train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
+            test_agents(problem, 2, 2, "10m"+str(it), [(problem, 2, 2), (problem, 3, 3)])
 
 
 
