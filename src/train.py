@@ -109,34 +109,33 @@ def exp_nnsize(problem, n, k, minutes):
 
 def pick_agent(problem, n, k, file):
     df = pd.read_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
-    idx = df.groupby("idx").loc[(df["n"] == 3) & (df["k"] == 3)]["expanded transitions"].argmax()
+    idx = df.groupby("idx").loc[(df["n"] == 3) & (df["k"] == 3)]["expanded transitions"].argmin()
 
-    with open("experiments/results/"+filename([problem, n, k])+"/"+file+".pkl", "rb") as f:
-        return pickle.load(f)[idx][0]
+    return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx")
 
 
-def exp_high_generalization(problem, file, up_to=4):
+def exp_test_all(problem, file, up_to):
     df = []
-    for n, k in [(x, x) for x in range(2, up_to+1)]:
+    for n in range(up_to+1):
+        for k in range(up_to+1):
+            env = lambda a, test: DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
 
-        env = lambda a, test: DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
+            agent = pick_agent(problem, n, k, file)
 
-        agent = pick_agent(problem, n, k, file)
+            print("Running Agent with", problem, n, k)
+            results = agent.test(env)
 
-        print("Running Agent...")
-        results = agent.test(env)
+            print("Running RA with", problem, n, k)
+            ra_result = test_old(problem, n, k, "r")
 
-        print("Running RA...")
-        ra_result = test_old(problem, n, k, "r")
-
-        df.append({
-            "total trans": max_actions[problem, n, k],
-            "agent trans": results["expanded transitions"],
-            "agent time": int(results["synthesis time(ms)"]),
-            "ra trans": ra_result["expanded transitions"],
-            "ra time": ra_result["synthesis time(ms)"]
-        })
-        print("Done.")
+            df.append({
+                "total trans": max_actions[problem, n, k],
+                "agent trans": results["expanded transitions"] if results != "timeout" else np.nan,
+                "agent time": int(results["synthesis time(ms)"]) if results != "timeout" else np.nan,
+                "ra trans": ra_result["expanded transitions"],
+                "ra time": ra_result["synthesis time(ms)"]
+            })
+            print("Done.")
 
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/high_generalization.csv")
@@ -159,11 +158,12 @@ def eval_agents_coefs(agent, problem, n, k):
 
 
 if __name__ == "__main__":
-    for problem in ["BW", "TL", "DP", "TA"]:
-        for it in range(3):
-            train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
-            test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
+    #for problem in ["AT", "BW", "TL", "DP", "TA"]:
+    #    for it in range(3):
+    #        train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
+    #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
 
-
+    for problem in ["AT", "BW", "TL", "DP", "TA"]:
+        exp_test_all(problem, "10m_0", up_to=5)
 
 
