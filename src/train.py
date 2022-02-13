@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 
 from agent import Agent, test_onnx
 from environment import DCSSolverEnv
-from test import test_old, test
+from test import test
 from util import filename, get_problem_data, feature_names
 max_actions = {}
 
@@ -117,15 +117,13 @@ def pick_agent(problem, n, k, file):
     return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx"), info
 
 
-def exp_test_generalization(problem, file, up_to):
+def exp_test_generalization(problem, file, up_to, timeout=10*60):
     df = []
     for n in range(1, up_to+1):
         for k in range(1, up_to+1):
             env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
             agent, info = pick_agent(problem, 2, 2, file)
-
-            print("Running Agent with", problem, n, k)
-            results = test_onnx(agent, env, timeout=10*60)
+            results = test_onnx(agent, env, timeout=timeout)
             print("Done.", results["synthesis time(ms)"])
             results.update(info)
 
@@ -133,19 +131,15 @@ def exp_test_generalization(problem, file, up_to):
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/generalization_2_2.csv")
 
 
-def exp_test_ra(problem, up_to, old=False):
+def exp_test_ra(problem, up_to, old=False, timeout="10m"):
     df = []
     for n in range(1, up_to+1):
         for k in range(1, up_to+1):
-            print("Running RA with", problem, n, k)
-            if old:
-                df.append(test_old(problem, n, k, "r", timeout="10m"))
-            else:
-                df.append(test(problem, n, k, "r", timeout="10m"))
-            print("Done.", df[-1]["synthesis time(ms)"])
+            df.append(test(problem, n, k, "r", timeout=timeout, old=old))
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/RA.csv")
+    file = "RAold.csv" if old else "RA.csv"
+    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file)
 
 
 if __name__ == "__main__":
@@ -153,13 +147,12 @@ if __name__ == "__main__":
     #    for it in range(3):
     #        train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
     #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
-    
-    #print(test_old("AT", 5, 5, "r", timeout="1s"))
-    for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
-        exp_test_ra(problem, up_to=5)
-        exp_test_ra(problem, up_to=5, old=True)
 
     for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
-        exp_test_generalization(problem, "10m_0", up_to=5)
+        exp_test_ra(problem, up_to=5, timeout="1s")
+        exp_test_ra(problem, up_to=5, old=True, timeout="1s")
+
+    for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
+        exp_test_generalization(problem, "10m_0", up_to=5, timeout=1)
 
 

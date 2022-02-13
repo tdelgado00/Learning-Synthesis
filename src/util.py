@@ -33,13 +33,9 @@ def get_problem_data(algorithm, heuristic=None):
 
 
 def read_results(proc):
-    lines = []
-    while len(lines) < 8:
-        line = proc.stdout.readline()[:-1]
-        if line == "":  # timeout
-            return {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
-        if "seed" not in line:
-            lines.append(line)
+    lines = proc.stdout.split("\n")
+    if "seed" in lines[0]:
+        lines = lines[1:]
 
     results = {}
     results["expanded states"] = int(lines[0].split(" ")[1])
