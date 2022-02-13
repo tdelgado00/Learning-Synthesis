@@ -110,4 +110,10 @@ def test_onnx(model, env, timeout=30*60):
         action = np.argmax(sess.run(None, {'X': obs}))
         obs, reward, done, info = env.step(action)
 
-    return info if time.time() - start_time < timeout else "timeout"
+    return info if time.time() - start_time < timeout else {
+        "problem": env.problem,
+        "n": env.n,
+        "k": env.k,
+        "synthesis time(ms)": np.nan,
+        "expanded transitions": np.nan
+    }

@@ -4,9 +4,9 @@ import pandas as pd
 from util import read_results
 
 
-def test(problem, n, k, heuristic):
+def test(problem, n, k, heuristic, timeout="30m"):
     proc = subprocess.Popen(
-        ["timeout", "30m", "java", "-cp", "mtsa.jar", "ltsa.ui.LTSABatch", "-i",
+        ["timeout", timeout, "java", "-cp", "mtsa.jar", "ltsa.ui.LTSABatch", "-i",
          "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp", "-c", "DirectedController",
          "-" + heuristic],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -19,9 +19,9 @@ def test(problem, n, k, heuristic):
     return results
 
 
-def test_old(problem, n, k, heuristic):
+def test_old(problem, n, k, heuristic, timeout="30m"):
     proc = subprocess.Popen(
-        ["timeout", "30m", "java", "-cp", "mtsaOld.jar", "ltsa.ui.LTSABatch", "-i",
+        ["timeout", timeout, "java", "-cp", "mtsaOld.jar", "ltsa.ui.LTSABatch", "-i",
          "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp", "-c", "DirectedController",
          "-" + heuristic],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)

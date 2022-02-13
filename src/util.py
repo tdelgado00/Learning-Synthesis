@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 feature_names = [
@@ -35,6 +36,8 @@ def read_results(proc):
     lines = []
     while len(lines) < 8:
         line = proc.stdout.readline()[:-1]
+        if line == "":  # timeout
+            return {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
         if "seed" not in line:
             lines.append(line)
 

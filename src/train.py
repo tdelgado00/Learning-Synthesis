@@ -29,9 +29,25 @@ def get_max_actions():
 get_max_actions()
 
 
-def experiment_file(problem, n, k, experiment, params):
-    name = filename([experiment]+params)
-    return "experiments/results/" + filename([problem, n, k]) + "/" + name + ".pkl"
+def eval_agents_coefs(agent, problem, n, k):
+    with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
+        states = pickle.load(f)
+    actions = np.array([a for s in states for a in s])
+
+    sess = InferenceSession(agent.SerializeToString())
+
+    values = sess.run(None, {'X': actions})[0]
+    values = (values - np.mean(values)) / np.std(values)
+    model = LinearRegression().fit(actions, values)
+    coefs = {}
+    for i in range(len(feature_names)):
+        coefs[feature_names[i]] = model.coef_[0][i]
+    return coefs
+
+
+def eval_agent_q(agent, random_states):
+    sess = InferenceSession(agent.SerializeToString())
+    return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
 def train_agent(problem, n, k, minutes, dir, eta=1e-6, epsilon=0.1, nnsize=20, copy_freq=200000):
@@ -43,11 +59,6 @@ def train_agent(problem, n, k, minutes, dir, eta=1e-6, epsilon=0.1, nnsize=20, c
     agent.train(env, minutes * 60, copy_freq=copy_freq)
 
     return agent
-
-
-def eval_agent_q(agent, random_states):
-    sess = InferenceSession(agent.SerializeToString())
-    return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
 def test_agents(problem, n, k, file, problems, freq = 1):
@@ -84,23 +95,11 @@ def test_agents(problem, n, k, file, problems, freq = 1):
     df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
 
 
-def exp_iterations(problem, n, k):
-    for it in range(5):
-        train_agent(problem, n, k, 20, "variance_"+str(it))
-
-
-def exp_eta(problem, n, k, minutes):
+def exp_hyp(problem, n, k, minutes):
     for eta in [1e-3, 1e-4, 1e-5, 1e-6]:
         for eps in [0.05, 0.1, 0.2]:
             for it in range(3):
                 train_agent(problem, n, k, minutes, "eta_"+str(eta), eta=eta, epsilon=0.1)
-
-
-def exp_epsilon(problem, n, k, minutes):
-    for eps in [0.01, 0.05, 0.1, 0.2, 0.33]:
-        train_agent(problem, n, k, minutes, "epsilon_"+str(eps), epsilon=eps)
-        test_agents(problem, n, k, "epsilon_"+str(eps), [(problem, 2, 2), (problem, 3, 3)])
-
 
 def exp_nnsize(problem, n, k, minutes):
     for nnsize in [5, 10, 20, 50, 100]:
@@ -112,52 +111,41 @@ def pick_agent(problem, n, k, file):
     dfloc = df.loc[(df["n"] == 3) & (df["k"] == 3)]
     idx = dfloc.loc[dfloc["expanded transitions"] == dfloc["expanded transitions"].min()].iloc[0]["idx"]
     print(idx)
-    return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx")
+
+    with open("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".json", "r") as f:
+        info = json.load(f)
+    return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx"), info
 
 
-def exp_test_all(problem, file, up_to):
+def exp_test_generalization(problem, file, up_to):
     df = []
     for n in range(1, up_to+1):
         for k in range(1, up_to+1):
             env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
-
-            agent = pick_agent(problem, 2, 2, file)
+            agent, info = pick_agent(problem, 2, 2, file)
 
             print("Running Agent with", problem, n, k)
             results = test_onnx(agent, env, timeout=10*60)
-            print("Done.", results["synthesis time(ms)"] if results != "timeout" else "timeout")
-            print("Running RA with", problem, n, k)
-            ra_result = test(problem, n, k, "r", timeout="10m")
             print("Done.", results["synthesis time(ms)"])
-            df.append({
-                "problem": problem,
-                "n": n,
-                "k": k,
-                "total trans": max_actions[problem, n, k],
-                "agent trans": results["expanded transitions"] if results != "timeout" else np.nan,
-                "agent time": int(results["synthesis time(ms)"]) if results != "timeout" else np.nan,
-                "ra trans": ra_result["expanded transitions"],
-                "ra time": ra_result["synthesis time(ms)"]
-            })
+            results.update(info)
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/high_generalization.csv")
+    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/generalization_2_2.csv")
 
 
-def eval_agents_coefs(agent, problem, n, k):
-    with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
-        states = pickle.load(f)
-    actions = np.array([a for s in states for a in s])
+def exp_test_ra(problem, up_to, old=False):
+    df = []
+    for n in range(1, up_to+1):
+        for k in range(1, up_to+1):
+            print("Running RA with", problem, n, k)
+            if old:
+                df.append(test_old(problem, n, k, "r", timeout="10m"))
+            else:
+                df.append(test_old(problem, n, k, "r", timeout="10m"))
+            print("Done.", df[-1]["synthesis time(ms)"])
 
-    sess = InferenceSession(agent.SerializeToString())
-
-    values = sess.run(None, {'X': actions})[0]
-    values = (values - np.mean(values)) / np.std(values)
-    model = LinearRegression().fit(actions, values)
-    coefs = {}
-    for i in range(len(feature_names)):
-        coefs[feature_names[i]] = model.coef_[0][i]
-    return coefs
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/RA.csv")
 
 
 if __name__ == "__main__":
@@ -166,7 +154,11 @@ if __name__ == "__main__":
     #        train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
     #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
     
-    for problem in ["BW", "TL", "DP", "TA", "AT"]:
-        exp_test_all(problem, "10m_0", up_to=5)
+    for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
+        exp_test_ra(problem, up_to=5)
+        exp_test_ra(problem, up_to=5, old=True)
+
+    for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
+        exp_test_generalization(problem, "10m_0", up_to=5)
 
 
