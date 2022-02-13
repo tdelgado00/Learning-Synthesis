@@ -141,7 +141,7 @@ def exp_test_ra(problem, up_to, old=False):
             if old:
                 df.append(test_old(problem, n, k, "r", timeout="10m"))
             else:
-                df.append(test_old(problem, n, k, "r", timeout="10m"))
+                df.append(test(problem, n, k, "r", timeout="10m"))
             print("Done.", df[-1]["synthesis time(ms)"])
 
     df = pd.DataFrame(df)
@@ -154,6 +154,7 @@ if __name__ == "__main__":
     #        train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
     #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
     
+    #print(test_old("AT", 5, 5, "r", timeout="1s"))
     for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
         exp_test_ra(problem, up_to=5)
         exp_test_ra(problem, up_to=5, old=True)
