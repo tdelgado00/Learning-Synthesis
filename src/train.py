@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 
 from agent import Agent, test_onnx
 from environment import DCSSolverEnv
-from test import test_old
+from test import test_old, test
 from util import filename, get_problem_data, feature_names
 max_actions = {}
 
@@ -109,33 +109,36 @@ def exp_nnsize(problem, n, k, minutes):
 
 def pick_agent(problem, n, k, file):
     df = pd.read_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
-    idx = df.groupby("idx").loc[(df["n"] == 3) & (df["k"] == 3)]["expanded transitions"].argmin()
-
+    dfloc = df.loc[(df["n"] == 3) & (df["k"] == 3)]
+    idx = dfloc.loc[dfloc["expanded transitions"] == dfloc["expanded transitions"].min()].iloc[0]["idx"]
+    print(idx)
     return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx")
 
 
 def exp_test_all(problem, file, up_to):
     df = []
-    for n in range(up_to+1):
-        for k in range(up_to+1):
-            env = lambda a, test: DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
+    for n in range(1, up_to+1):
+        for k in range(1, up_to+1):
+            env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
 
-            agent = pick_agent(problem, n, k, file)
+            agent = pick_agent(problem, 2, 2, file)
 
             print("Running Agent with", problem, n, k)
-            results = agent.test(env)
-
+            results = test_onnx(agent, env, timeout=10*60)
+            print("Done.", results["synthesis time(ms)"] if results != "timeout" else "timeout")
             print("Running RA with", problem, n, k)
-            ra_result = test_old(problem, n, k, "r")
-
+            ra_result = test(problem, n, k, "r", timeout="10m")
+            print("Done.", results["synthesis time(ms)"])
             df.append({
+                "problem": problem,
+                "n": n,
+                "k": k,
                 "total trans": max_actions[problem, n, k],
                 "agent trans": results["expanded transitions"] if results != "timeout" else np.nan,
                 "agent time": int(results["synthesis time(ms)"]) if results != "timeout" else np.nan,
                 "ra trans": ra_result["expanded transitions"],
                 "ra time": ra_result["synthesis time(ms)"]
             })
-            print("Done.")
 
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/high_generalization.csv")
@@ -162,8 +165,8 @@ if __name__ == "__main__":
     #    for it in range(3):
     #        train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
     #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
-
-    for problem in ["AT", "BW", "TL", "DP", "TA"]:
+    
+    for problem in ["BW", "TL", "DP", "TA", "AT"]:
         exp_test_all(problem, "10m_0", up_to=5)
 
 
