@@ -154,7 +154,7 @@ if __name__ == "__main__":
     #    exp_test_ra(problem, up_to=5, timeout="10m")
     #    exp_test_ra(problem, up_to=5, old=True, timeout="10m")
 
-    #for problem in ["BW", "TL", "DP", "TA", "AT"]:
-    #    exp_test_generalization(problem, "10m_0", up_to=5, timeout=10*60)
+    for problem in ["CM"]:
+        exp_test_generalization(problem, "10m_0", up_to=5, timeout=10*60)
 
 
