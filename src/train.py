@@ -145,14 +145,14 @@ def exp_test_ra(problem, up_to, old=False, timeout="10m"):
 
 
 if __name__ == "__main__":
-    #for problem in ["AT", "BW", "TL", "DP", "TA"]:
-    #    for it in range(3):
-    #        train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
-    #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
+    for problem in ["CM"]:
+        for it in range(3):
+            train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
+            test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
 
-    for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
-        exp_test_ra(problem, up_to=5, timeout="10m")
-        #exp_test_ra(problem, up_to=5, old=True, timeout="10m")
+    #for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
+    #    exp_test_ra(problem, up_to=5, timeout="10m")
+    #    exp_test_ra(problem, up_to=5, old=True, timeout="10m")
 
     #for problem in ["BW", "TL", "DP", "TA", "AT"]:
     #    exp_test_generalization(problem, "10m_0", up_to=5, timeout=10*60)

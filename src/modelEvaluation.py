@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 
@@ -10,45 +11,36 @@ import itertools
 import numpy as np
 import pandas as pd
 
+from util import feature_names
 
-def get_random_states(problem, n, k):
 
-    env = DCSSolverEnv(problem, n, k, max_actions=10000)
+def get_random_states(problem, n, k, total, sampled):
+    env = DCSSolverEnv(problem, n, k, max_actions=100000)
 
-    idxs = np.random.choice(range(10000), 100)
+    idxs = np.random.choice(range(total), sampled)
 
     states = []
     done = True
     obs = None
-    for i in range(10000):
+    for i in range(total):
         if done:
             obs = env.reset()
+
         if i in idxs:
             states.append(obs)
+
         action = np.random.randint(len(obs))
         obs, reward, done, info = env.step(action)
 
-    file = "experiments/results/"+filename([problem, n, k])+"/random_states.pkl"
+    file = "experiments/results/"+filename([problem, n, k])+"/random_states2.pkl"
     os.makedirs(os.path.dirname(file), exist_ok=True)
     with open(file, "wb") as f:
         pickle.dump(states, f)
 
 
-def print_features(features):
-    print("controlable:", features[0])
-    print("goal:", features[1])
-    print("error:", features[2])
-    print("none:", features[3])
-    print("marcado:", features[4])
-    print("deadlock:", features[5])
-    print("uncontrollability:", features[6])
-    print("unexplorability:", features[7])
-    print("1/depth:", features[8])
-    print("stateUnexplorability:", features[9])
-
 def save_q_values():
     problem, n, k = "BW", 2, 2
-    env = lambda a, test: DCSSolverEnv(problem, n, k, a, test, max_actions=1000)
+    env = DCSSolverEnv(problem, n, k, max_actions=1000)
     agent = Agent.load("agents/" + filename([problem, 2, 2]) + "/good.pkl", env, env)
 
     features = [0,    # controlable: binaria
@@ -96,10 +88,11 @@ def save_q_values():
     df = pd.DataFrame(df)
     df.to_csv("agents/" + filename([problem, 2, 2]) + "/good_values.csv")
 
-def save_all_random_states():
-    for problem, n, k in [(problem, 2, 2) for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]]:
-        get_random_states(problem, n, k)
+def save_all_random_states(n, k):
+    for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]:
+        get_random_states(problem, n, k, 10000, 500)
 
 
 if __name__ == "__main__":
-    save_all_random_states()
+    save_all_random_states(2, 2)
+    save_all_random_states(3, 3)
