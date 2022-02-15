@@ -74,4 +74,5 @@ def find_inefficiency():
 
 
 if __name__ == '__main__':
-    print(test("AT", 2, 2, "r"))
+    print(test("AT", 3, 1, "r", old=False))
+    print(test("AT", 3, 1, "r", old=True))

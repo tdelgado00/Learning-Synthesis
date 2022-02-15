@@ -36,7 +36,7 @@ def read_results(proc):
     lines = proc.stdout.split("\n")
     if "seed" in lines[0]:
         lines = lines[1:]
-
+    
     results = {}
     results["expanded states"] = int(lines[0].split(" ")[1])
     results["used states"] = int(lines[1].split(" ")[1])

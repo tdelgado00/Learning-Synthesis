@@ -123,10 +123,12 @@ def exp_test_generalization(problem, file, up_to, timeout=10*60):
         for k in range(1, up_to+1):
             env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
             agent, info = pick_agent(problem, 2, 2, file)
+            
+            print("Testing agent with", problem, n, k)
             results = test_onnx(agent, env, timeout=timeout)
             print("Done.", results["synthesis time(ms)"])
             results.update(info)
-
+            df.append(results)
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/generalization_2_2.csv")
 
@@ -149,10 +151,10 @@ if __name__ == "__main__":
     #        test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
 
     for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
-        exp_test_ra(problem, up_to=5, timeout="1s")
-        exp_test_ra(problem, up_to=5, old=True, timeout="1s")
+        exp_test_ra(problem, up_to=5, timeout="10m")
+        #exp_test_ra(problem, up_to=5, old=True, timeout="10m")
 
-    for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
-        exp_test_generalization(problem, "10m_0", up_to=5, timeout=1)
+    #for problem in ["BW", "TL", "DP", "TA", "AT"]:
+    #    exp_test_generalization(problem, "10m_0", up_to=5, timeout=10*60)
 
 
