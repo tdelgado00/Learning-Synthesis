@@ -18,8 +18,8 @@ max_actions = {}
 def get_max_actions():
     r = get_problem_data("mono")["expandedTransitions"]
     for problem in ["AT", "TA", "DP", "TL", "BW", "CM"]:
-        for n in range(1, 6):
-            for k in range(1, 6):
+        for n in range(1, 16):
+            for k in range(1, 16):
                 if (problem, n, k) in r.keys() and r[problem, n, k] == r[problem, n, k]:
                     max_actions[problem, n, k] = int(r[problem, n, k])
                 else:
@@ -119,42 +119,42 @@ def pick_agent(problem, n, k, file):
 
 def exp_test_generalization(problem, file, up_to, timeout=10*60):
     df = []
-    for n in range(1, up_to+1):
-        for k in range(1, up_to+1):
-            env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
-            agent, info = pick_agent(problem, 2, 2, file)
-            
-            print("Testing agent with", problem, n, k)
-            results = test_onnx(agent, env, timeout=timeout)
-            print("Done.", results["synthesis time(ms)"])
-            results.update(info)
-            df.append(results)
+    solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+    for n in range(up_to):
+        for k in range(up_to):
+            if n == 0 or solved[n-1][k] or k == 0 or solved[n][k-1]:
+                env = DCSSolverEnv(problem, n+1, k+1, max_actions=max_actions[problem, n+1, k+1])
+                agent, info = pick_agent(problem, 2, 2, file)
+
+                print("Testing agent with", problem, n+1, k+1)
+                results = test_onnx(agent, env, timeout=timeout)
+                print("Done.", results["synthesis time(ms)"])
+                results.update(info)
+                df.append(results)
+                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                    solved[n][k] = True
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/generalization_2_2.csv")
+    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/Agent"+str(up_to)+".csv")
 
 
 def exp_test_ra(problem, up_to, old=False, timeout="10m"):
     df = []
-    for n in range(1, up_to+1):
-        for k in range(1, up_to+1):
-            df.append(test(problem, n, k, "r", timeout=timeout, old=old))
+    solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+    for n in range(up_to):
+        for k in range(up_to):
+            if n == 0 or solved[n-1][k] or k == 0 or solved[n][k-1]:
+                df.append(test(problem, n+1, k+1, "r", timeout=timeout, old=old))
+                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                    solved[n][k] = True
 
     df = pd.DataFrame(df)
-    file = "RAold.csv" if old else "RA.csv"
+    file = "RAold"+str(up_to)+".csv" if old else "RA"+str(up_to)+".csv"
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file)
 
 
 if __name__ == "__main__":
-    for problem in ["CM"]:
-        for it in range(3):
-            train_agent(problem, 2, 2, 3, "10m_"+str(it), copy_freq=2000, epsilon=0.1, eta=1e-5)
-            test_agents(problem, 2, 2, "10m_"+str(it), [(problem, 2, 2), (problem, 3, 3)], freq=5)
-
-    #for problem in ["BW", "TL", "DP", "TA", "AT", "CM"]:
-    #    exp_test_ra(problem, up_to=5, timeout="10m")
-    #    exp_test_ra(problem, up_to=5, old=True, timeout="10m")
-
-    for problem in ["CM"]:
-        exp_test_generalization(problem, "10m_0", up_to=5, timeout=10*60)
+    for problem in ["AT", "BW", "TL", "DP", "TA"]:
+        exp_test_ra(problem, 15, timeout="1s")
+        exp_test_generalization(problem, "10m_0", 15, timeout=1)
 
 
