@@ -36,7 +36,6 @@ def read_results(proc):
     lines = proc.stdout.split("\n")
     if "seed" in lines[0]:
         lines = lines[1:]
-    
     results = {}
     results["expanded states"] = int(lines[0].split(" ")[1])
     results["used states"] = int(lines[1].split(" ")[1])
@@ -50,4 +49,5 @@ def read_results(proc):
     results["propagateGoals"] = int(propagateLine[1][:-1])
     results["propagateErrors"] = int(propagateLine[3])
     results["memory(mb)"] = float(lines[7].split(" ")[1])
+    results["heuristic time(ms)"] = float(lines[8].split(" ")[1])
     return results

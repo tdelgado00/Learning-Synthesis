@@ -2,9 +2,12 @@ import json
 import os
 import pickle
 
+from onnxruntime import InferenceSession
+
 from agent import Agent
 
 from environment import DCSSolverEnv
+from src.train import get_agent
 from util import filename
 import itertools
 
@@ -93,6 +96,18 @@ def save_all_random_states(n, k):
         get_random_states(problem, n, k, 10000, 500)
 
 
+def eval_agent(agent, features):
+    sess = InferenceSession(agent.SerializeToString())
+    return sess.run(None, {'X': features})
+
+
 if __name__ == "__main__":
-    save_all_random_states(2, 2)
-    save_all_random_states(3, 3)
+    print(eval_agent(get_agent("AT", 2, 2, "10m_0")[0],
+        [[0, 1, 1, 0, 0, 0, 0, 0, 0, 0.5, 1]]
+    ))
+
+    print(eval_agent(get_agent("AT", 2, 2, "10m_0")[0],
+        [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    ))
+    #save_all_random_states(2, 2)
+    #save_all_random_states(3, 3)

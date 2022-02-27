@@ -107,7 +107,8 @@ def test_onnx(model, env, timeout=30*60):
     info = None
 
     while not done and time.time() - start_time < timeout:
-        action = np.argmax(sess.run(None, {'X': obs}))
+        values = sess.run(None, {'X': obs})
+        action = np.argmax(values)
         obs, reward, done, info = env.step(action)
 
     return info if time.time() - start_time < timeout else {

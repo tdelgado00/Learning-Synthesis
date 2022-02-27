@@ -2,19 +2,29 @@ import subprocess
 
 import numpy as np
 import pandas as pd
-from util import read_results
+from util import read_results, filename
+
+
+agent_idx = {
+    "AT": 95,
+    "TA": 105,
+    "TL": 105,
+    "BW": 95,
+    "DP": 130
+}
 
 
 def test(problem, n, k, heuristic, timeout="30m", old=False):
     if old:
-        print("Running old RA with", problem, n, k)
         jar = "mtsaOld.jar"
     else:
-        print("Running RA with", problem, n, k)
         jar = "mtsa.jar"
     path = "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
-    proc = subprocess.run(["timeout", timeout, "java", "-Xmx8g", "-classpath", jar,
-                           "ltsa.ui.LTSABatch", "-i", path, "-c", "DirectedController"],
+    command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", jar,
+                           "ltsa.ui.LTSABatch", "-i", path, "-c", "DirectedController", "-"+heuristic]
+    if heuristic == "e":
+        command += ["-p", "experiments/results/"+filename([problem, 2, 2])+"/10m_0/"+str(agent_idx[problem])+".onnx"]
+    proc = subprocess.run(command,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
@@ -25,7 +35,6 @@ def test(problem, n, k, heuristic, timeout="30m", old=False):
     results["problem"] = problem
     results["n"] = n
     results["k"] = k
-    print("Done.", results["synthesis time(ms)"])
     return results
 
 

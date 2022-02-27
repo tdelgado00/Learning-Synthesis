@@ -8,7 +8,7 @@ import pandas as pd
 from onnxruntime import InferenceSession
 from sklearn.linear_model import LinearRegression
 
-from agent import Agent, test_onnx
+from agent import Agent
 from environment import DCSSolverEnv
 from test import test
 from util import filename, get_problem_data, feature_names
@@ -82,7 +82,7 @@ def test_agents(problem, n, k, file, problems, freq = 1):
         for problem2, n2, k2 in problems:
             env = DCSSolverEnv(problem2, n2, k2, max_actions=max_actions[problem2, n2, k2])
             print("Testing", i, "with", problem2, n2, k2)
-            result = test_onnx(agent, env)
+            result = test(problem2, n2, k2, "e", timeout=10*60)
             if result == "timeout":
                 result = {"problem": problem2, "n": n2, "k": k2}
             result.update(info)
@@ -110,51 +110,37 @@ def pick_agent(problem, n, k, file):
     df = pd.read_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
     dfloc = df.loc[(df["n"] == 3) & (df["k"] == 3)]
     idx = dfloc.loc[dfloc["expanded transitions"] == dfloc["expanded transitions"].min()].iloc[0]["idx"]
-    print(idx)
+    return idx
 
+
+def get_agent(problem, n, k, file):
+    idx = pick_agent(problem, n, k, file)
     with open("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".json", "r") as f:
         info = json.load(f)
     return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx"), info
 
 
-def exp_test_generalization(problem, file, up_to, timeout=10*60):
+def exp_test_all(problem, up_to, old=False, timeout="10m", heuristic="r"):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
         for k in range(up_to):
             if n == 0 or solved[n-1][k] or k == 0 or solved[n][k-1]:
-                env = DCSSolverEnv(problem, n+1, k+1, max_actions=max_actions[problem, n+1, k+1])
-                agent, info = pick_agent(problem, 2, 2, file)
-
-                print("Testing agent with", problem, n+1, k+1)
-                results = test_onnx(agent, env, timeout=timeout)
-                print("Done.", results["synthesis time(ms)"])
-                results.update(info)
-                df.append(results)
-                if not np.isnan(df[-1]["synthesis time(ms)"]):
-                    solved[n][k] = True
-    df = pd.DataFrame(df)
-    df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/Agent"+str(up_to)+".csv")
-
-
-def exp_test_ra(problem, up_to, old=False, timeout="10m"):
-    df = []
-    solved = [[False for _ in range(up_to)] for _ in range(up_to)]
-    for n in range(up_to):
-        for k in range(up_to):
-            if n == 0 or solved[n-1][k] or k == 0 or solved[n][k-1]:
-                df.append(test(problem, n+1, k+1, "r", timeout=timeout, old=old))
+                print("Testing", heuristic, problem, n, k)
+                df.append(test(problem, n+1, k+1, heuristic, timeout=timeout, old=old))
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    file = "RAold"+str(up_to)+".csv" if old else "RA"+str(up_to)+".csv"
+    file = filename(["all", heuristic, up_to])+(".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file)
 
 
 if __name__ == "__main__":
+
     for problem in ["AT", "BW", "TL", "DP", "TA"]:
-        exp_test_ra(problem, 15, timeout="10m")
-        exp_test_generalization(problem, "10m_0", 15, timeout=10*60)
+        exp_test_all(problem, 15, timeout="10m", heuristic="r")
+        exp_test_all(problem, 15, timeout="10m", heuristic="e")
 
-
+    #for problem in ["AT", "BW", "TL", "DP", "TA"]:
+    #    print(problem, pick_agent(problem, 2, 2, "10m_0"))
