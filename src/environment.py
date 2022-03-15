@@ -9,51 +9,28 @@ from gym import spaces
 
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])
-from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForPythonFF
-from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForPythonPF
+from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForPython
 
 
-class DCSSolverEnv(gym.Env):
-    def __init__(self, problem, n, k, nactions=None, max_actions=3000):
+class DCSSolverEnv:
+    def __init__(self, problem, n, k, max_actions=3000):
         super(DCSSolverEnv, self).__init__()
         self.problem = problem
         self.n = n
         self.k = k
         self.problemFilename = filename([problem, n, k])
 
-        if nactions is None:
-            self.max_actions = max_actions
-            self.javaEnv = DCSForPythonFF()
-            self.nfeatures = self.javaEnv.getNumberOfFeatures()
-            self.featuresBuffer = jpype.nio.convertToDirectBuffer(
-                bytearray(self.nfeatures * self.max_actions * 4)).asFloatBuffer()
-            self.javaEnv.setFeaturesBuffer(self.featuresBuffer)
-            self.get_actions = self.get_actions_full_frontier
-        else:
-            self.nactions = nactions
-            self.binaryFeaturesBuffer = jpype.nio.convertToDirectBuffer(bytearray(6 * self.nactions))
-            self.boxFeaturesBuffer = jpype.nio.convertToDirectBuffer(bytearray(4 * 4 * self.nactions)).asFloatBuffer()
+        self.max_actions = max_actions
+        self.javaEnv = DCSForPython()
+        self.nfeatures = self.javaEnv.getNumberOfFeatures()
+        self.featuresBuffer = jpype.nio.convertToDirectBuffer(
+            bytearray(self.nfeatures * self.max_actions * 4)).asFloatBuffer()
+        self.javaEnv.setFeaturesBuffer(self.featuresBuffer)
 
-            self.javaEnv = DCSForPythonPF(self.nactions, self.boxFeaturesBuffer, self.binaryFeaturesBuffer)
-
-            self.action_space = spaces.Discrete(self.nactions)
-            self.observation_space = spaces.Dict({
-                    "binary": spaces.MultiBinary(6 * self.nactions),
-                    "real": spaces.Box(low=0, high=1, shape=(4 * self.nactions,), dtype=np.float32)
-                })
-            self.get_actions = self.get_actions_partial_frontier
-
-
-    def get_actions_full_frontier(self):
+    def get_actions(self):
         nactions = self.javaEnv.frontierSize()
         actions = np.asarray(self.featuresBuffer, dtype=np.float32)
         return actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures))
-
-    def get_actions_partial_frontier(self):
-        return {
-            "binary": np.asarray(self.binaryFeaturesBuffer, dtype=np.bool),
-            "real": np.asarray(self.boxFeaturesBuffer, dtype=np.float32)
-        }
 
     def step(self, action):
         self.javaEnv.expandAction(action)

@@ -8,7 +8,7 @@ import pandas as pd
 from onnxruntime import InferenceSession
 from sklearn.linear_model import LinearRegression
 
-from agent import Agent
+from agent import Agent, test_onnx
 from environment import DCSSolverEnv
 from test import test
 from util import filename, get_problem_data, feature_names
@@ -135,12 +135,13 @@ def exp_test_all(problem, up_to, old=False, timeout="10m", heuristic="r"):
     file = filename(["all", heuristic, up_to])+(".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file)
 
+def test_from_python(problem, n, k):
+    env = DCSSolverEnv(problem, n, k, 100000)
+    agent = get_agent(problem, 2, 2, "10m_0")[0]
+    return test_onnx(agent, env)
 
 if __name__ == "__main__":
 
     for problem in ["AT", "BW", "TL", "DP", "TA"]:
-        exp_test_all(problem, 15, timeout="10m", heuristic="r")
-        exp_test_all(problem, 15, timeout="10m", heuristic="e")
-
-    #for problem in ["AT", "BW", "TL", "DP", "TA"]:
-    #    print(problem, pick_agent(problem, 2, 2, "10m_0"))
+         exp_test_all(problem, 15, timeout="10m", heuristic="r")
+         # exp_test_all(problem, 15, timeout="10m", heuristic="e")
