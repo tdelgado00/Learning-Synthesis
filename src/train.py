@@ -12,21 +12,6 @@ from agent import Agent, test_onnx
 from environment import DCSSolverEnv
 from test import test
 from util import filename, get_problem_data, feature_names
-max_actions = {}
-
-
-def get_max_actions():
-    r = get_problem_data("mono")["expandedTransitions"]
-    for problem in ["AT", "TA", "DP", "TL", "BW", "CM"]:
-        for n in range(1, 16):
-            for k in range(1, 16):
-                if (problem, n, k) in r.keys() and r[problem, n, k] == r[problem, n, k]:
-                    max_actions[problem, n, k] = int(r[problem, n, k])
-                else:
-                    max_actions[problem, n, k] = 1000000
-
-
-get_max_actions()
 
 
 def eval_agents_coefs(agent, problem, n, k):
@@ -51,8 +36,8 @@ def eval_agent_q(agent, random_states):
 
 
 def train_agent(problem, n, k, minutes, dir, eta=1e-6, epsilon=0.1, nnsize=20, copy_freq=200000):
-    env = DCSSolverEnv(problem, n, k, max_actions=max_actions[problem, n, k])
-
+    env = DCSSolverEnv(problem, n, k)
+    print("Number of features:", env.nfeatures)
     dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
 
     agent = Agent(eta=eta, nnsize=nnsize, epsilon=epsilon, dir=dir)
@@ -80,7 +65,6 @@ def test_agents(problem, n, k, file, problems, freq = 1):
         coefs = eval_agents_coefs(agent, problem, n, k)
 
         for problem2, n2, k2 in problems:
-            env = DCSSolverEnv(problem2, n2, k2, max_actions=max_actions[problem2, n2, k2])
             print("Testing", i, "with", problem2, n2, k2)
             result = test(problem2, n2, k2, "e", timeout=10*60)
             if result == "timeout":
@@ -135,13 +119,22 @@ def exp_test_all(problem, up_to, old=False, timeout="10m", heuristic="r"):
     file = filename(["all", heuristic, up_to])+(".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file)
 
+
 def test_from_python(problem, n, k):
-    env = DCSSolverEnv(problem, n, k, 100000)
+    env = DCSSolverEnv(problem, n, k)
     agent = get_agent(problem, 2, 2, "10m_0")[0]
     return test_onnx(agent, env)
+
+agent_idx = {
+    "AT": 95,
+    "TA": 105,
+    "TL": 105,
+    "BW": 95,
+    "DP": 130
+}
 
 if __name__ == "__main__":
 
     for problem in ["AT", "BW", "TL", "DP", "TA"]:
-         exp_test_all(problem, 15, timeout="10m", heuristic="r")
-         # exp_test_all(problem, 15, timeout="10m", heuristic="e")
+        train_agent(problem, 2, 2, 3, "ra_feature", copy_freq=5000)
+        test_agents(problem, 3, 3, "ra_feature")

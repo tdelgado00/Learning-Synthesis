@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 
 feature_names = [
+    "ra 1",
+    "ra 2",
     "controllable",
     "depth",
     "state unexplorability",
@@ -34,8 +36,7 @@ def get_problem_data(algorithm, heuristic=None):
 
 def read_results(proc):
     lines = proc.stdout.split("\n")
-    if "seed" in lines[0]:
-        lines = lines[1:]
+    print(lines)
     results = {}
     results["expanded states"] = int(lines[0].split(" ")[1])
     results["used states"] = int(lines[1].split(" ")[1])

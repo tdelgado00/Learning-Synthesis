@@ -60,7 +60,7 @@ class Agent:
             steps += 1
 
             if steps % copy_freq == 0 and self.dir is not None:
-                self.save(time.time() - training_start, steps)
+                self.save(time.time() - training_start, steps, env.nfeatures)
 
     def get_action(self, actionFeatures, epsilon):
         if np.random.rand() <= epsilon:
@@ -78,9 +78,9 @@ class Agent:
         self.model.partial_fit([features], [value])
         self.has_learned_something = True
 
-    def save(self, training_time, steps):
+    def save(self, training_time, steps, nfeatures):
         os.makedirs(self.dir, exist_ok=True)
-        X_test = np.array([[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]]).astype(np.float32)
+        X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
         onx = to_onnx(self.model, X_test)
         onnx.save(onx, self.dir + "/" + str(self.save_idx) + ".onnx")
 

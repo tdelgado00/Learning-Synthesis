@@ -7,7 +7,6 @@ from onnxruntime import InferenceSession
 from agent import Agent
 
 from environment import DCSSolverEnv
-from src.train import get_agent
 from util import filename
 import itertools
 
@@ -18,7 +17,7 @@ from util import feature_names
 
 
 def get_random_states(problem, n, k, total, sampled):
-    env = DCSSolverEnv(problem, n, k, max_actions=100000)
+    env = DCSSolverEnv(problem, n, k)
 
     idxs = np.random.choice(range(total), sampled)
 
@@ -102,12 +101,5 @@ def eval_agent(agent, features):
 
 
 if __name__ == "__main__":
-    print(eval_agent(get_agent("AT", 2, 2, "10m_0")[0],
-        [[0, 1, 1, 0, 0, 0, 0, 0, 0, 0.5, 1]]
-    ))
-
-    print(eval_agent(get_agent("AT", 2, 2, "10m_0")[0],
-        [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-    ))
-    #save_all_random_states(2, 2)
+    save_all_random_states(2, 2)
     #save_all_random_states(3, 3)
