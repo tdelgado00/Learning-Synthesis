@@ -14,9 +14,7 @@ from test import test
 from util import filename, get_problem_data, feature_names
 
 
-def eval_agents_coefs(agent, problem, n, k):
-    with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
-        states = pickle.load(f)
+def eval_agents_coefs(agent, states):
     actions = np.array([a for s in states for a in s])
 
     sess = InferenceSession(agent.SerializeToString())
@@ -46,8 +44,8 @@ def train_agent(problem, n, k, minutes, dir, eta=1e-6, epsilon=0.1, nnsize=20, c
     return agent
 
 
-def test_agents(problem, n, k, file, problems, freq = 1):
-    with open("experiments/results/"+filename([problem, n, k])+"/random_states.pkl", "rb") as f:
+def test_agents(problem, n, k, file, problems, freq=1):
+    with open("experiments/results/"+filename([problem, n, k])+"/ra_feature_states.pkl", "rb") as f:
         random_states = pickle.load(f)
 
     df = []
@@ -62,11 +60,11 @@ def test_agents(problem, n, k, file, problems, freq = 1):
 
         avg_q = eval_agent_q(agent, random_states)
 
-        coefs = eval_agents_coefs(agent, problem, n, k)
+        coefs = eval_agents_coefs(agent, random_states)
 
         for problem2, n2, k2 in problems:
             print("Testing", i, "with", problem2, n2, k2)
-            result = test(problem2, n2, k2, "e", timeout=10*60)
+            result = test(problem2, n2, k2, "e", timeout="10m", agent_dir=file, agent_idx=i)
             if result == "timeout":
                 result = {"problem": problem2, "n": n2, "k": k2}
             result.update(info)
@@ -136,5 +134,5 @@ agent_idx = {
 if __name__ == "__main__":
 
     for problem in ["AT", "BW", "TL", "DP", "TA"]:
-        train_agent(problem, 2, 2, 3, "ra_feature", copy_freq=5000)
-        test_agents(problem, 3, 3, "ra_feature")
+        # train_agent(problem, 2, 2, 0.3, "ra_feature", copy_freq=500)
+        test_agents(problem, 2, 2, "ra_feature", [(problem, 2, 2), (problem, 3, 3)])

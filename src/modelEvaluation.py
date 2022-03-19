@@ -16,7 +16,7 @@ import pandas as pd
 from util import feature_names
 
 
-def get_random_states(problem, n, k, total, sampled):
+def get_random_states(problem, n, k, total, sampled, name):
     env = DCSSolverEnv(problem, n, k)
 
     idxs = np.random.choice(range(total), sampled)
@@ -34,7 +34,7 @@ def get_random_states(problem, n, k, total, sampled):
         action = np.random.randint(len(obs))
         obs, reward, done, info = env.step(action)
 
-    file = "experiments/results/"+filename([problem, n, k])+"/random_states2.pkl"
+    file = "experiments/results/"+filename([problem, n, k])+"/"+name+".pkl"
     os.makedirs(os.path.dirname(file), exist_ok=True)
     with open(file, "wb") as f:
         pickle.dump(states, f)
@@ -90,9 +90,9 @@ def save_q_values():
     df = pd.DataFrame(df)
     df.to_csv("agents/" + filename([problem, 2, 2]) + "/good_values.csv")
 
-def save_all_random_states(n, k):
+def save_all_random_states(n, k, name):
     for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]:
-        get_random_states(problem, n, k, 10000, 500)
+        get_random_states(problem, n, k, 10000, 500, name)
 
 
 def eval_agent(agent, features):
@@ -101,5 +101,4 @@ def eval_agent(agent, features):
 
 
 if __name__ == "__main__":
-    save_all_random_states(2, 2)
-    #save_all_random_states(3, 3)
+    save_all_random_states(2, 2, "ra_feature_states")

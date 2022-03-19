@@ -5,7 +5,7 @@ import pandas as pd
 from util import read_results, filename
 
 
-def test(problem, n, k, heuristic, timeout="30m", old=False, agent_dir="10m_0", agent_idx=0):
+def test(problem, n, k, heuristic, timeout="30m", old=False, agent_dir="10m_0", agent_idx=0, labels_dir="mock"):
     if old:
         jar = "mtsaOld.jar"
     else:
@@ -15,7 +15,7 @@ def test(problem, n, k, heuristic, timeout="30m", old=False, agent_dir="10m_0", 
                            "ltsa.ui.LTSABatch", "-i", path, "-c", "DirectedController", "-"+heuristic]
     if heuristic == "e":
         command += ["-p", "experiments/results/"+filename([problem, 2, 2])+"/"+agent_dir+"/"+str(agent_idx)+".onnx"]
-        command += ["-l", "labels/"+problem+".txt"]
+        command += ["-l", labels_dir]
     proc = subprocess.run(command,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     if proc.returncode == 124:
