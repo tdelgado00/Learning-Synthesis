@@ -1,18 +1,10 @@
-import json
 import os
 import pickle
-
 from onnxruntime import InferenceSession
-
-from agent import Agent
-
+from sklearn.linear_model import LinearRegression
 from environment import DCSSolverEnv
 from util import filename
-import itertools
-
 import numpy as np
-import pandas as pd
-
 from util import feature_names
 
 
@@ -40,56 +32,6 @@ def get_random_states(problem, n, k, total, sampled, name):
         pickle.dump(states, f)
 
 
-def save_q_values():
-    problem, n, k = "BW", 2, 2
-    env = DCSSolverEnv(problem, n, k, max_actions=1000)
-    agent = Agent.load("agents/" + filename([problem, 2, 2]) + "/good.pkl", env, env)
-
-    features = [0,    # controlable: binaria
-                0,    # goal: binaria
-                0,    # error: binaria
-                0,    # none: binaria
-                0,    # marcado: binaria
-                0,    # deadlock: binaria
-                0,    # uncontrollability: [0,1]
-                0,    # unexplorability: [0,1]
-                0.1,  # 1/depth: [0,1]
-                1     # stateUnexplorability: [0,1]
-                ]
-
-    possible_features = itertools.product(*[
-        [0,1],
-        [0,1],
-        [0,1],
-        [0,1],
-        [0,1],
-        [0,1],
-        [0, 0.1, 0.25, 0.5, 0.75, 1],
-        [0, 0.1, 0.25, 0.5, 0.75, 1],
-        [0, 0.1, 0.25, 0.5, 0.75, 1],
-        [0, 0.1, 0.25, 0.5, 0.75, 1]
-    ])
-    df = []
-    for features in possible_features:
-        df.append({
-            "controllable": features[0],
-            "goal": features[1],
-            "error": features[2],
-            "none": features[3],
-            "marcado": features[4],
-            "deadlock": features[5],
-            "uncontrollability": features[6],
-            "unexplorability": features[7],
-            "1/depth": features[8],
-            "stateUnexplorability": features[9],
-            "value": np.round(-agent.eval([features])[0], 3)
-        })
-
-    #print_features(features)
-    #print("Agent value:", np.round(-agent.eval([features])[0], 3))
-    df = pd.DataFrame(df)
-    df.to_csv("agents/" + filename([problem, 2, 2]) + "/good_values.csv")
-
 def save_all_random_states(n, k, name):
     for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]:
         get_random_states(problem, n, k, 10000, 500, name)
@@ -98,6 +40,25 @@ def save_all_random_states(n, k, name):
 def eval_agent(agent, features):
     sess = InferenceSession(agent.SerializeToString())
     return sess.run(None, {'X': features})
+
+
+def eval_agents_coefs(agent, states):
+    actions = np.array([a for s in states for a in s])
+
+    sess = InferenceSession(agent.SerializeToString())
+
+    values = sess.run(None, {'X': actions})[0]
+    values = (values - np.mean(values)) / np.std(values)
+    model = LinearRegression().fit(actions, values)
+    coefs = {}
+    for i in range(len(feature_names)):
+        coefs[feature_names[i]] = model.coef_[0][i]
+    return coefs
+
+
+def eval_agent_q(agent, random_states):
+    sess = InferenceSession(agent.SerializeToString())
+    return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
 if __name__ == "__main__":

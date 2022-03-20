@@ -8,29 +8,11 @@ import pandas as pd
 from onnxruntime import InferenceSession
 from sklearn.linear_model import LinearRegression
 
-from agent import Agent, test_onnx
+from agent import Agent
 from environment import DCSSolverEnv
+from src.modelEvaluation import eval_agent_q, eval_agents_coefs
 from test import test
 from util import filename, get_problem_data, feature_names
-
-
-def eval_agents_coefs(agent, states):
-    actions = np.array([a for s in states for a in s])
-
-    sess = InferenceSession(agent.SerializeToString())
-
-    values = sess.run(None, {'X': actions})[0]
-    values = (values - np.mean(values)) / np.std(values)
-    model = LinearRegression().fit(actions, values)
-    coefs = {}
-    for i in range(len(feature_names)):
-        coefs[feature_names[i]] = model.coef_[0][i]
-    return coefs
-
-
-def eval_agent_q(agent, random_states):
-    sess = InferenceSession(agent.SerializeToString())
-    return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
 def train_agent(problem, n, k, minutes, dir, eta=1e-6, epsilon=0.1, nnsize=20, copy_freq=200000):
@@ -88,20 +70,6 @@ def exp_nnsize(problem, n, k, minutes):
         train_agent(problem, n, k, minutes, "nnsize_"+str(nnsize), nnsize=nnsize)
 
 
-def pick_agent(problem, n, k, file):
-    df = pd.read_csv("experiments/results/"+filename([problem, n, k])+"/"+file+".csv")
-    dfloc = df.loc[(df["n"] == 3) & (df["k"] == 3)]
-    idx = dfloc.loc[dfloc["expanded transitions"] == dfloc["expanded transitions"].min()].iloc[0]["idx"]
-    return idx
-
-
-def get_agent(problem, n, k, file):
-    idx = pick_agent(problem, n, k, file)
-    with open("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".json", "r") as f:
-        info = json.load(f)
-    return onnx.load("experiments/results/"+filename([problem, n, k])+"/"+file+"/"+str(idx)+".onnx"), info
-
-
 def exp_test_all(problem, up_to, old=False, timeout="10m", heuristic="r"):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
@@ -118,11 +86,6 @@ def exp_test_all(problem, up_to, old=False, timeout="10m", heuristic="r"):
     df.to_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file)
 
 
-def test_from_python(problem, n, k):
-    env = DCSSolverEnv(problem, n, k)
-    agent = get_agent(problem, 2, 2, "10m_0")[0]
-    return test_onnx(agent, env)
-
 agent_idx = {
     "AT": 95,
     "TA": 105,
@@ -134,5 +97,5 @@ agent_idx = {
 if __name__ == "__main__":
 
     for problem in ["AT", "BW", "TL", "DP", "TA"]:
-        # train_agent(problem, 2, 2, 0.3, "ra_feature", copy_freq=500)
+        train_agent(problem, 2, 2, 20, "ra_feature", copy_freq=10000)
         test_agents(problem, 2, 2, "ra_feature", [(problem, 2, 2), (problem, 3, 3)])

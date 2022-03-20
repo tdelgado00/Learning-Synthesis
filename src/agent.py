@@ -96,25 +96,3 @@ class Agent:
 
         print("Agent", self.save_idx, "saved. Training time:", training_time)
         self.save_idx += 1
-
-
-def test_onnx(model, env, timeout=30*60):
-    start_time = time.time()
-    sess = InferenceSession(model.SerializeToString())
-
-    obs = env.reset()
-    done = False
-    info = None
-
-    while not done and time.time() - start_time < timeout:
-        values = sess.run(None, {'X': obs})
-        action = np.argmax(values)
-        obs, reward, done, info = env.step(action)
-
-    return info if time.time() - start_time < timeout else {
-        "problem": env.problem,
-        "n": env.n,
-        "k": env.k,
-        "synthesis time(ms)": np.nan,
-        "expanded transitions": np.nan
-    }

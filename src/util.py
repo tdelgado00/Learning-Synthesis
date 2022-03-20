@@ -34,8 +34,7 @@ def get_problem_data(algorithm, heuristic=None):
     return df
 
 
-def read_results(proc):
-    lines = proc.stdout.split("\n")
+def read_results(lines):
     results = {}
     results["expanded states"] = int(lines[0].split(" ")[1])
     results["used states"] = int(lines[1].split(" ")[1])
