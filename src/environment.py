@@ -13,14 +13,14 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k):
+    def __init__(self, problem, n, k, ra_feature):
         super(DCSSolverEnv, self).__init__()
         self.problem = problem
         self.n = n
         self.k = k
         self.problemFilename = filename([problem, n, k])
 
-        self.javaEnv = DCSForPython("", "mock")#"labels/"+self.problem+".txt")
+        self.javaEnv = DCSForPython("", "mock", ra_feature)
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
         self.featuresBuffer = jpype.nio.convertToDirectBuffer(
             bytearray(self.nfeatures * 100000 * 4)).asFloatBuffer()

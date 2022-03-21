@@ -40,7 +40,7 @@ class Agent:
 
         return info if time.time() - start_time < timeout else "timeout"
 
-    def train(self, env, seconds, copy_freq=200000):
+    def train(self, env, seconds, copy_freq=200000, agent_info={}):
         training_start = time.time()
         saving_time = 0
 
@@ -60,7 +60,7 @@ class Agent:
             steps += 1
 
             if steps % copy_freq == 0 and self.dir is not None:
-                self.save(time.time() - training_start, steps, env.nfeatures)
+                self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
 
     def get_action(self, actionFeatures, epsilon):
         if np.random.rand() <= epsilon:
@@ -78,7 +78,7 @@ class Agent:
         self.model.partial_fit([features], [value])
         self.has_learned_something = True
 
-    def save(self, training_time, steps, nfeatures):
+    def save(self, training_time, steps, nfeatures, extra_info=None):
         os.makedirs(self.dir, exist_ok=True)
         X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
         onx = to_onnx(self.model, X_test)
@@ -91,7 +91,9 @@ class Agent:
                 "eta": self.eta,
                 "nnsize": self.nnsize,
                 "epsilon": self.epsilon,
+                "nfeatures": nfeatures
             }
+            info.update(extra_info if extra_info is not None else {})
             json.dump(info, f)
 
         print("Agent", self.save_idx, "saved. Training time:", training_time)

@@ -8,8 +8,8 @@ import numpy as np
 from util import feature_names
 
 
-def get_random_states(problem, n, k, total, sampled, name):
-    env = DCSSolverEnv(problem, n, k)
+def get_random_states(problem, n, k, total, sampled, name, ra_feature):
+    env = DCSSolverEnv(problem, n, k, ra_feature)
 
     idxs = np.random.choice(range(total), sampled)
 
@@ -32,9 +32,9 @@ def get_random_states(problem, n, k, total, sampled, name):
         pickle.dump(states, f)
 
 
-def save_all_random_states(n, k, name):
+def save_all_random_states(n, k, name, ra_feature):
     for problem in ["AT", "TL", "TA", "BW", "DP", "CM"]:
-        get_random_states(problem, n, k, 10000, 500, name)
+        get_random_states(problem, n, k, 10000, 500, name, ra_feature)
 
 
 def eval_agent(agent, features):
@@ -42,7 +42,7 @@ def eval_agent(agent, features):
     return sess.run(None, {'X': features})
 
 
-def eval_agents_coefs(agent, states):
+def eval_agents_coefs(agent, states, agent_info):
     actions = np.array([a for s in states for a in s])
 
     sess = InferenceSession(agent.SerializeToString())
@@ -51,8 +51,9 @@ def eval_agents_coefs(agent, states):
     values = (values - np.mean(values)) / np.std(values)
     model = LinearRegression().fit(actions, values)
     coefs = {}
-    for i in range(len(feature_names)):
-        coefs[feature_names[i]] = model.coef_[0][i]
+    features = feature_names(agent_info["ra feature"])
+    for i in range(len(features)):
+        coefs[features[i]] = model.coef_[0][i]
     return coefs
 
 
@@ -62,4 +63,4 @@ def eval_agent_q(agent, random_states):
 
 
 if __name__ == "__main__":
-    save_all_random_states(2, 2, "ra_feature_states")
+    save_all_random_states(2, 2, "base_features_states", False)

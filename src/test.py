@@ -7,40 +7,77 @@ import onnx
 import pandas as pd
 from onnxruntime import InferenceSession
 
-from src.environment import DCSSolverEnv
+from environment import DCSSolverEnv
 from util import read_results, filename
 
 
-def test(problem, n, k, heuristic, timeout="30m", old=False, agent_dir="10m_0", agent_idx=0, labels_dir="mock",
-         debug=False):
-    if old:
-        jar = "mtsaOld.jar"
-    else:
-        jar = "mtsa.jar"
-    path = "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
+def fsp_path(problem, n, k):
+    return "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
+
+
+def agent_path(problem, dir, idx):
+    return "experiments/results/" + filename([problem, 2, 2]) + "/" + dir + "/" + str(idx) + ".onnx"
+
+
+def test_ra(problem, n, k, timeout="30m", old=False):
+    jar = "mtsaOld.jar" if old else "mtsa.jar"
     command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", jar,
-               "ltsa.ui.LTSABatch", "-i", path, "-c", "DirectedController", "-" + heuristic]
-    if heuristic == "e":
-        command += ["-p", "experiments/results/" + filename([problem, 2, 2]) + "/" + agent_dir + "/" + str(
-            agent_idx) + ".onnx"]
-        command += ["-l", labels_dir]
-        if debug:
-            command += ["-a"]
+               "ltsa.ui.LTSABatch", "-i", fsp_path(problem, n, k), "-c", "DirectedController", "-r"]
+
     proc = subprocess.run(command,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
     else:
-        lines = proc.stdout.split("\n")
-        if debug:
-            debug = parse_java_debug(lines[:-10])
-            results = read_results(lines[-10:])
-        else:
-            debug = None
-            results = read_results(lines[-10:])
+        results = read_results(proc.stdout.split("\n"))
+
     results["algorithm"] = "old" if old else "new"
-    results["heuristic"] = heuristic
+    results["heuristic"] = "r"
+    results["problem"] = problem
+    results["n"] = n
+    results["k"] = k
+    return results, None
+
+
+def test_agent(problem, n, k, timeout="30m", dir="10m_0", idx=0, labels_dir="mock", debug=False):
+    command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
+               "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
+               "-i", fsp_path(problem, n, k),
+               "-m", agent_path(problem, dir, idx),
+               "-l", labels_dir
+               ]
+    if debug:
+        command += ["-d"]
+
+    with open("experiments/results/" + filename([problem, 2, 2]) + "/" + dir + "/" + str(idx) + ".json", "r") as f:
+        info = json.load(f)
+    if info["ra feature"]:
+        command += ["-r"]
+
+    proc = subprocess.run(command,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    if proc.returncode == 124:
+        results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
+    else:
+        lines = proc.stdout.split("\n")[2:]
+        i = lines.index('Composition:DirectedController = DirectedController')
+        try:
+            if debug:
+                debug = parse_java_debug(lines[:i])
+                results = read_results(lines[i+6:])
+            else:
+                debug = None
+                results = read_results(lines[i+6:])
+        except (IndexError, ValueError) as e:
+            print("Error reading results")
+            print(lines)
+            print(proc.stderr)
+            raise
+
+    results["algorithm"] = "new"
+    results["heuristic"] = dir + str(idx)
     results["problem"] = problem
     results["n"] = n
     results["k"] = k
@@ -124,16 +161,16 @@ def get_agent(problem, n, k, file, idx=None):
     return onnx.load("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + str(idx) + ".onnx"), info
 
 
-def test_from_python(problem, n, k, agent_dir, agent_idx, debug=None):
+def test_from_python(problem, n, k, agent_dir, agent_idx, debug=None, ra_feature=True):
     env = DCSSolverEnv(problem, n, k)
     agent = get_agent(problem, 2, 2, agent_dir, agent_idx)[0]
     return test_onnx(agent, env, debug=debug)
 
 
-def testJavaAndPythonCoherent():
+def test_java_and_python_coherent():
     for problem, n, k, agent_dir, agent_idx in [("AT", 2, 2, "ra_feature", 8), ("AT", 3, 3, "ra_feature", 8)]:
-        result, debug_java = test(problem, n, k, "e", agent_dir=agent_dir, agent_idx=agent_idx, debug=True)
-        result, debug_python = test_from_python(problem, n, k, agent_dir=agent_dir, agent_idx=agent_idx, debug=True)
+        result, debug_java = test_agent(problem, n, k, dir=agent_dir, idx=agent_idx, debug=True, ra_feature=True)
+        result, debug_python = test_from_python(problem, n, k, agent_dir, agent_idx, debug=True, ra_feature=True)
         assert len(debug_java) == len(debug_python)
         for i in range(len(debug_java)):
             if not np.allclose(debug_python[i]["features"], debug_java[i]["features"]):
@@ -144,6 +181,7 @@ def testJavaAndPythonCoherent():
                 print(debug_python[i]["features"], debug_java[i]["features"])
 
 
-
 if __name__ == '__main__':
-    testJavaAndPythonCoherent()
+    _, _ = test_agent("AT", 2, 2, dir="ra_feature", idx=0, debug=True)
+    _, _ = test_agent("AT", 2, 2, dir="10m_0", idx=95, debug=False)
+    test_java_and_python_coherent()

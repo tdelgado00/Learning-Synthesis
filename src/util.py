@@ -1,21 +1,23 @@
-import numpy as np
 import pandas as pd
 
-feature_names = [
-    "ra 1",
-    "ra 2",
-    "controllable",
-    "depth",
-    "state unexplorability",
-    "state marked",
-    "child marked",
-    "child goal",
-    "child error",
-    "child none",
-    "child deadlock",
-    "uncontrollability child",
-    "unexplorability child",
-]
+
+def feature_names(ra_feature):
+    features = [
+        "controllable",
+        "depth",
+        "state unexplorability",
+        "state marked",
+        "child marked",
+        "child goal",
+        "child error",
+        "child none",
+        "child deadlock",
+        "uncontrollability child",
+        "unexplorability child",
+    ]
+    if ra_feature:
+        features = ["ra 1", "ra 2"]+features
+    return features
 
 def filename(parameters):
     return "_".join(list(map(str, parameters)))
