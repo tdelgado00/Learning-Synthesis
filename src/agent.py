@@ -6,7 +6,6 @@ import numpy as np
 import os
 
 import onnx
-from onnxruntime import InferenceSession
 from skl2onnx import to_onnx
 from sklearn.neural_network import MLPRegressor
 

@@ -8,7 +8,7 @@ import pandas as pd
 
 from agent import Agent
 from environment import DCSSolverEnv
-from src.modelEvaluation import eval_agent_q, eval_agents_coefs
+from modelEvaluation import eval_agent_q, eval_agents_coefs
 from test import test_agent, test_ra
 from util import filename
 
@@ -69,19 +69,19 @@ def exp_nnsize(problem, n, k, minutes):
         train_agent(problem, n, k, minutes, "nnsize_" + str(nnsize), nnsize=nnsize)
 
 
-def exp_test_all_ra(problem, up_to, old=False, timeout="10m", heuristic="r"):
+def exp_test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
         for k in range(up_to):
             if n == 0 or solved[n - 1][k] or k == 0 or solved[n][k - 1]:
-                print("Testing", heuristic, problem, n, k)
-                df.append(test_ra(problem, n + 1, k + 1, timeout=timeout, old=old))
+                print("Testing ra with", problem, n, k)
+                df.append(test_ra(problem, n + 1, k + 1, timeout=timeout, old=old)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    file = filename(["all", heuristic, up_to]) + (".csv" if not old else "_old.csv")
+    file = filename([name, up_to]) + (".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
 
@@ -95,6 +95,9 @@ agent_idx = {
 
 if __name__ == "__main__":
 
-    for problem in ["AT", "BW", "TL", "DP", "TA"]:
-        train_agent(problem, 2, 2, 0.3, "base_features", copy_freq=10000, ra_feature=False)
-        test_agents(problem, 2, 2, "base_features", [(problem, 2, 2), (problem, 3, 3)])
+    #for problem in ["AT", "BW", "TL", "DP", "TA"]:
+    #    train_agent(problem, 2, 2, 0.3, "base_features", copy_freq=10000, ra_feature=False)
+    #    test_agents(problem, 2, 2, "base_features", [(problem, 2, 2), (problem, 3, 3)])
+
+    for problem in ["AT", "BW", "TL", "DP", "TA", "CM"]:
+        exp_test_all_ra(problem, 15, timeout="10m", name="all_ra_afterfix")

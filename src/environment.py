@@ -1,11 +1,7 @@
-from time import sleep
-
 import numpy as np
 import jpype
 import jpype.imports
 from util import *
-import gym
-from gym import spaces
 
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])

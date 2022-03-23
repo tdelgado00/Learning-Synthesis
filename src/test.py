@@ -52,7 +52,7 @@ def test_agent(problem, n, k, timeout="30m", dir="10m_0", idx=0, labels_dir="moc
 
     with open("experiments/results/" + filename([problem, 2, 2]) + "/" + dir + "/" + str(idx) + ".json", "r") as f:
         info = json.load(f)
-    if info["ra feature"]:
+    if "ra feature" in info.keys() and info["ra feature"]:
         command += ["-r"]
 
     proc = subprocess.run(command,
@@ -162,15 +162,15 @@ def get_agent(problem, n, k, file, idx=None):
 
 
 def test_from_python(problem, n, k, agent_dir, agent_idx, debug=None, ra_feature=True):
-    env = DCSSolverEnv(problem, n, k)
+    env = DCSSolverEnv(problem, n, k, ra_feature)
     agent = get_agent(problem, 2, 2, agent_dir, agent_idx)[0]
     return test_onnx(agent, env, debug=debug)
 
 
 def test_java_and_python_coherent():
-    for problem, n, k, agent_dir, agent_idx in [("AT", 2, 2, "ra_feature", 8), ("AT", 3, 3, "ra_feature", 8)]:
-        result, debug_java = test_agent(problem, n, k, dir=agent_dir, idx=agent_idx, debug=True, ra_feature=True)
-        result, debug_python = test_from_python(problem, n, k, agent_dir, agent_idx, debug=True, ra_feature=True)
+    for problem, n, k, agent_dir, agent_idx in [("AT", 1, 1, "10m_0", 95), ("AT", 2, 2, "10m_0", 95)]:
+        result, debug_java = test_agent(problem, n, k, dir=agent_dir, idx=agent_idx, debug=True)
+        result, debug_python = test_from_python(problem, n, k, agent_dir, agent_idx, debug=True, ra_feature=False)
         assert len(debug_java) == len(debug_python)
         for i in range(len(debug_java)):
             if not np.allclose(debug_python[i]["features"], debug_java[i]["features"]):
@@ -180,8 +180,17 @@ def test_java_and_python_coherent():
                 print(i)
                 print(debug_python[i]["features"], debug_java[i]["features"])
 
+def tests():
+    print("Testing agent without RA")
+    _, _ = test_agent("AT", 1, 1, dir="10m_0", idx=95, debug=False)
+
+    #print("Testing agent with RA")
+    #_, _ = test_agent("AT", 1, 1, dir="ra_feature", idx=0, debug=True)
+
+    print("Testing java and python coherent")
+    test_java_and_python_coherent()
+
+
 
 if __name__ == '__main__':
-    _, _ = test_agent("AT", 2, 2, dir="ra_feature", idx=0, debug=True)
-    _, _ = test_agent("AT", 2, 2, dir="10m_0", idx=95, debug=False)
-    test_java_and_python_coherent()
+    tests()
