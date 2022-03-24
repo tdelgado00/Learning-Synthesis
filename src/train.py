@@ -75,7 +75,7 @@ def exp_test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
     for n in range(up_to):
         for k in range(up_to):
             if n == 0 or solved[n - 1][k] or k == 0 or solved[n][k - 1]:
-                print("Testing ra with", problem, n, k)
+                print("Testing ra with", problem, n, k, "- Old:", old)
                 df.append(test_ra(problem, n + 1, k + 1, timeout=timeout, old=old)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
@@ -100,4 +100,5 @@ if __name__ == "__main__":
     #    test_agents(problem, 2, 2, "base_features", [(problem, 2, 2), (problem, 3, 3)])
 
     for problem in ["AT", "BW", "TL", "DP", "TA", "CM"]:
+        exp_test_all_ra(problem, 15, timeout="10m", name="all_ra_old", old=True)
         exp_test_all_ra(problem, 15, timeout="10m", name="all_ra_afterfix")

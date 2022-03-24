@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 
@@ -50,5 +51,5 @@ def read_results(lines):
     results["propagateGoals"] = int(propagateLine[1][:-1])
     results["propagateErrors"] = int(propagateLine[3])
     results["memory(mb)"] = float(lines[7].split(" ")[1])
-    results["heuristic time(ms)"] = float(lines[8].split(" ")[1])
+    results["heuristic time(ms)"] = float(lines[8].split(" ")[1]) if "heuristic" in lines[8] else np.nan
     return results
