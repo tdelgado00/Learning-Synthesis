@@ -95,10 +95,8 @@ agent_idx = {
 
 if __name__ == "__main__":
 
-    #for problem in ["AT", "BW", "TL", "DP", "TA"]:
-    #    train_agent(problem, 2, 2, 0.3, "base_features", copy_freq=10000, ra_feature=False)
-    #    test_agents(problem, 2, 2, "base_features", [(problem, 2, 2), (problem, 3, 3)])
-
-    for problem in ["AT", "BW", "TL", "DP", "TA", "CM"]:
-        exp_test_all_ra(problem, 15, timeout="10m", name="all_ra_old", old=True)
-        exp_test_all_ra(problem, 15, timeout="10m", name="all_ra_afterfix")
+    for problem in ["AT", "BW", "TL", "DP", "TA"]:
+        train_agent(problem, 2, 2, 20, "base_features", copy_freq=10000, ra_feature=False)
+        test_agents(problem, 2, 2, "base_features", [(problem, 2, 2), (problem, 3, 3)])
+        train_agent(problem, 2, 2, 0.2, "ra_feature", copy_freq=2000, ra_feature=True)
+        test_agents(problem, 2, 2, "ra_feature", [(problem, 2, 2), (problem, 3, 3)])
