@@ -24,8 +24,8 @@ def train_agent(problem, n, k, minutes, dir, eta=1e-5, epsilon=0.1, nnsize=20, c
     return agent
 
 
-def test_agents(problem, n, k, file, problems, random_states_file, freq=1):
-    with open("experiments/results/" + filename([problem, n, k]) + "/" + random_states_file, "rb") as f:
+def test_agents(problem, n, k, file, problems, freq=1):
+    with open("experiments/results/" + filename([problem, n, k]) + "/" + file + "_states.pkl", "rb") as f:
         random_states = pickle.load(f)
 
     df = []
@@ -95,8 +95,8 @@ agent_idx = {
 
 if __name__ == "__main__":
 
-    for problem in ["DP", "TL", "TA", "CM", "BW"]:
-        train_agent(problem, 2, 2, 120, "base_features_2h", copy_freq=50000, ra_feature=False)
-        test_agents(problem, 2, 2, "base_features_2h", [(problem, 2, 2)], "base_features_states.pkl")
+    
+    train_agent(problem, 2, 2, 120, "base_features_2h", copy_freq=50000, ra_feature=False)
+        test_agents(problem, 2, 2, "base_features_2h", [(problem, 2, 2)])
         train_agent(problem, 2, 2, 120, "ra_feature_2h", copy_freq=50000, ra_feature=True)
-        test_agents(problem, 2, 2, "ra_feature_2h", [(problem, 2, 2)], "ra_feature_states.pkl")
+        test_agents(problem, 2, 2, "ra_feature_2h", [(problem, 2, 2)])

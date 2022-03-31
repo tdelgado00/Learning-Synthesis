@@ -193,4 +193,11 @@ def tests():
 
 
 if __name__ == '__main__':
-    tests()
+    #tests()
+    n, k = 4, 4
+    print(test_agent("AT", n, k, dir="base_features_4h", idx=5, debug=False))
+    print(test_agent("AT", n, k, dir="ra_feature_4h", idx=15, debug=False))
+
+    print(test_agent("AT", n, k, dir="ra_feature_4h", idx=36, debug=False))
+    print(test_agent("AT", n, k, dir="ra_feature_4h", idx=51, debug=False))
+
