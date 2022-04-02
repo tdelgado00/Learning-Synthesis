@@ -1,40 +1,60 @@
 import numpy as np
-import pandas as pd
+import json
 
 
 def feature_names(ra_feature):
     features = [
-        "controllable",
-        "depth",
-        "state unexplorability",
+        "action controllable",
+        "1 / depth",
+        "state portion explored",
+        "state portion controllable",
         "state marked",
         "child marked",
         "child goal",
         "child error",
         "child none",
         "child deadlock",
-        "uncontrollability child",
-        "unexplorability child",
+        "child portion controllable",
+        "child portion explored",
     ]
     if ra_feature:
-        features = ["ra 1", "ra 2"]+features
+        features = ["ra type", "1 / ra distance"]+features
     return features
+
+
+def results_path(problem, n, k, file):
+    return "experiments/results/"+filename([problem, n, k])+"/"+file
+
+
+def fsp_path(problem, n, k):
+    return "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
+
+
+def agent_path(problem, n, k, dir, idx):
+    return "experiments/results/" + filename([problem, n, k]) + "/" + dir + "/" + str(idx) + ".onnx"
+
 
 def filename(parameters):
     return "_".join(list(map(str, parameters)))
 
 
-def get_problem_data(algorithm, heuristic=None):
-    df = pd.DataFrame()
-    for problem in ["TA", "TL", "AT", "BW", "CM", "DP"]:
-        curr_df = pd.read_csv("experiments/results/ResultsPaper/" + problem + "_mejorado.csv")
-        curr_df = curr_df.loc[(curr_df["controllerType"] == algorithm) &
-                              (heuristic is None or curr_df["heuristic"] == heuristic)]
-        df = df.append(curr_df)
-    df["testcase"] = df["testcase"].apply(lambda t: t.split("-"))
-    df["testcase"] = df["testcase"].apply(lambda t: (t[0], int(t[1]), int(t[2])))
-    df = df.set_index("testcase").to_dict()
-    return df
+def best_agent_idx(df):
+    return df.loc[df["expanded transitions"] == df["expanded transitions"].min()]["idx"].iloc[0]
+
+
+def last_agent_idx(df):
+    return df["idx"].max()
+
+
+def get_agent_info(path):
+    with open(path[:-5]+".json", "r") as f:
+        info = json.load(f)
+    return info
+
+
+def uses_ra(path):
+    info = get_agent_info(path)
+    return "ra feature" in info.keys() and info["ra feature"]
 
 
 def read_results(lines):

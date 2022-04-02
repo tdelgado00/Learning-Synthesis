@@ -1,22 +1,15 @@
-import json
+import pickle
 import subprocess
 import time
+import os
 
-import numpy as np
 import onnx
 import pandas as pd
 from onnxruntime import InferenceSession
 
 from environment import DCSSolverEnv
-from util import read_results, filename
-
-
-def fsp_path(problem, n, k):
-    return "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
-
-
-def agent_path(problem, dir, idx):
-    return "experiments/results/" + filename([problem, 2, 2]) + "/" + dir + "/" + str(idx) + ".onnx"
+from modelEvaluation import eval_agent_q
+from util import *
 
 
 def test_ra(problem, n, k, timeout="30m", old=False):
@@ -40,44 +33,36 @@ def test_ra(problem, n, k, timeout="30m", old=False):
     return results, None
 
 
-def test_agent(problem, n, k, timeout="30m", dir="10m_0", idx=0, labels_dir="mock", debug=False):
+def test_agent(path, problem, n, k, timeout="30m", labels_dir="mock", debug=False):
     command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
-               "-m", agent_path(problem, dir, idx),
+               "-m", path,
                "-l", labels_dir
                ]
+
     if debug:
         command += ["-d"]
 
-    with open("experiments/results/" + filename([problem, 2, 2]) + "/" + dir + "/" + str(idx) + ".json", "r") as f:
-        info = json.load(f)
-    if "ra feature" in info.keys() and info["ra feature"]:
+    if uses_ra(path):
         command += ["-r"]
 
-    proc = subprocess.run(command,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
     else:
         lines = proc.stdout.split("\n")[2:]
         i = lines.index('Composition:DirectedController = DirectedController')
-        try:
-            if debug:
-                debug = parse_java_debug(lines[:i])
-                results = read_results(lines[i+6:])
-            else:
-                debug = None
-                results = read_results(lines[i+6:])
-        except (IndexError, ValueError) as e:
-            print("Error reading results")
-            print(lines)
-            print(proc.stderr)
-            raise
+        if debug:
+            debug = parse_java_debug(lines[:i])
+            results = read_results(lines[i+6:])
+        else:
+            debug = None
+            results = read_results(lines[i+6:])
 
     results["algorithm"] = "new"
-    results["heuristic"] = dir + str(idx)
+    results["heuristic"] = path
     results["problem"] = problem
     results["n"] = n
     results["k"] = k
@@ -98,9 +83,17 @@ def test_mono(problem, n, k):
     return results
 
 
-def test_onnx(model, env, timeout=30 * 60, debug=None):
+# Not using this function, we test with onnx from Java
+def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
+    with open(path[:-5] + ".json", "r") as f:
+        info = json.load(f)
+
+    env = DCSSolverEnv(problem, n, k, info["ra feature"])
+
+    agent = onnx.load(path)
+
     start_time = time.time()
-    sess = InferenceSession(model.SerializeToString())
+    sess = InferenceSession(agent.SerializeToString())
 
     obs = env.reset()
     done = False
@@ -146,58 +139,63 @@ def parse_java_debug(debug):
     return steps
 
 
-def pick_agent(problem, n, k, file):
-    df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + ".csv")
-    dfloc = df.loc[(df["n"] == 3) & (df["k"] == 3)]
-    idx = dfloc.loc[dfloc["expanded transitions"] == dfloc["expanded transitions"].min()].iloc[0]["idx"]
-    return idx
+def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
+    df = []
+
+    dir = results_path(problem, n, k, file)
+    files = [f for f in os.listdir(dir) if f.endswith(".onnx")]
+    for i in range(0, len(files), freq):
+        print("Testing", i, "with", problem2, n2, k2)
+        path = agent_path(problem, n, k, file, i)
+        result, debug = test_agent(path, problem2, n2, k2, timeout="10m")
+
+        if result == "timeout":
+            result = {"problem": problem2, "n": n2, "k": k2}
+        result.update(get_agent_info(path))
+        result["idx"] = i
+        df.append(result)
+
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + filename([problem2, n2, k2]) + ".csv")
 
 
-def get_agent(problem, n, k, file, idx=None):
-    if idx is None:
-        idx = pick_agent(problem, n, k, file)
-    with open("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + str(idx) + ".json", "r") as f:
-        info = json.load(f)
-    return onnx.load("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + str(idx) + ".onnx"), info
+def get_correct_features(states, info):
+    if not info["ra feature"]:
+        return [s[:, 2:] for s in states]
+    else:
+        return states
 
 
-def test_from_python(problem, n, k, agent_dir, agent_idx, debug=None, ra_feature=True):
-    env = DCSSolverEnv(problem, n, k, ra_feature)
-    agent = get_agent(problem, 2, 2, agent_dir, agent_idx)[0]
-    return test_onnx(agent, env, debug=debug)
+def test_agents_q(problem, n, k, file, random_states_file, freq=1):
+    with open(results_path(problem, n, k, random_states_file), "rb") as f:
+        random_states = pickle.load(f)
+    df = []
+
+    dir = results_path(problem, n, k, file)
+    files = [f for f in os.listdir(dir) if f.endswith(".onnx")]
+    for i in range(0, len(files), freq):
+        print("Testing q", i)
+        path = agent_path(problem, n, k, file, i)
+        info = get_agent_info(path)
+        info["avg q"] = eval_agent_q(path, get_correct_features(random_states, info))
+        info["idx"] = i
+        df.append(info)
+
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + "q.csv")
 
 
-def test_java_and_python_coherent():
-    for problem, n, k, agent_dir, agent_idx in [("AT", 1, 1, "10m_0", 95), ("AT", 2, 2, "10m_0", 95)]:
-        result, debug_java = test_agent(problem, n, k, dir=agent_dir, idx=agent_idx, debug=True)
-        result, debug_python = test_from_python(problem, n, k, agent_dir, agent_idx, debug=True, ra_feature=False)
-        assert len(debug_java) == len(debug_python)
-        for i in range(len(debug_java)):
-            if not np.allclose(debug_python[i]["features"], debug_java[i]["features"]):
-                print(i)
-                print(debug_python[i]["features"], debug_java[i]["features"])
-            if not np.allclose(debug_python[i]["values"], debug_java[i]["values"]):
-                print(i)
-                print(debug_python[i]["features"], debug_java[i]["features"])
+def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
+    df = []
+    solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+    for n in range(up_to):
+        for k in range(up_to):
+            if n == 0 or solved[n - 1][k] or k == 0 or solved[n][k - 1]:
+                print("Testing ra with", problem, n, k, "- Old:", old)
+                df.append(test_ra(problem, n + 1, k + 1, timeout=timeout, old=old)[0])
+                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                    solved[n][k] = True
 
-def tests():
-    print("Testing agent without RA")
-    _, _ = test_agent("AT", 1, 1, dir="10m_0", idx=95, debug=False)
-
-    #print("Testing agent with RA")
-    #_, _ = test_agent("AT", 1, 1, dir="ra_feature", idx=0, debug=True)
-
-    print("Testing java and python coherent")
-    test_java_and_python_coherent()
-
-
-
-if __name__ == '__main__':
-    #tests()
-    n, k = 4, 4
-    print(test_agent("AT", n, k, dir="base_features_4h", idx=5, debug=False))
-    print(test_agent("AT", n, k, dir="ra_feature_4h", idx=15, debug=False))
-
-    print(test_agent("AT", n, k, dir="ra_feature_4h", idx=36, debug=False))
-    print(test_agent("AT", n, k, dir="ra_feature_4h", idx=51, debug=False))
-
+    df = pd.DataFrame(df)
+    file = filename([name, up_to]) + (".csv" if not old else "_old.csv")
+    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
