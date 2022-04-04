@@ -66,7 +66,34 @@ def eval_agent_q(path, random_states):
     return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
-if __name__ == "__main__":
+def save_all_random_states():
     for problem in ["DP", "TL", "TA", "BW", "CM"]:
         print(problem)
         get_random_states(problem, 2, 2, "states_2_2")
+
+def save_models_q_dfs(last=False):
+
+    problems = ["AT", "TA", "TL", "DP", "BW", "CM"]
+    for problem, n, k in [(x, 2, 2) for x in problems]:
+        problem2, n2, k2 = (problem, 3, 3) if problem != "CM" else (problem, 2, 2)
+        df1 = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/ra_feature_2h/" + filename(
+            [problem2, n2, k2]) + ".csv")
+        df2 = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/base_features_2h/" + filename(
+            [problem, n2, k2]) + ".csv")
+        idx_ra = best_agent_idx(df1) if not last else last_agent_idx(df1)
+        idx_bf = best_agent_idx(df2) if not last else last_agent_idx(df2)
+
+        with open(results_path(problem, n, k, "states_2_2.pkl"), "rb") as f:
+            random_states = pickle.load(f)
+
+        df_ra = get_agent_q_df(agent_path(problem, n, k, "ra_feature_2h", idx_ra), random_states)
+        df_bf = get_agent_q_df(agent_path(problem, n, k, "base_features_2h", idx_bf), random_states)
+
+        t = "last" if last else "best"
+        df_ra.to_csv("experiments/results/" + filename([problem, n, k]) + "/ra_feature_2h/"+t+"_"+str(idx_ra)+".csv")
+        df_bf.to_csv("experiments/results/" + filename([problem, n, k]) + "/base_features_2h/"+t+"_"+str(idx_bf)+".csv")
+
+
+if __name__ == "__main__":
+    save_models_q_dfs(last=False)
+    save_models_q_dfs(last=True)
