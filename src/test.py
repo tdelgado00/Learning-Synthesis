@@ -8,7 +8,7 @@ import pandas as pd
 from onnxruntime import InferenceSession
 
 from environment import DCSSolverEnv
-from modelEvaluation import eval_agent_q
+from modelEvaluation import eval_agent_q, read_random_states
 from util import *
 
 
@@ -159,16 +159,8 @@ def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
     df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + filename([problem2, n2, k2]) + ".csv")
 
 
-def get_correct_features(states, info):
-    if not info["ra feature"]:
-        return [s[:, 2:] for s in states]
-    else:
-        return states
-
 
 def test_agents_q(problem, n, k, file, random_states_file, freq=1):
-    with open(results_path(problem, n, k, random_states_file), "rb") as f:
-        random_states = pickle.load(f)
     df = []
 
     dir = results_path(problem, n, k, file)
@@ -177,7 +169,7 @@ def test_agents_q(problem, n, k, file, random_states_file, freq=1):
         print("Testing q", i)
         path = agent_path(problem, n, k, file, i)
         info = get_agent_info(path)
-        info["avg q"] = eval_agent_q(path, get_correct_features(random_states, info))
+        info["avg q"] = eval_agent_q(path, read_random_states(problem, n, k, random_states_file, info["ra feature"]))
         info["idx"] = i
         df.append(info)
 
