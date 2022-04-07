@@ -4,10 +4,7 @@ import sys
 import onnx
 
 from onnxruntime import InferenceSession
-from sklearn.linear_model import LinearRegression
 from environment import DCSSolverEnv
-from util import filename
-import numpy as np
 from util import *
 import pandas as pd
 from statsmodels.stats.outliers_influence import variance_inflation_factor

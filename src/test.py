@@ -191,3 +191,36 @@ def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
     df = pd.DataFrame(df)
     file = filename([name, up_to]) + (".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
+
+def test_heuristic_python(problem, n, k, heuristic):
+    env = DCSSolverEnv(problem, n, k, True)
+
+    obs = env.reset()
+    done = False
+    info = None
+
+    while not done:
+        action = heuristic(obs)
+        obs, reward, done, info = env.step(action)
+
+    return info, None
+
+
+def random_heuristic(obs):
+    return np.random.randint(0, obs.shape[0])
+
+
+def heuristic_test_exp(problem, n, k, eps, heuristic, file):
+    df = []
+    for i in range(eps):
+        r = test_heuristic_python(problem, n, k, heuristic)[0]
+        r["idx"] = i
+        df.append(r)
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file)
+
+
+if __name__ == "__main__":
+    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+        heuristic_test_exp(problem, 2, 2, 200, random_heuristic, "random.csv")
+        heuristic_test_exp(problem, 3, 3, 20, random_heuristic, "random.csv")
