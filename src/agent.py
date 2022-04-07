@@ -1,5 +1,6 @@
 import json
 import time
+from copy import copy
 
 import numpy as np
 
@@ -11,12 +12,16 @@ from sklearn.neural_network import MLPRegressor
 
 
 class Agent:
-    def __init__(self, eta=1e-5, nnsize=20, epsilon=0.1, dir=None):
+    def __init__(self, eta=1e-5, nnsize=20, epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=100):
 
         self.model = MLPRegressor(hidden_layer_sizes=(nnsize,),
                                   solver="sgd",
                                   learning_rate="constant",
                                   learning_rate_init=eta)
+        self.target = None
+        self.fixed_q_target = fixed_q_target
+        self.reset_target_freq = reset_target_freq
+
         self.has_learned_something = False
 
         self.eta = eta
@@ -55,22 +60,30 @@ class Agent:
                 self.update(a_features, reward)
                 obs = env.reset()
             else:
-                self.update(a_features, reward + np.max(self.eval(obs)))
-            steps += 1
+                self.update(a_features, reward + np.max(self.eval(obs, use_target=self.fixed_q_target)))
 
             if steps % copy_freq == 0 and self.dir is not None:
                 self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
 
+            if steps % self.reset_target_freq == 0:
+                self.target = copy(self.model)
+
+            steps += 1
+
+    # Takes action according to self.model
     def get_action(self, actionFeatures, epsilon):
         if np.random.rand() <= epsilon:
             return np.random.randint(len(actionFeatures))
         else:
             return np.argmax(self.eval(actionFeatures))
 
-    def eval(self, actionFeatures):
+    def eval(self, actionFeatures, use_target=False):
         if not self.has_learned_something:
             return np.random.rand(len(actionFeatures))
-        values = self.model.predict(actionFeatures)
+        if use_target:
+            values = self.target.predict(actionFeatures)
+        else:
+            values = self.model.predict(actionFeatures)
         return values
 
     def update(self, features, value):
