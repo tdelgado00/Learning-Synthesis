@@ -18,7 +18,7 @@ def feature_names(ra_feature):
         "child portion explored",
     ]
     if ra_feature:
-        features = ["ra type", "1 / ra distance"]+features
+        features = ["ra type best", "1 / ra distance best", "ra type last", "1 / ra distance last", "in open"]+features
     return features
 
 

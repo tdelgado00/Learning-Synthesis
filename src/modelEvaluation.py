@@ -64,9 +64,9 @@ def eval_agent_q(path, random_states):
 
 
 def save_all_random_states():
-    for problem in ["DP", "TL", "TA", "BW", "CM"]:
+    for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        get_random_states(problem, 2, 2, "states_2_2")
+        get_random_states(problem, 2, 2, "states")
 
 
 def read_random_states(problem, n, k, file, ra_feature):
@@ -102,5 +102,6 @@ def save_models_q_dfs(last=False):
 
 
 if __name__ == "__main__":
-    save_models_q_dfs(last=False)
-    save_models_q_dfs(last=True)
+    #save_models_q_dfs(last=False)
+    #save_models_q_dfs(last=True)
+    save_all_random_states()

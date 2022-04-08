@@ -28,9 +28,9 @@ agent_idx = {
 if __name__ == "__main__":
 
     for problem in ["AT", "DP", "TL", "TA", "CM", "BW"]:
-        #for file, ra_feature in [("base_features_2h", False), ("ra_feature_2h", True)]:
-        for file, ra_feature in [("2h_target_10000", True)]:
+        for file, ra_feature in [("ra_feature2_2h", True)]:
+        #for file, ra_feature in [("2h_target_10000", True)]:
             train_agent(problem, 2, 2, 120, file, copy_freq=50000, ra_feature=ra_feature)
             test_agents(problem, 2, 2, problem, 2, 2, file)
             test_agents(problem, 2, 2, problem, 3, 3, file, freq=5)
-            test_agents_q(problem, 2, 2, file, "states_2_2.pkl")
+            test_agents_q(problem, 2, 2, file, "states.pkl")
