@@ -1,0 +1,20 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,ra feature,idx
+0,327,148,685,274,597,218,0,2,168,111.93,152.0,new,experiments/results/AT_2_2/ra_feature2_2h/0.onnx,AT,3,3,0.1405785083770752,0,1e-05,20,0.1,17,True,0
+1,310,145,606,259,687,199,0,2,120,108.9,166.0,new,experiments/results/AT_2_2/ra_feature2_2h/5.onnx,AT,3,3,357.5421254634857,250000,1e-05,20,0.1,17,True,5
+2,325,148,623,274,629,239,0,1,106,117.9,154.0,new,experiments/results/AT_2_2/ra_feature2_2h/10.onnx,AT,3,3,726.6836955547333,500000,1e-05,20,0.1,17,True,10
+3,272,128,473,206,535,84,0,1,84,72.89,158.0,new,experiments/results/AT_2_2/ra_feature2_2h/15.onnx,AT,3,3,1086.5090589523315,750000,1e-05,20,0.1,17,True,15
+4,278,129,502,213,488,87,0,1,97,71.91,129.0,new,experiments/results/AT_2_2/ra_feature2_2h/20.onnx,AT,3,3,1451.396388053894,1000000,1e-05,20,0.1,17,True,20
+5,197,131,389,205,539,132,0,1,6,64.89,133.0,new,experiments/results/AT_2_2/ra_feature2_2h/25.onnx,AT,3,3,1859.9830284118652,1250000,1e-05,20,0.1,17,True,25
+6,290,145,533,250,681,121,0,1,100,80.88,165.0,new,experiments/results/AT_2_2/ra_feature2_2h/30.onnx,AT,3,3,2290.6939544677734,1500000,1e-05,20,0.1,17,True,30
+7,307,140,528,241,839,158,0,1,106,111.87,283.0,new,experiments/results/AT_2_2/ra_feature2_2h/35.onnx,AT,3,3,2707.7448172569275,1750000,1e-05,20,0.1,17,True,35
+8,226,118,411,192,484,157,0,1,35,76.87,151.0,new,experiments/results/AT_2_2/ra_feature2_2h/40.onnx,AT,3,3,3117.6893167495728,2000000,1e-05,20,0.1,17,True,40
+9,221,120,409,197,457,108,0,6,44,68.87,155.0,new,experiments/results/AT_2_2/ra_feature2_2h/45.onnx,AT,3,3,3505.8939900398254,2250000,1e-05,20,0.1,17,True,45
+10,312,135,563,218,577,101,0,1,114,99.87,194.0,new,experiments/results/AT_2_2/ra_feature2_2h/50.onnx,AT,3,3,3878.62907910347,2500000,1e-05,20,0.1,17,True,50
+11,314,141,561,231,751,80,0,7,133,87.88,238.0,new,experiments/results/AT_2_2/ra_feature2_2h/55.onnx,AT,3,3,4298.896415233612,2750000,1e-05,20,0.1,17,True,55
+12,304,140,518,234,661,78,0,11,115,62.87,175.0,new,experiments/results/AT_2_2/ra_feature2_2h/60.onnx,AT,3,3,4714.219958305359,3000000,1e-05,20,0.1,17,True,60
+13,252,145,493,259,634,32,0,1,60,68.87,245.0,new,experiments/results/AT_2_2/ra_feature2_2h/65.onnx,AT,3,3,5083.7656037807465,3250000,1e-05,20,0.1,17,True,65
+14,213,112,409,176,462,58,0,6,22,55.88,151.0,new,experiments/results/AT_2_2/ra_feature2_2h/70.onnx,AT,3,3,5464.111416816711,3500000,1e-05,20,0.1,17,True,70
+15,315,136,569,225,596,106,0,1,107,93.87,191.0,new,experiments/results/AT_2_2/ra_feature2_2h/75.onnx,AT,3,3,5819.727833271027,3750000,1e-05,20,0.1,17,True,75
+16,321,138,596,230,462,22,0,1,139,61.9,143.0,new,experiments/results/AT_2_2/ra_feature2_2h/80.onnx,AT,3,3,6173.216054201126,4000000,1e-05,20,0.1,17,True,80
+17,238,102,407,148,374,18,0,1,78,38.88,90.0,new,experiments/results/AT_2_2/ra_feature2_2h/85.onnx,AT,3,3,6521.940408229828,4250000,1e-05,20,0.1,17,True,85
+18,327,152,631,264,570,86,0,1,154,91.88,159.0,new,experiments/results/AT_2_2/ra_feature2_2h/90.onnx,AT,3,3,6872.03702878952,4500000,1e-05,20,0.1,17,True,90

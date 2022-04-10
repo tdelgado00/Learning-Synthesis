@@ -1,0 +1,15 @@
+,expanded transitions,synthesis time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,ra feature,idx
+0,,,new,experiments/results/CM_2_2/ra_feature2_2h/0.onnx,CM,3,3,0.03404402732849121,0,1e-05,20,0.1,17,True,0
+1,,,new,experiments/results/CM_2_2/ra_feature2_2h/5.onnx,CM,3,3,747.8810322284698,250000,1e-05,20,0.1,17,True,5
+2,,,new,experiments/results/CM_2_2/ra_feature2_2h/10.onnx,CM,3,3,1306.0778884887695,500000,1e-05,20,0.1,17,True,10
+3,,,new,experiments/results/CM_2_2/ra_feature2_2h/15.onnx,CM,3,3,1914.8245866298676,750000,1e-05,20,0.1,17,True,15
+4,,,new,experiments/results/CM_2_2/ra_feature2_2h/20.onnx,CM,3,3,2562.4286551475525,1000000,1e-05,20,0.1,17,True,20
+5,,,new,experiments/results/CM_2_2/ra_feature2_2h/25.onnx,CM,3,3,3220.565563440323,1250000,1e-05,20,0.1,17,True,25
+6,,,new,experiments/results/CM_2_2/ra_feature2_2h/30.onnx,CM,3,3,3725.1040897369385,1500000,1e-05,20,0.1,17,True,30
+7,,,new,experiments/results/CM_2_2/ra_feature2_2h/35.onnx,CM,3,3,4245.354295969009,1750000,1e-05,20,0.1,17,True,35
+8,,,new,experiments/results/CM_2_2/ra_feature2_2h/40.onnx,CM,3,3,4750.14478635788,2000000,1e-05,20,0.1,17,True,40
+9,,,new,experiments/results/CM_2_2/ra_feature2_2h/45.onnx,CM,3,3,5229.480383872986,2250000,1e-05,20,0.1,17,True,45
+10,,,new,experiments/results/CM_2_2/ra_feature2_2h/50.onnx,CM,3,3,5715.154621839523,2500000,1e-05,20,0.1,17,True,50
+11,,,new,experiments/results/CM_2_2/ra_feature2_2h/55.onnx,CM,3,3,6189.227952241898,2750000,1e-05,20,0.1,17,True,55
+12,,,new,experiments/results/CM_2_2/ra_feature2_2h/60.onnx,CM,3,3,6663.470649957657,3000000,1e-05,20,0.1,17,True,60
+13,,,new,experiments/results/CM_2_2/ra_feature2_2h/65.onnx,CM,3,3,7123.071380376816,3250000,1e-05,20,0.1,17,True,65
