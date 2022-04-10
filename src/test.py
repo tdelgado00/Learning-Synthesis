@@ -192,17 +192,21 @@ def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
     file = filename([name, up_to]) + (".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
-def test_heuristic_python(problem, n, k, heuristic):
+def test_heuristic_python(problem, n, k, heuristic, verbose=False):
     env = DCSSolverEnv(problem, n, k, True)
 
     obs = env.reset()
     done = False
     info = None
-
+    c = 0
     while not done:
-        action = heuristic(obs)
+        if verbose:
+            print("---------------------------")
+        action, count = heuristic(obs, verbose)
+        c += count
         obs, reward, done, info = env.step(action)
 
+    print("Desempates por depth:", c)
     return info, None
 
 
@@ -210,10 +214,50 @@ def random_heuristic(obs):
     return np.random.randint(0, obs.shape[0])
 
 
-def heuristic_test_exp(problem, n, k, eps, heuristic, file):
+def ra_feature_heuristic(obs, verbose=True):
+    max_i = -1
+    count = 0
+    for i in range(0, len(obs)):
+        if verbose:
+            print(list(np.round(obs[i], 2)))
+        obs[i][1] *= -1
+        if obs[i][2] < 0.5: # not in open
+            if verbose:
+                print("not in open")
+            continue
+        if max_i == -1:
+            if verbose:
+                print("first possibility")
+            max_i = i
+        elif obs[i][3] < obs[max_i][3]:
+            if verbose:
+                print("better controllability")
+            max_i = i
+        elif np.isclose(obs[i][3], obs[max_i][3]):
+            if obs[i][3] < 0.5:  # uncontrollable
+                obs[i][0:2] *= -1
+            dist, best_dist = tuple(obs[i][0:2]), tuple(obs[max_i][0:2])
+
+            if dist < best_dist:
+                if verbose:
+                    print("better distance")
+                max_i = i
+            elif dist == best_dist and obs[i][4] > obs[max_i][4]:
+                if verbose:
+                    print("same distance, better depth")
+                count += 1
+                max_i = i
+
+    if verbose:
+        print(max_i)
+    assert max_i != -1
+    return max_i, count
+
+
+def heuristic_test_exp(problem, n, k, eps, heuristic, file, verbose=False):
     df = []
     for i in range(eps):
-        r = test_heuristic_python(problem, n, k, heuristic)[0]
+        r = test_heuristic_python(problem, n, k, heuristic, verbose)[0]
         r["idx"] = i
         df.append(r)
     df = pd.DataFrame(df)
@@ -221,6 +265,12 @@ def heuristic_test_exp(problem, n, k, eps, heuristic, file):
 
 
 if __name__ == "__main__":
+    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+    #    heuristic_test_exp(problem, 2, 2, 200, random_heuristic, "random.csv")
+    #    heuristic_test_exp(problem, 3, 3, 20, random_heuristic, "random.csv")
+
     for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-        heuristic_test_exp(problem, 2, 2, 200, random_heuristic, "random.csv")
-        heuristic_test_exp(problem, 3, 3, 20, random_heuristic, "random.csv")
+        n, k = 2, 2
+        print(problem)
+        print(test_heuristic_python(problem, n, k, ra_feature_heuristic, verbose=False)[0]["expanded transitions"])
+        print(test_ra(problem, n, k)[0]["expanded transitions"])

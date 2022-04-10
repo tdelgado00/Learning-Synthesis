@@ -66,7 +66,7 @@ def eval_agent_q(path, random_states):
 def save_all_random_states():
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        get_random_states(problem, 2, 2, "states")
+        get_random_states(problem, 2, 2, "states_no_conflict")
 
 
 def read_random_states(problem, n, k, file, ra_feature):
