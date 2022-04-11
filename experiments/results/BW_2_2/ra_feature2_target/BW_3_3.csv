@@ -1,0 +1,13 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,ra feature,idx
+0,139,127,368,319,282,141,0,1,0,31.7,65.0,new,experiments/results/BW_2_2/ra_feature2_target/0.onnx,BW,3,3,0.0033087730407714844,0,1e-05,20,0.1,15,True,0
+1,305,215,965,610,637,658,0,2,0,56.43,138.0,new,experiments/results/BW_2_2/ra_feature2_target/5.onnx,BW,3,3,309.005539894104,250000,1e-05,20,0.1,15,True,5
+2,440,356,1458,1100,999,857,0,157,0,94.04,284.0,new,experiments/results/BW_2_2/ra_feature2_target/10.onnx,BW,3,3,615.5573947429657,500000,1e-05,20,0.1,15,True,10
+3,388,262,1128,691,806,725,0,1,0,128.62,205.0,new,experiments/results/BW_2_2/ra_feature2_target/15.onnx,BW,3,3,922.0749654769897,750000,1e-05,20,0.1,15,True,15
+4,374,229,1183,646,876,790,0,3,0,43.95,205.0,new,experiments/results/BW_2_2/ra_feature2_target/20.onnx,BW,3,3,1228.8556866645813,1000000,1e-05,20,0.1,15,True,20
+5,376,106,1191,227,906,801,0,1,0,64.91,221.0,new,experiments/results/BW_2_2/ra_feature2_target/25.onnx,BW,3,3,1535.5467994213104,1250000,1e-05,20,0.1,15,True,25
+6,449,109,1394,232,1277,896,0,29,0,41.26,362.0,new,experiments/results/BW_2_2/ra_feature2_target/30.onnx,BW,3,3,1842.346641778946,1500000,1e-05,20,0.1,15,True,30
+7,379,207,1181,535,916,778,0,10,0,25.01,232.0,new,experiments/results/BW_2_2/ra_feature2_target/35.onnx,BW,3,3,2151.16117310524,1750000,1e-05,20,0.1,15,True,35
+8,162,67,357,124,360,188,0,3,0,41.71,97.0,new,experiments/results/BW_2_2/ra_feature2_target/40.onnx,BW,3,3,2459.5645694732666,2000000,1e-05,20,0.1,15,True,40
+9,381,289,1207,864,774,762,0,30,0,119.48,199.0,new,experiments/results/BW_2_2/ra_feature2_target/45.onnx,BW,3,3,3178.6943697929382,2250000,1e-05,20,0.1,15,True,45
+10,329,140,961,362,698,623,0,1,0,78.52,168.0,new,experiments/results/BW_2_2/ra_feature2_target/50.onnx,BW,3,3,4435.556612730026,2500000,1e-05,20,0.1,15,True,50
+11,325,154,928,352,656,588,0,4,0,35.52,151.0,new,experiments/results/BW_2_2/ra_feature2_target/55.onnx,BW,3,3,5983.25447845459,2750000,1e-05,20,0.1,15,True,55
