@@ -10,8 +10,27 @@ import pandas as pd
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
-def get_random_states(problem, n, k, name, total=20000, sampled=2000):
-    env = DCSSolverEnv(problem, n, k, True)
+def get_random_experience(env, total):
+
+    states = []
+    done = True
+    obs = None
+    steps = 0
+    for i in range(total):
+        if done:
+            obs = env.reset()
+
+        action = np.random.randint(len(obs))
+
+        obs2, reward, done, info = env.step(action)
+
+        states.append((obs.copy(),  action, 0 if done else -1, obs2.copy(), -steps-1))
+        obs = obs2
+        steps += 1
+
+    return states
+
+def get_random_states(env, total=20000, sampled=2000):
 
     idxs = np.random.choice(range(total), sampled)
 
@@ -28,10 +47,7 @@ def get_random_states(problem, n, k, name, total=20000, sampled=2000):
         action = np.random.randint(len(obs))
         obs, reward, done, info = env.step(action)
 
-    file = "experiments/results/"+filename([problem, n, k])+"/"+name+".pkl"
-    os.makedirs(os.path.dirname(file), exist_ok=True)
-    with open(file, "wb") as f:
-        pickle.dump(states, f)
+    return states
 
 
 def eval_VIF(actions, features):
@@ -66,7 +82,12 @@ def eval_agent_q(path, random_states):
 def save_all_random_states():
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        get_random_states(problem, 2, 2, "states_no_conflict")
+        states = get_random_states(DCSSolverEnv(problem, 2, 2, True))
+
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_no_conflict.pkl"
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with open(file, "wb") as f:
+            pickle.dump(states, f)
 
 
 def read_random_states(problem, n, k, file, ra_feature):

@@ -1,18 +1,21 @@
 import json
 import time
-from copy import copy
 
 import numpy as np
 
 import os
 
 import onnx
+from onnxruntime import InferenceSession
 from skl2onnx import to_onnx
 from sklearn.neural_network import MLPRegressor
+from modelEvaluation import get_random_experience
+from experience_buffer import ReplayBuffer
 
 
 class Agent:
-    def __init__(self, eta=1e-5, nnsize=20, epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=100):
+    def __init__(self, eta=1e-5, nnsize=20, epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
+                 experience_replay=False, buffer_size=10000, batch_size=32):
 
         self.model = MLPRegressor(hidden_layer_sizes=(nnsize,),
                                   solver="sgd",
@@ -21,8 +24,14 @@ class Agent:
         self.target = None
         self.fixed_q_target = fixed_q_target
         self.reset_target_freq = reset_target_freq
+        self.target_session = None
 
         self.has_learned_something = False
+
+        self.experience_replay = experience_replay
+        self.buffer_size = buffer_size
+        self.buffer = None
+        self.batch_size = batch_size
 
         self.eta = eta
         self.nnsize = nnsize
@@ -44,50 +53,73 @@ class Agent:
 
         return info if time.time() - start_time < timeout else "timeout"
 
-    def train(self, env, seconds, copy_freq=200000, agent_info={}):
+    def train(self, env, seconds=None, max_steps=None, copy_freq=200000, agent_info={}):
         training_start = time.time()
         saving_time = 0
 
         steps = 0
 
-        obs = env.reset()
-        while time.time() - training_start - saving_time < seconds:
-            a = self.get_action(obs, self.epsilon)
-            a_features = obs[a]
-            obs, reward, done, _ = env.step(a)
+        if self.experience_replay:
+            self.buffer = ReplayBuffer(self.buffer_size)
+            for data in get_random_experience(env, total=self.buffer_size // 2):
+                self.buffer.add(data)
 
-            if done:
-                self.update(a_features, reward)
-                obs = env.reset()
+        obs = env.reset()
+        while True:
+            a = self.get_action(obs, self.epsilon)
+            obs2, reward, done, _ = env.step(a)
+            if self.experience_replay:
+                self.buffer.add((obs, a, reward, obs2, steps))
+                self.batch_update()
             else:
-                self.update(a_features, reward + np.max(self.eval(obs, use_target=self.fixed_q_target)))
+                self.update(obs, a, reward, obs2)
+            obs = obs2 if not done else env.reset()
 
             if steps % copy_freq == 0 and self.dir is not None:
                 self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
 
-            if steps % self.reset_target_freq == 0:
-                self.target = copy(self.model)
+            if self.fixed_q_target and steps % self.reset_target_freq == 0:
+                self.reset_target(env.nfeatures)
 
             steps += 1
+
+            if seconds is not None and time.time() - training_start - saving_time < seconds:
+                break
+
+            if max_steps is not None and steps >= max_steps:
+                break
+
+        self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
 
     # Takes action according to self.model
     def get_action(self, actionFeatures, epsilon):
         if np.random.rand() <= epsilon:
             return np.random.randint(len(actionFeatures))
         else:
-            return np.argmax(self.eval(actionFeatures))
+            return np.argmax(self.eval_model(actionFeatures))
 
-    def eval(self, actionFeatures, use_target=False):
-        if not self.has_learned_something:
-            return np.random.rand(len(actionFeatures))
-        if use_target:
-            values = self.target.predict(actionFeatures)
+    def eval_model(self, actionFeatures):
+        if not self.has_learned_something or actionFeatures is None:
+            return 0
+        return self.model.predict(actionFeatures)
+
+    def eval_target(self, actionFeatures):
+        if not self.has_learned_something or actionFeatures is None:
+            return 0
+        return self.target_session.run(None, {'X': actionFeatures})[0]
+
+    def update(self, obs, action, reward, obs2):
+        value = np.max(self.eval_target(obs2) if self.fixed_q_target else self.eval_model(obs2))
+        self.model.partial_fit([obs[action]], [value+reward])
+        self.has_learned_something = True
+
+    def batch_update(self):
+        obses, actions, rewards, obses2, steps = self.buffer.sample(self.batch_size)
+        if not self.fixed_q_target:
+            values = np.array([np.max(self.eval_model(state)) for state in obses2])
         else:
-            values = self.model.predict(actionFeatures)
-        return values
-
-    def update(self, features, value):
-        self.model.partial_fit([features], [value])
+            values = np.array([np.max(self.eval_target(state)) for state in obses2])
+        self.model.partial_fit([obses[i][actions[i]] for i in range(len(actions))], rewards + values)
         self.has_learned_something = True
 
     def save(self, training_time, steps, nfeatures, extra_info=None):
@@ -103,10 +135,17 @@ class Agent:
                 "eta": self.eta,
                 "nnsize": self.nnsize,
                 "epsilon": self.epsilon,
-                "nfeatures": nfeatures
+                "nfeatures": nfeatures,
+                "target q": self.fixed_q_target,
+                "reset target freq": self.reset_target_freq
             }
             info.update(extra_info if extra_info is not None else {})
             json.dump(info, f)
 
         print("Agent", self.save_idx, "saved. Training time:", training_time)
         self.save_idx += 1
+
+    def reset_target(self, nfeatures):
+        X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
+        self.target = to_onnx(self.model, X_test)
+        self.target_session = InferenceSession(self.target.SerializeToString())

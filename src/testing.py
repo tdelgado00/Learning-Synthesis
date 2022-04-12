@@ -22,12 +22,12 @@ def test_java_and_python_coherent():
 
 def test_agent_no_ra():
     print("Testing agent without RA")
-    train_agent("AT", 2, 2, 0.03, "testing_base_features", copy_freq=100, ra_feature=False)
+    train_agent("AT", 2, 2, "testing_base_features", seconds=5, copy_freq=100, ra_feature=False)
     _, _ = test_agent(agent_path("AT", 2, 2, "testing_base_features", 1), "AT", 1, 2, debug=False)
 
 def test_agent_ra():
     print("Testing agent with RA")
-    train_agent("AT", 2, 2, 0.03, "testing_ra", copy_freq=100, ra_feature=True)
+    train_agent("AT", 2, 2, "testing_ra", seconds=5, copy_freq=100, ra_feature=True)
     _, _ = test_agent(agent_path("AT", 2, 2, "testing_ra", 1), "AT", 1, 2, debug=False)
 
 
