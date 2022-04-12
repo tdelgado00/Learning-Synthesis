@@ -21,10 +21,10 @@ class Agent:
                                   solver="sgd",
                                   learning_rate="constant",
                                   learning_rate_init=eta)
-        self.target = None
+
         self.fixed_q_target = fixed_q_target
         self.reset_target_freq = reset_target_freq
-        self.target_session = None
+        self.target = None
 
         self.has_learned_something = False
 
@@ -91,7 +91,8 @@ class Agent:
             if max_steps is not None and steps >= max_steps:
                 break
 
-        self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
+        if self.dir is not None:
+            self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
 
     # Takes action according to self.model
     def get_action(self, actionFeatures, epsilon):
@@ -112,7 +113,7 @@ class Agent:
             if self.verbose:
                 print("Target evaluation is 0", self.has_learned_something, actionFeatures is None)
             return 0
-        return self.target_session.run(None, {'X': actionFeatures})[0]
+        return self.target.run(None, {'X': actionFeatures})[0]
 
     def update(self, obs, action, reward, obs2):
         value = np.max(self.eval_target(obs2) if self.fixed_q_target else self.eval_model(obs2))
@@ -159,5 +160,4 @@ class Agent:
         if self.verbose:
             print("Resetting target.")
         X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
-        self.target = to_onnx(self.model, X_test)
-        self.target_session = InferenceSession(self.target.SerializeToString())
+        self.target = InferenceSession(to_onnx(self.model, X_test).SerializeToString())

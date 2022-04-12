@@ -31,6 +31,27 @@ def get_random_experience(env, total):
     return states
 
 
+def features_search(env, total):
+    done = True
+    obs = None
+    steps = 0
+    count = 0
+    for i in range(total):
+        if done:
+            obs = env.reset()
+
+        if np.any([obs[i][9] > 0.5 for i in range(len(obs))]):
+            print("Found child goal", steps)
+            count += 1
+
+        action = np.random.randint(len(obs))
+
+        obs2, reward, done, info = env.step(action)
+
+        obs = obs2
+        steps += 1
+    print("Total:", count)
+
 def get_random_states(env, total=20000, sampled=2000):
     idxs = np.random.choice(range(total), sampled)
 
@@ -125,4 +146,13 @@ def save_models_q_dfs(last=False):
 if __name__ == "__main__":
     #save_models_q_dfs(last=False)
     #save_models_q_dfs(last=True)
-    save_all_random_states()
+    #save_all_random_states()
+
+    #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
+    #features_search(DCSSolverEnv("DP", 2, 2, True), 100000)
+    #features_search(DCSSolverEnv("BW", 2, 2, True), 100000)
+    #features_search(DCSSolverEnv("CM", 2, 2, True), 100000)
+
+    for problem in ["TA", "TL", "DP", "BW", "CM"]:
+        print(problem)
+        features_search(DCSSolverEnv(problem, 3, 3, True), 100000)

@@ -31,6 +31,21 @@ def test_agent_ra():
     _, _ = test_agent(agent_path("AT", 2, 2, "testing_ra", 1), "AT", 1, 2, debug=False)
 
 
+def test_target_and_buffer():
+    problem, n, k = "AT", 1, 1
+    max_steps = 100
+    copy_freq = 100
+    buffer_size = 5
+    batch_size = 3
+    reset_target = 10
+
+    train_agent(problem, n, k, None, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True,
+                fixed_q_target=True, reset_target_freq=reset_target,
+                experience_replay=True, buffer_size=buffer_size, batch_size=batch_size, verbose=True)
+    #test_agents(problem, n, k, problem, n, k, file)
+    #test_agents_q(problem, n, k, file, "states_no_conflict.pkl")
+
+
 def tests():
     test_agent_ra()
     test_agent_no_ra()
@@ -38,4 +53,4 @@ def tests():
 
 
 if __name__ == '__main__':
-    tests()
+    test_target_and_buffer()
