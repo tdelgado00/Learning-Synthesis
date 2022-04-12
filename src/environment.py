@@ -25,7 +25,7 @@ class DCSSolverEnv:
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
         actions = np.asarray(self.featuresBuffer, dtype=np.float32)
-        return actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures))
+        return actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures)).copy()
 
     def step(self, action):
         self.javaEnv.expandAction(action)

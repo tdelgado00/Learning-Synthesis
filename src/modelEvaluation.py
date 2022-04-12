@@ -24,14 +24,14 @@ def get_random_experience(env, total):
 
         obs2, reward, done, info = env.step(action)
 
-        states.append((obs.copy(),  action, 0 if done else -1, obs2.copy(), -steps-1))
+        states.append((obs,  action, 0 if done else -1, obs2, -steps-1))
         obs = obs2
         steps += 1
 
     return states
 
-def get_random_states(env, total=20000, sampled=2000):
 
+def get_random_states(env, total=20000, sampled=2000):
     idxs = np.random.choice(range(total), sampled)
 
     states = []

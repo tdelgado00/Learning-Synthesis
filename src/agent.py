@@ -10,12 +10,12 @@ from onnxruntime import InferenceSession
 from skl2onnx import to_onnx
 from sklearn.neural_network import MLPRegressor
 from modelEvaluation import get_random_experience
-from experience_buffer import ReplayBuffer
+from replayBuffer import ReplayBuffer
 
 
 class Agent:
     def __init__(self, eta=1e-5, nnsize=20, epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
-                 experience_replay=False, buffer_size=10000, batch_size=32):
+                 experience_replay=False, buffer_size=10000, batch_size=32, verbose=False):
 
         self.model = MLPRegressor(hidden_layer_sizes=(nnsize,),
                                   solver="sgd",
@@ -40,6 +40,8 @@ class Agent:
         self.dir = dir
         self.save_idx = 0
 
+        self.verbose = verbose
+
     def test(self, env, timeout=30 * 60):
         start_time = time.time()
 
@@ -61,15 +63,15 @@ class Agent:
 
         if self.experience_replay:
             self.buffer = ReplayBuffer(self.buffer_size)
-            for data in get_random_experience(env, total=self.buffer_size // 2):
-                self.buffer.add(data)
+            for obs, action, reward, obs2, step in get_random_experience(env, total=self.buffer_size // 10):
+                self.buffer.add(obs, action, reward, obs2, step)
 
         obs = env.reset()
         while True:
             a = self.get_action(obs, self.epsilon)
             obs2, reward, done, _ = env.step(a)
             if self.experience_replay:
-                self.buffer.add((obs, a, reward, obs2, steps))
+                self.buffer.add(obs, a, reward, obs2, steps)
                 self.batch_update()
             else:
                 self.update(obs, a, reward, obs2)
@@ -100,11 +102,15 @@ class Agent:
 
     def eval_model(self, actionFeatures):
         if not self.has_learned_something or actionFeatures is None:
+            if self.verbose:
+                print("Model evaluation is 0", self.has_learned_something, actionFeatures is None)
             return 0
         return self.model.predict(actionFeatures)
 
     def eval_target(self, actionFeatures):
         if not self.has_learned_something or actionFeatures is None:
+            if self.verbose:
+                print("Target evaluation is 0", self.has_learned_something, actionFeatures is None)
             return 0
         return self.target_session.run(None, {'X': actionFeatures})[0]
 
@@ -112,6 +118,8 @@ class Agent:
         value = np.max(self.eval_target(obs2) if self.fixed_q_target else self.eval_model(obs2))
         self.model.partial_fit([obs[action]], [value+reward])
         self.has_learned_something = True
+        if self.verbose:
+            print("Normal update. Value:", value+reward)
 
     def batch_update(self):
         obses, actions, rewards, obses2, steps = self.buffer.sample(self.batch_size)
@@ -119,6 +127,8 @@ class Agent:
             values = np.array([np.max(self.eval_model(state)) for state in obses2])
         else:
             values = np.array([np.max(self.eval_target(state)) for state in obses2])
+        if self.verbose:
+            print("Batch update. Values:", rewards+values, "Steps:", steps)
         self.model.partial_fit([obses[i][actions[i]] for i in range(len(actions))], rewards + values)
         self.has_learned_something = True
 
@@ -146,6 +156,8 @@ class Agent:
         self.save_idx += 1
 
     def reset_target(self, nfeatures):
+        if self.verbose:
+            print("Resetting target.")
         X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
         self.target = to_onnx(self.model, X_test)
         self.target_session = InferenceSession(self.target.SerializeToString())
