@@ -44,7 +44,7 @@ def test_agent(path, problem, n, k, timeout="30m", labels_dir="mock", debug=Fals
     if debug:
         command += ["-d"]
 
-    if uses_ra(path):
+    if path != "mock" and uses_ra(path):
         command += ["-r"]
 
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -192,6 +192,7 @@ def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
     file = filename([name, up_to]) + (".csv" if not old else "_old.csv")
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
+
 def test_heuristic_python(problem, n, k, heuristic, verbose=False):
     env = DCSSolverEnv(problem, n, k, True)
 
@@ -264,13 +265,23 @@ def heuristic_test_exp(problem, n, k, eps, heuristic, file, verbose=False):
     df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file)
 
 
-if __name__ == "__main__":
-    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    #    heuristic_test_exp(problem, 2, 2, 200, random_heuristic, "random.csv")
-    #    heuristic_test_exp(problem, 3, 3, 20, random_heuristic, "random.csv")
+def test_random_exp(problem, n, k, eps, file):
+    df = []
+    for i in range(eps):
+        r = test_agent("mock", problem, n, k, "10m")[0]
+        r["idx"] = i
+        df.append(r)
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file)
 
+
+if __name__ == "__main__":
     for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-        n, k = 2, 2
-        print(problem)
-        print(test_heuristic_python(problem, n, k, ra_feature_heuristic, verbose=False)[0]["expanded transitions"])
-        print(test_ra(problem, n, k)[0]["expanded transitions"])
+        test_random_exp(problem, 2, 2, 200, "random.csv")
+        test_random_exp(problem, 3, 3, 20, "random.csv")
+
+    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+    #    n, k = 2, 2
+    #    print(problem)
+    #    print(test_heuristic_python(problem, n, k, ra_feature_heuristic, verbose=False)[0]["expanded transitions"])
+    #    print(test_ra(problem, n, k)[0]["expanded transitions"])
