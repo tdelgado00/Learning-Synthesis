@@ -42,9 +42,9 @@ if __name__ == "__main__":
     copy_freq = 50000
     buffer_size = 10000
     batch_size = 10
-    reset_target = 10000
+    reset_target = 5000
 
-    for file, target, replay in [("TB_5mill", True, True)]:
+    for file, target, replay in [("TB_5mill_5000", True, True)]:
         train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True,
                     fixed_q_target=target, reset_target_freq=reset_target,
                     experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size, verbose=False)

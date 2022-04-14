@@ -148,7 +148,9 @@ class Agent:
                 "epsilon": self.epsilon,
                 "nfeatures": nfeatures,
                 "target q": self.fixed_q_target,
-                "reset target freq": self.reset_target_freq
+                "reset target freq": self.reset_target_freq,
+                "experience replay": self.experience_replay,
+                "buffer size": self.buffer_size
             }
             info.update(extra_info if extra_info is not None else {})
             json.dump(info, f)
