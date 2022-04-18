@@ -63,7 +63,7 @@ class Agent:
 
         if self.experience_replay:
             self.buffer = ReplayBuffer(self.buffer_size)
-            for obs, action, reward, obs2, step in get_random_experience(env, total=self.buffer_size // 10):
+            for obs, action, reward, obs2, step in get_random_experience(env, total=self.buffer_size // 5):
                 self.buffer.add(obs, action, reward, obs2, step)
 
         obs = env.reset()

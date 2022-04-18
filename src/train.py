@@ -37,17 +37,19 @@ if __name__ == "__main__":
     #        test_agents(problem, 2, 2, problem, 3, 3, file, freq=5)
     #        test_agents_q(problem, 2, 2, file, "states_no_conflict.pkl")
 
-    problem, n, k = "TA", 2, 2
     max_steps = 5000000
     copy_freq = 50000
     buffer_size = 10000
-    batch_size = 10
-    reset_target = 5000
-
-    for file, target, replay in [("TB_5mill_5000", True, True)]:
+    batch_size = 100
+    reset_target = 10000
+    target = True
+    replay = True
+    file = "TB_5mill_bs100"
+    n, k = 2, 2
+    for problem in ["DP"]:
         train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True,
-                    fixed_q_target=target, reset_target_freq=reset_target,
-                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size, verbose=False)
-        test_agents(problem, n, k, problem, n, k, file)
-        test_agents(problem, n, k, problem, 3, 3, file)
+                fixed_q_target=target, reset_target_freq=reset_target,
+                experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size, verbose=False)
+        test_agents(problem, n, k, problem, 2, 2, file)
+        test_agents(problem, n, k, problem, 3, 3, file, freq=5)
         test_agents_q(problem, n, k, file, "states_no_conflict.pkl")
