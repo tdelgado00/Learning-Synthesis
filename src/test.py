@@ -193,6 +193,26 @@ def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
 
+def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
+    df_3_3 = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/" + filename(
+        [problem, 3, 3]) + ".csv")
+    idx_agent = best_agent_idx(df_3_3)
+    path = agent_path(problem, 2, 2, file, idx_agent)
+
+    df = []
+    solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+    for n in range(up_to):
+        for k in range(up_to):
+            if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
+                print("Testing agent with", problem, n, k)
+                df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
+                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                    solved[n][k] = True
+
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/" + name + ".csv")
+
+
 def test_heuristic_python(problem, n, k, heuristic, verbose=False):
     env = DCSSolverEnv(problem, n, k, True)
 
@@ -276,12 +296,15 @@ def test_random_exp(problem, n, k, eps, file):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-        test_random_exp(problem, 2, 2, 200, "random.csv")
-        test_random_exp(problem, 3, 3, 20, "random.csv")
+    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+    #    test_random_exp(problem, 2, 2, 200, "random.csv")
+    #    test_random_exp(problem, 3, 3, 20, "random.csv")
 
     #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
     #    n, k = 2, 2
     #    print(problem)
     #    print(test_heuristic_python(problem, n, k, ra_feature_heuristic, verbose=False)[0]["expanded transitions"])
     #    print(test_ra(problem, n, k)[0]["expanded transitions"])
+
+    for problem in ["AT"]:
+        test_all_agent(problem, "TB_5mill", 15, timeout="1s")
