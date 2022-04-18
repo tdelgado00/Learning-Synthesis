@@ -267,7 +267,9 @@ def heuristic_test_exp(problem, n, k, eps, heuristic, file, verbose=False):
 
 def test_random_exp(problem, n, k, eps, file):
     df = []
+    start = time.time()
     for i in range(eps):
+        print("Testing random with", problem, n, k, i, "- Time: ", time.time()-start)
         r = test_agent("mock", problem, n, k, "10m")[0]
         r["idx"] = i
         df.append(r)
@@ -276,7 +278,7 @@ def test_random_exp(problem, n, k, eps, file):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+    for problem in ["TA", "TL", "DP", "BW", "CM"]:
         test_random_exp(problem, 2, 2, 200, "random.csv")
         test_random_exp(problem, 3, 3, 20, "random.csv")
 
