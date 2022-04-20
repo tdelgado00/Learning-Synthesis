@@ -33,12 +33,11 @@ def test_ra(problem, n, k, timeout="30m", old=False):
     return results, None
 
 
-def test_agent(path, problem, n, k, timeout="30m", labels_dir="mock", debug=False):
+def test_agent(path, problem, n, k, timeout="30m", debug=False):
     command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
-               "-m", path,
-               "-l", labels_dir
+               "-m", path
                ]
 
     if debug:
@@ -47,13 +46,16 @@ def test_agent(path, problem, n, k, timeout="30m", labels_dir="mock", debug=Fals
     if path != "mock" and uses_ra(path):
         command += ["-r"]
 
+    if path != "mock" and uses_labels(path):
+        command += ["-l", "labels/"+problem+".txt"]
+
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
     else:
+        lines = proc.stdout.split("\n")[2:]
         try:
-            lines = proc.stdout.split("\n")[2:]
             i = list(map((lambda l: "ExpandedStates" in l), lines)).index(True)
             j = list(map((lambda l: "DirectedController" in l), lines)).index(True)
             if debug:
@@ -122,24 +124,22 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
 
 
 def parse_java_debug(debug):
-    debug = " ".join(debug).split("--------------------------")
+    debug = [l for l in debug if l != "--------------------------"]
     steps = []
-    for step in filter(lambda x: x != "", debug):
-        step = step.split(" ")
-        step = list(filter(lambda x: x != "", step))
-        n, nfeatures = int(step[0]), int(step[1])
-        step = step[2:]
-        features = []
+    i = 0
+    while i < len(debug):
+        first = debug[i].split(" ")
+        n, nfeatures = int(first[0]), int(first[1])
         actions = []
-        for i in range(n):
-            actions.append(step[0])
-            features.append([float(x) for x in step[1:nfeatures + 1]])
-            step = step[nfeatures + 1:]
-        values = [float(x) for x in step[:n]]
-        selected = int(step[n])
-        steps.append(
-            {"frontier size": n, "nfeatures": nfeatures, "actoins": actions, "features": features, "values": values,
-             "selected": selected})
+        features = []
+        for j in range(n):
+            line = debug[i+1+j].split(" ")
+            actions.append(line[0])
+            features.append([float(x) for x in line[1:nfeatures+1]])
+        values = [float(x) for x in debug[i+1+n].split(" ")[:n]]
+        selected = float(debug[i+2+n])
+        steps.append({"frontier size": n, "nfeatures": nfeatures, "actions": actions, "features": features, "values": values, "selected": selected})
+        i += n + 3
     return steps
 
 
@@ -173,7 +173,7 @@ def test_agents_q(problem, n, k, file, random_states_file, freq=1):
         print("Testing q", i)
         path = agent_path(problem, n, k, file, i)
         info = get_agent_info(path)
-        info["avg q"] = eval_agent_q(path, read_random_states(problem, n, k, random_states_file, info["ra feature"]))
+        info["avg q"] = eval_agent_q(path, read_random_states(problem, n, k, random_states_file, info))
         info["idx"] = i
         df.append(info)
 
@@ -301,6 +301,16 @@ def test_random_exp(problem, n, k, eps, file):
     df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file)
 
 
+def get_problem_labels(problem, eps=5):
+    actions = set()
+    for i in range(eps):
+        actions.update({x for step in list(pd.DataFrame(test_agent("mock", problem, 2, 2, "10m", debug=True)[1])["actions"]) for x in step})
+
+    def simplify(l):
+        return "".join([c for c in l if c.isalpha()])
+
+    return {simplify(l) for l in actions}
+
 if __name__ == "__main__":
     #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
     #    test_random_exp(problem, 2, 2, 200, "random.csv")
@@ -312,5 +322,13 @@ if __name__ == "__main__":
     #    print(test_heuristic_python(problem, n, k, ra_feature_heuristic, verbose=False)[0]["expanded transitions"])
     #    print(test_ra(problem, n, k)[0]["expanded transitions"])
 
+    #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    #    test_all_agent(problem, "TB_5mill", 15, timeout="10m")
+
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        test_all_agent(problem, "TB_5mill", 15, timeout="10m")
+        print(problem)
+        labels = get_problem_labels(problem)
+        print(labels)
+        with open("labels/"+problem+".txt", "w") as f:
+            for l in labels:
+                f.write(l+"\n")

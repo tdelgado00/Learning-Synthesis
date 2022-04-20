@@ -55,7 +55,7 @@ class Agent:
 
         return info if time.time() - start_time < timeout else "timeout"
 
-    def train(self, env, seconds=None, max_steps=None, copy_freq=200000, agent_info={}):
+    def train(self, env, agent_info, seconds=None, max_steps=None, copy_freq=200000):
         training_start = time.time()
         saving_time = 0
 

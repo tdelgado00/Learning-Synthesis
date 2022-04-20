@@ -103,22 +103,27 @@ def eval_agent_q(path, random_states):
 def save_all_random_states():
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, 2, 2, True))
+        states = get_random_states(DCSSolverEnv(problem, 2, 2, True, True))
 
-        file = "experiments/results/" + filename([problem, 2, 2]) + "/states_no_conflict.pkl"
+        file = "experiments/results/" + filename([problem, 2, 2]) + "/states_labels.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)
 
 
-def read_random_states(problem, n, k, file, ra_feature):
+def read_random_states(problem, n, k, file, info):
     with open(results_path(problem, n, k, file), "rb") as f:
         states = pickle.load(f)
 
-    if not ra_feature:
-        return [s[:, 2:] for s in states]
+    if not info["ra feature"] and not info["labels"]:
+        return [s[:, -12:] for s in states]
+    elif info["ra feature"] and not info["labels"]:
+        return [s[:, :2]+s[:, -12:] for s in states]
+    elif not info["ra feature"] and info["labels"]:
+        return [s[2:] for s in states]
     else:
         return states
+
 
 def save_models_q_dfs(file, last=False):
 
@@ -138,9 +143,9 @@ def save_models_q_dfs(file, last=False):
 
 
 if __name__ == "__main__":
-    save_models_q_dfs("TB_5mill", last=False)
-    save_models_q_dfs("TB_5mill", last=True)
-    #save_all_random_states()
+    #save_models_q_dfs("TB_5mill", last=False)
+    #save_models_q_dfs("TB_5mill", last=True)
+    save_all_random_states()
 
     #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
     #features_search(DCSSolverEnv("DP", 2, 2, True), 100000)

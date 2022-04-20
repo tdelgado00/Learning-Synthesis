@@ -1,0 +1,16 @@
+uncommitted
+purchasefail
+query
+committed
+available
+agencyrequest
+agencysucc
+querysucc
+cancel
+select
+agencyfail
+queryfail
+purchasesucc
+unavailable
+purchase
+steps

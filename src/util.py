@@ -57,6 +57,11 @@ def uses_ra(path):
     return "ra feature" in info.keys() and info["ra feature"]
 
 
+def uses_labels(path):
+    info = get_agent_info(path)
+    return "labels" in info.keys() and info["labels"]
+
+
 def read_results(lines):
     results = {}
     results["expanded states"] = int(lines[0].split(" ")[1])
