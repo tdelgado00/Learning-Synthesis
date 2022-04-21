@@ -79,14 +79,14 @@ def eval_VIF(actions, features):
     return vif_data
 
 
-def get_agent_q_df(path, states):
+def get_agent_q_df(problem, path, states):
     actions = np.array([a for s in states for a in s])
 
     agent = onnx.load(path)
     sess = InferenceSession(agent.SerializeToString())
 
     values = sess.run(None, {'X': actions})[0]
-    features = feature_names(get_agent_info(path)["ra feature"])
+    features = feature_names(get_agent_info(path), problem)
 
     df = {features[i]: actions[:, i] for i in range(len(features))}
     df["q"] = [v[0] for v in values]
@@ -114,7 +114,7 @@ def save_all_random_states():
 def read_random_states(problem, n, k, file, info):
     with open(results_path(problem, n, k, file), "rb") as f:
         states = pickle.load(f)
-
+    
     if not info["ra feature"] and not info["labels"]:
         return [s[:, -12:] for s in states]
     elif info["ra feature"] and not info["labels"]:
@@ -125,7 +125,7 @@ def read_random_states(problem, n, k, file, info):
         return states
 
 
-def save_models_q_dfs(file, last=False):
+def save_models_q_dfs(file, states_file, last=False):
 
     problems = ["AT", "TA", "TL", "DP", "BW", "CM"]
     for problem, n, k in [(x, 2, 2) for x in problems]:
@@ -134,18 +134,18 @@ def save_models_q_dfs(file, last=False):
             [problem2, n2, k2]) + ".csv")
         idx = best_agent_idx(df) if not last else last_agent_idx(df)
 
-        random_states = read_random_states(problem, n, k, "states_no_conflict.pkl", True)
+        random_states = read_random_states(problem, n, k, states_file, {"ra feature": True, "labels": True})
 
-        df_ra = get_agent_q_df(agent_path(problem, n, k, file, idx), random_states)
+        df_ra = get_agent_q_df(problem, agent_path(problem, n, k, file, idx), random_states)
 
         t = "last" if last else "best"
         df_ra.to_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/"+t+"_"+str(idx)+".csv")
 
 
 if __name__ == "__main__":
-    #save_models_q_dfs("TB_5mill", last=False)
-    #save_models_q_dfs("TB_5mill", last=True)
-    save_all_random_states()
+    save_models_q_dfs("labels_2h", "states_labels.pkl", last=False)
+    save_models_q_dfs("labels_2h", "states_labels.pkl", last=True)
+    #save_all_random_states()
 
     #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
     #features_search(DCSSolverEnv("DP", 2, 2, True), 100000)

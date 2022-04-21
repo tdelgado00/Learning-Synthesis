@@ -2,7 +2,7 @@ import numpy as np
 import json
 
 
-def feature_names(ra_feature):
+def feature_names(info, labels=None):
     features = [
         "action controllable",
         "1 / depth",
@@ -17,7 +17,13 @@ def feature_names(ra_feature):
         "child portion controllable",
         "child portion explored",
     ]
-    if ra_feature:
+    if labels is not None:
+        with open("labels/"+labels+".txt", "r") as f:
+            labels = list(f)
+        labels = [l[:-1] for l in labels]
+        features = labels + features
+    
+    if info["ra feature"]:
         features = ["ra type", "1 / ra distance", "in open"]+features
     return features
 
