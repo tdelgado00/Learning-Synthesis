@@ -1,0 +1,22 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,target q,reset target freq,experience replay,buffer size,ra feature,labels,idx
+0,1083,177,3231,279,4082,1547,0,1,366,272.09,1487.0,new,experiments/results/TA_2_2/labels_2h/0.onnx,TA,3,3,3.3342485427856445,0,1e-05,20,0.1,31,True,10000,True,10000,True,True,0
+1,1051,246,2725,422,4699,1115,0,1,26,59.64,3059.0,new,experiments/results/TA_2_2/labels_2h/5.onnx,TA,3,3,605.771448135376,250000,1e-05,20,0.1,31,True,10000,True,10000,True,True,5
+2,1008,290,2479,575,3764,1285,0,1,32,191.09,1729.0,new,experiments/results/TA_2_2/labels_2h/10.onnx,TA,3,3,1192.322684764862,500000,1e-05,20,0.1,31,True,10000,True,10000,True,True,10
+3,1001,256,2687,471,4287,1101,0,1,34,141.31,2145.0,new,experiments/results/TA_2_2/labels_2h/15.onnx,TA,3,3,1777.223350763321,750000,1e-05,20,0.1,31,True,10000,True,10000,True,True,15
+4,640,219,1320,366,2069,317,0,1,27,31.23,1291.0,new,experiments/results/TA_2_2/labels_2h/20.onnx,TA,3,3,2360.9497632980347,1000000,1e-05,20,0.1,31,True,10000,True,10000,True,True,20
+5,908,244,1945,413,2763,704,0,1,147,90.08,1433.0,new,experiments/results/TA_2_2/labels_2h/25.onnx,TA,3,3,2945.4905529022217,1250000,1e-05,20,0.1,31,True,10000,True,10000,True,True,25
+6,863,277,1955,487,2883,846,0,1,27,238.74,1529.0,new,experiments/results/TA_2_2/labels_2h/30.onnx,TA,3,3,3529.6526398658752,1500000,1e-05,20,0.1,31,True,10000,True,10000,True,True,30
+7,940,298,1800,527,2984,746,0,1,38,171.9,1698.0,new,experiments/results/TA_2_2/labels_2h/35.onnx,TA,3,3,4115.660814285278,1750000,1e-05,20,0.1,31,True,10000,True,10000,True,True,35
+8,983,254,1810,424,3088,704,0,1,45,78.24,1854.0,new,experiments/results/TA_2_2/labels_2h/40.onnx,TA,3,3,4703.947879552841,2000000,1e-05,20,0.1,31,True,10000,True,10000,True,True,40
+9,1047,201,2425,328,3484,831,0,1,74,187.48,1930.0,new,experiments/results/TA_2_2/labels_2h/45.onnx,TA,3,3,5292.783061504364,2250000,1e-05,20,0.1,31,True,10000,True,10000,True,True,45
+10,1069,158,1956,239,3202,1,0,1,39,233.95,2576.0,new,experiments/results/TA_2_2/labels_2h/50.onnx,TA,3,3,5881.411033630371,2500000,1e-05,20,0.1,31,True,10000,True,10000,True,True,50
+11,1072,217,2714,362,4117,44,0,1,142,187.54,3288.0,new,experiments/results/TA_2_2/labels_2h/55.onnx,TA,3,3,6471.33814406395,2750000,1e-05,20,0.1,31,True,10000,True,10000,True,True,55
+12,921,260,1903,453,2915,677,0,1,37,176.76,1794.0,new,experiments/results/TA_2_2/labels_2h/60.onnx,TA,3,3,7064.744298458099,3000000,1e-05,20,0.1,31,True,10000,True,10000,True,True,60
+13,947,281,2216,505,3013,893,0,1,85,15.2,1498.0,new,experiments/results/TA_2_2/labels_2h/65.onnx,TA,3,3,7656.872703075409,3250000,1e-05,20,0.1,31,True,10000,True,10000,True,True,65
+14,1002,238,2056,410,3348,701,0,1,147,108.41,1866.0,new,experiments/results/TA_2_2/labels_2h/70.onnx,TA,3,3,8251.280642747879,3500000,1e-05,20,0.1,31,True,10000,True,10000,True,True,70
+15,862,278,1908,484,3053,805,0,1,101,217.0,1508.0,new,experiments/results/TA_2_2/labels_2h/75.onnx,TA,3,3,8843.321315526962,3750000,1e-05,20,0.1,31,True,10000,True,10000,True,True,75
+16,1004,215,2072,362,3738,905,0,1,93,197.05,2070.0,new,experiments/results/TA_2_2/labels_2h/80.onnx,TA,3,3,9438.33066534996,4000000,1e-05,20,0.1,31,True,10000,True,10000,True,True,80
+17,959,261,1711,459,3031,617,0,1,26,135.94,1972.0,new,experiments/results/TA_2_2/labels_2h/85.onnx,TA,3,3,10038.725180625916,4250000,1e-05,20,0.1,31,True,10000,True,10000,True,True,85
+18,1004,262,2365,459,3090,671,0,1,139,171.21,1569.0,new,experiments/results/TA_2_2/labels_2h/90.onnx,TA,3,3,10632.239523172379,4500000,1e-05,20,0.1,31,True,10000,True,10000,True,True,90
+19,745,147,1108,206,1916,267,0,1,62,135.22,1231.0,new,experiments/results/TA_2_2/labels_2h/95.onnx,TA,3,3,11223.404384613037,4750000,1e-05,20,0.1,31,True,10000,True,10000,True,True,95
+20,1040,210,2196,322,3647,667,0,1,148,164.21,2339.0,new,experiments/results/TA_2_2/labels_2h/100.onnx,TA,3,3,11817.200504541397,5000000,1e-05,20,0.1,31,True,10000,True,10000,True,True,100
