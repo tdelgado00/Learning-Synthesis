@@ -33,12 +33,12 @@ if __name__ == "__main__":
     max_steps = 5000000
     copy_freq = 50000
     buffer_size = 10000
-    batch_size = 100
+    batch_size = 10
     reset_target = 10000
     target = True
     replay = True
 
-    file = "labels_2h"
+    file = "labels_2h_40"
 
     n, k = 2, 2
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
@@ -46,6 +46,7 @@ if __name__ == "__main__":
                     fixed_q_target=target, reset_target_freq=reset_target,
                     experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
                     labels=True,
+                    nnsize=40,
                     verbose=False)
         test_agents(problem, n, k, problem, 2, 2, file)
         test_agents(problem, n, k, problem, 3, 3, file, freq=5)
