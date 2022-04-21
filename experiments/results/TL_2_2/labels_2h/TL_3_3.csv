@@ -1,0 +1,22 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,target q,reset target freq,experience replay,buffer size,ra feature,labels,idx
+0,4563,458,13259,1156,36216,926,0,1,1905,665.26,27916.0,new,experiments/results/TL_2_2/labels_2h/0.onnx,TL,3,3,2.489363193511963,0,1e-05,20,0.1,20,True,10000,True,10000,True,True,0
+1,9560,814,21795,2237,324600,4429,0,1393,4819,653.77,295071.0,new,experiments/results/TL_2_2/labels_2h/5.onnx,TL,3,3,748.15261054039,250000,1e-05,20,0.1,20,True,10000,True,10000,True,True,5
+2,11,11,12,12,159,2,0,1,0,17.14,12.0,new,experiments/results/TL_2_2/labels_2h/10.onnx,TL,3,3,1241.2059118747711,500000,1e-05,20,0.1,20,True,10000,True,10000,True,True,10
+3,11,11,12,12,156,2,0,1,0,17.14,9.0,new,experiments/results/TL_2_2/labels_2h/15.onnx,TL,3,3,1699.1491403579712,750000,1e-05,20,0.1,20,True,10000,True,10000,True,True,15
+4,44,21,61,28,212,9,0,5,0,22.18,45.0,new,experiments/results/TL_2_2/labels_2h/20.onnx,TL,3,3,2145.0571269989014,1000000,1e-05,20,0.1,20,True,10000,True,10000,True,True,20
+5,11,11,12,12,160,2,0,1,0,17.14,10.0,new,experiments/results/TL_2_2/labels_2h/25.onnx,TL,3,3,2576.9211604595184,1250000,1e-05,20,0.1,20,True,10000,True,10000,True,True,25
+6,2220,192,3331,269,10185,151,0,106,331,211.68,9510.0,new,experiments/results/TL_2_2/labels_2h/30.onnx,TL,3,3,2998.656704187393,1500000,1e-05,20,0.1,20,True,10000,True,10000,True,True,30
+7,7890,102,10549,127,114846,452,0,568,1591,678.87,111956.0,new,experiments/results/TL_2_2/labels_2h/35.onnx,TL,3,3,3429.755579471588,1750000,1e-05,20,0.1,20,True,10000,True,10000,True,True,35
+8,11,11,12,12,173,2,0,1,0,17.14,10.0,new,experiments/results/TL_2_2/labels_2h/40.onnx,TL,3,3,3860.123866558075,2000000,1e-05,20,0.1,20,True,10000,True,10000,True,True,40
+9,46,11,73,12,242,22,0,1,1,23.62,51.0,new,experiments/results/TL_2_2/labels_2h/45.onnx,TL,3,3,4294.860072851181,2250000,1e-05,20,0.1,20,True,10000,True,10000,True,True,45
+10,6828,378,12174,622,114611,1940,0,652,1465,722.57,107617.0,new,experiments/results/TL_2_2/labels_2h/50.onnx,TL,3,3,4730.972635507584,2500000,1e-05,20,0.1,20,True,10000,True,10000,True,True,50
+11,5920,250,8515,412,68269,85,0,782,1369,645.21,67129.0,new,experiments/results/TL_2_2/labels_2h/55.onnx,TL,3,3,5177.378027677536,2750000,1e-05,20,0.1,20,True,10000,True,10000,True,True,55
+12,28,22,39,29,204,2,0,10,2,18.18,22.0,new,experiments/results/TL_2_2/labels_2h/60.onnx,TL,3,3,5620.007099151611,3000000,1e-05,20,0.1,20,True,10000,True,10000,True,True,60
+13,6740,207,9832,292,111034,852,0,342,1266,806.86,107207.0,new,experiments/results/TL_2_2/labels_2h/65.onnx,TL,3,3,6061.24188375473,3250000,1e-05,20,0.1,20,True,10000,True,10000,True,True,65
+14,15,14,18,16,168,2,0,2,0,17.14,13.0,new,experiments/results/TL_2_2/labels_2h/70.onnx,TL,3,3,6492.886035442352,3500000,1e-05,20,0.1,20,True,10000,True,10000,True,True,70
+15,76,16,91,20,215,6,0,6,2,28.18,41.0,new,experiments/results/TL_2_2/labels_2h/75.onnx,TL,3,3,6936.897441625595,3750000,1e-05,20,0.1,20,True,10000,True,10000,True,True,75
+16,11,11,12,12,166,2,0,1,0,17.14,11.0,new,experiments/results/TL_2_2/labels_2h/80.onnx,TL,3,3,7374.86701965332,4000000,1e-05,20,0.1,20,True,10000,True,10000,True,True,80
+17,56,16,70,20,215,2,0,4,0,25.14,40.0,new,experiments/results/TL_2_2/labels_2h/85.onnx,TL,3,3,7810.051460027695,4250000,1e-05,20,0.1,20,True,10000,True,10000,True,True,85
+18,18,13,19,14,178,2,0,1,0,17.62,15.0,new,experiments/results/TL_2_2/labels_2h/90.onnx,TL,3,3,8250.867138624191,4500000,1e-05,20,0.1,20,True,10000,True,10000,True,True,90
+19,12,11,13,12,159,2,0,1,0,17.14,10.0,new,experiments/results/TL_2_2/labels_2h/95.onnx,TL,3,3,8698.36181139946,4750000,1e-05,20,0.1,20,True,10000,True,10000,True,True,95
+20,220,11,290,12,462,30,0,1,3,125.62,222.0,new,experiments/results/TL_2_2/labels_2h/100.onnx,TL,3,3,9132.877201795578,5000000,1e-05,20,0.1,20,True,10000,True,10000,True,True,100
