@@ -1,0 +1,22 @@
+,expanded transitions,synthesis time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,target q,reset target freq,experience replay,buffer size,ra feature,labels,idx
+0,,,new,experiments/results/CM_2_2/labels_2h_40/0.onnx,CM,3,3,7.068803310394287,0,1e-05,40,0.1,20,True,10000,True,10000,True,True,0
+1,,,new,experiments/results/CM_2_2/labels_2h_40/5.onnx,CM,3,3,3465.1677474975586,250000,1e-05,40,0.1,20,True,10000,True,10000,True,True,5
+2,,,new,experiments/results/CM_2_2/labels_2h_40/10.onnx,CM,3,3,5628.404896020889,500000,1e-05,40,0.1,20,True,10000,True,10000,True,True,10
+3,,,new,experiments/results/CM_2_2/labels_2h_40/15.onnx,CM,3,3,7476.769665002823,750000,1e-05,40,0.1,20,True,10000,True,10000,True,True,15
+4,,,new,experiments/results/CM_2_2/labels_2h_40/20.onnx,CM,3,3,9612.161903858185,1000000,1e-05,40,0.1,20,True,10000,True,10000,True,True,20
+5,,,new,experiments/results/CM_2_2/labels_2h_40/25.onnx,CM,3,3,11812.333893299103,1250000,1e-05,40,0.1,20,True,10000,True,10000,True,True,25
+6,,,new,experiments/results/CM_2_2/labels_2h_40/30.onnx,CM,3,3,13752.048354625702,1500000,1e-05,40,0.1,20,True,10000,True,10000,True,True,30
+7,,,new,experiments/results/CM_2_2/labels_2h_40/35.onnx,CM,3,3,15687.404776334763,1750000,1e-05,40,0.1,20,True,10000,True,10000,True,True,35
+8,,,new,experiments/results/CM_2_2/labels_2h_40/40.onnx,CM,3,3,17636.603971481323,2000000,1e-05,40,0.1,20,True,10000,True,10000,True,True,40
+9,,,new,experiments/results/CM_2_2/labels_2h_40/45.onnx,CM,3,3,19715.424417734146,2250000,1e-05,40,0.1,20,True,10000,True,10000,True,True,45
+10,,,new,experiments/results/CM_2_2/labels_2h_40/50.onnx,CM,3,3,21692.12730908394,2500000,1e-05,40,0.1,20,True,10000,True,10000,True,True,50
+11,,,new,experiments/results/CM_2_2/labels_2h_40/55.onnx,CM,3,3,23671.38903260231,2750000,1e-05,40,0.1,20,True,10000,True,10000,True,True,55
+12,,,new,experiments/results/CM_2_2/labels_2h_40/60.onnx,CM,3,3,25670.953585386276,3000000,1e-05,40,0.1,20,True,10000,True,10000,True,True,60
+13,,,new,experiments/results/CM_2_2/labels_2h_40/65.onnx,CM,3,3,27461.87810587883,3250000,1e-05,40,0.1,20,True,10000,True,10000,True,True,65
+14,,,new,experiments/results/CM_2_2/labels_2h_40/70.onnx,CM,3,3,29684.520701169968,3500000,1e-05,40,0.1,20,True,10000,True,10000,True,True,70
+15,,,new,experiments/results/CM_2_2/labels_2h_40/75.onnx,CM,3,3,31572.760089874268,3750000,1e-05,40,0.1,20,True,10000,True,10000,True,True,75
+16,,,new,experiments/results/CM_2_2/labels_2h_40/80.onnx,CM,3,3,33732.596412181854,4000000,1e-05,40,0.1,20,True,10000,True,10000,True,True,80
+17,,,new,experiments/results/CM_2_2/labels_2h_40/85.onnx,CM,3,3,35811.24350643158,4250000,1e-05,40,0.1,20,True,10000,True,10000,True,True,85
+18,,,new,experiments/results/CM_2_2/labels_2h_40/90.onnx,CM,3,3,37737.40799021721,4500000,1e-05,40,0.1,20,True,10000,True,10000,True,True,90
+19,,,new,experiments/results/CM_2_2/labels_2h_40/95.onnx,CM,3,3,39887.320607185364,4750000,1e-05,40,0.1,20,True,10000,True,10000,True,True,95
+20,,,new,experiments/results/CM_2_2/labels_2h_40/100.onnx,CM,3,3,42060.10315299034,5000000,1e-05,40,0.1,20,True,10000,True,10000,True,True,100
