@@ -100,12 +100,12 @@ def eval_agent_q(path, random_states):
     return np.mean([np.max(sess.run(None, {'X': s})) for s in random_states])
 
 
-def save_all_random_states():
+def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, 2, 2, True, True))
+        states = get_random_states(DCSSolverEnv(problem, n, k, True, True))
 
-        file = "experiments/results/" + filename([problem, 2, 2]) + "/states_labels.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_labels.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)
@@ -143,9 +143,9 @@ def save_models_q_dfs(file, states_file, last=False):
 
 
 if __name__ == "__main__":
-    save_models_q_dfs("labels_2h", "states_labels.pkl", last=False)
-    save_models_q_dfs("labels_2h", "states_labels.pkl", last=True)
-    #save_all_random_states()
+    #save_models_q_dfs("labels_2h", "states_labels.pkl", last=False)
+    #save_models_q_dfs("labels_2h", "states_labels.pkl", last=True)
+    save_all_random_states(3, 3)
 
     #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
     #features_search(DCSSolverEnv("DP", 2, 2, True), 100000)

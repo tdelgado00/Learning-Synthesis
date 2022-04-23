@@ -31,23 +31,21 @@ agent_idx = {
 
 if __name__ == "__main__":
     max_steps = 5000000
-    copy_freq = 50000
+    copy_freq = 10000
     buffer_size = 10000
     batch_size = 10
     reset_target = 10000
     target = True
     replay = True
 
-    file = "labels_2h_40"
+    file = "5mill"
 
-    n, k = 2, 2
-    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    n, k = 3, 3
+    for problem in ["AT"]:
         train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True,
                     fixed_q_target=target, reset_target_freq=reset_target,
                     experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
                     labels=True,
                     nnsize=40,
                     verbose=False)
-        test_agents(problem, n, k, problem, 2, 2, file)
-        test_agents(problem, n, k, problem, 3, 3, file, freq=5)
         test_agents_q(problem, n, k, file, "states_labels.pkl")
