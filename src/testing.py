@@ -5,9 +5,9 @@ import numpy as np
 
 def test_java_and_python_coherent():
     print("Testing java and python coherent")
-    for problem, n, k, agent_dir, agent_idx in [("AT", 1, 1, "10m_0", 95)]:#, ("AT", 2, 2, "10m_0", 95)]:
-        result, debug_java = test_agent(agent_path(problem, 2, 2, "testing_base_features", 1), problem, n, k, debug=True)
-        result, debug_python = test_onnx(agent_path(problem, 2, 2, "testing_base_features", 1), problem, n, k, debug=True)
+    for problem, n, k, agent_dir, agent_idx in [("AT", 2, 2, "testing", 1)]:
+        result, debug_java = test_agent(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
+        result, debug_python = test_onnx(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
         assert len(debug_java) == len(debug_python)
         for i in range(len(debug_java)):
             if not np.allclose(np.round(debug_python[i]["features"], 2), debug_java[i]["features"]):
@@ -20,15 +20,10 @@ def test_java_and_python_coherent():
                 print("Java", debug_java[i]["values"])
 
 
-def test_agent_no_ra():
-    print("Testing agent without RA")
-    train_agent("AT", 2, 2, "testing_base_features", seconds=5, copy_freq=100, ra_feature=False)
-    _, _ = test_agent(agent_path("AT", 2, 2, "testing_base_features", 1), "AT", 1, 2, debug=False)
-
-def test_agent_ra():
-    print("Testing agent with RA")
-    train_agent("AT", 2, 2, "testing_ra", seconds=5, copy_freq=100, ra_feature=True)
-    _, _ = test_agent(agent_path("AT", 2, 2, "testing_ra", 1), "AT", 1, 2, debug=False)
+def test_train_agent():
+    print("Training agent")
+    train_agent("AT", 2, 2, "testing", seconds=5, copy_freq=200, ra_feature=True, labels=True, experience_replay=True, fixed_q_target=True)
+    _, _ = test_agent(agent_path("AT", 2, 2, "testing", 1), "AT", 1, 2, debug=False)
 
 
 def test_target_and_buffer():
@@ -47,10 +42,9 @@ def test_target_and_buffer():
 
 
 def tests():
-    test_agent_ra()
-    test_agent_no_ra()
+    test_train_agent()
     test_java_and_python_coherent()
 
 
 if __name__ == '__main__':
-    test_target_and_buffer()
+    tests()

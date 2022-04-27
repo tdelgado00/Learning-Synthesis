@@ -94,7 +94,7 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
     with open(path[:-5] + ".json", "r") as f:
         info = json.load(f)
 
-    env = DCSSolverEnv(problem, n, k, info["ra feature"])
+    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"])
 
     agent = onnx.load(path)
 
@@ -136,10 +136,10 @@ def parse_java_debug(debug):
             line = debug[i+1+j].split(" ")
             actions.append(line[0])
             features.append([float(x) for x in line[1:nfeatures+1]])
-        values = [float(x) for x in debug[i+1+n].split(" ")[:n]]
-        selected = float(debug[i+2+n])
+        values = [float(x) for x in debug[i+1+n:i+1+2*n]]
+        selected = float(debug[i+1+2*n])
         steps.append({"frontier size": n, "nfeatures": nfeatures, "actions": actions, "features": features, "values": values, "selected": selected})
-        i += n + 3
+        i += n*2 + 2
     return steps
 
 
