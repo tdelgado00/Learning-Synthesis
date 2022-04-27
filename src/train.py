@@ -1,5 +1,6 @@
 from agent import Agent
 from environment import DCSSolverEnv
+from modelEvaluation import save_model_q_dfs
 from test import test_agents, test_agents_q
 from util import *
 
@@ -31,21 +32,27 @@ agent_idx = {
 
 if __name__ == "__main__":
     max_steps = 5000000
-    copy_freq = 10000
+    copy_freq = 50000
     buffer_size = 10000
     batch_size = 10
     reset_target = 10000
     target = True
     replay = True
+    nnsize = 20
+    eta = 1e-5
+    ra_feature = True
 
-    file = "5mill"
-
-    n, k = 3, 3
-    for problem in ["AT"]:
-        train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True,
-                    fixed_q_target=target, reset_target_freq=reset_target,
-                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                    labels=True,
-                    nnsize=40,
-                    verbose=False)
-        test_agents_q(problem, n, k, file, "states_labels.pkl")
+    n, k = 2, 2
+    for labels, file in [(False, "5mill_RA"), (True, "5mill_L")]:
+        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+            train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
+                        fixed_q_target=target, reset_target_freq=reset_target,
+                        experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                        labels=labels, ra_feature=ra_feature,
+                        nnsize=nnsize, eta=eta,
+                        verbose=False)
+            test_agents(problem, n, k, problem, 2, 2, file)
+            test_agents(problem, n, k, problem, 3, 3, file, freq=5)
+            test_agents_q(problem, n, k, file, "states_labels.pkl")
+            save_model_q_dfs(problem, n, k, file, "states_labels.pkl", last=True)
+            save_model_q_dfs(problem, n, k, file, "states_labels.pkl", last=False)

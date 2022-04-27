@@ -125,27 +125,22 @@ def read_random_states(problem, n, k, file, info):
         return states
 
 
-def save_models_q_dfs(file, states_file, last=False):
+def save_model_q_dfs(problem, n, k, file, states_file, last=False):
+    problem2, n2, k2 = problem, 3, 3
+    df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/" + filename(
+        [problem2, n2, k2]) + ".csv")
+    idx = best_agent_idx(df) if not last else last_agent_idx(df)
 
-    problems = ["AT", "TA", "TL", "DP", "BW", "CM"]
-    for problem, n, k in [(x, 2, 2) for x in problems]:
-        problem2, n2, k2 = problem, 3, 3
-        df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/" + filename(
-            [problem2, n2, k2]) + ".csv")
-        idx = best_agent_idx(df) if not last else last_agent_idx(df)
+    random_states = read_random_states(problem, n, k, states_file, {"ra feature": True, "labels": True})
 
-        random_states = read_random_states(problem, n, k, states_file, {"ra feature": True, "labels": True})
+    df_ra = get_agent_q_df(problem, agent_path(problem, n, k, file, idx), random_states)
 
-        df_ra = get_agent_q_df(problem, agent_path(problem, n, k, file, idx), random_states)
-
-        t = "last" if last else "best"
-        df_ra.to_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/"+t+"_"+str(idx)+".csv")
+    t = "last" if last else "best"
+    df_ra.to_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/"+t+"_"+str(idx)+".csv")
 
 
 if __name__ == "__main__":
-    #save_models_q_dfs("labels_2h", "states_labels.pkl", last=False)
-    #save_models_q_dfs("labels_2h", "states_labels.pkl", last=True)
-    save_all_random_states(3, 3)
+    save_all_random_states(2, 2)
 
     #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
     #features_search(DCSSolverEnv("DP", 2, 2, True), 100000)

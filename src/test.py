@@ -311,24 +311,8 @@ def get_problem_labels(problem, eps=5):
 
     return {simplify(l) for l in actions}
 
+
 if __name__ == "__main__":
-    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    #    test_random_exp(problem, 2, 2, 200, "random.csv")
-    #    test_random_exp(problem, 3, 3, 20, "random.csv")
-
-    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    #    n, k = 2, 2
-    #    print(problem)
-    #    print(test_heuristic_python(problem, n, k, ra_feature_heuristic, verbose=False)[0]["expanded transitions"])
-    #    print(test_ra(problem, n, k)[0]["expanded transitions"])
-
-    #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-    #    test_all_agent(problem, "TB_5mill", 15, timeout="10m")
-
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        print(problem)
-        labels = get_problem_labels(problem)
-        print(labels)
-        with open("labels/"+problem+".txt", "w") as f:
-            for l in labels:
-                f.write(l+"\n")
+        test_all_agent(problem, "5mill_RA", 15, timeout="10m")
+        test_all_agent(problem, "5mill_L", 15, timeout="10m")
