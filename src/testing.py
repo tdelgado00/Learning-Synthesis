@@ -6,18 +6,22 @@ import numpy as np
 def test_java_and_python_coherent():
     print("Testing java and python coherent")
     for problem, n, k, agent_dir, agent_idx in [("AT", 2, 2, "testing", 1)]:
-        result, debug_java = test_agent(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
-        result, debug_python = test_onnx(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
-        assert len(debug_java) == len(debug_python)
-        for i in range(len(debug_java)):
-            if not np.allclose(np.round(debug_python[i]["features"], 2), debug_java[i]["features"]):
-                print(i)
-                print("Python", debug_python[i]["features"])
-                print("Java", debug_java[i]["features"])
-            if not np.allclose(debug_python[i]["values"], debug_java[i]["values"]):
-                print(i)
-                print("Python", debug_python[i]["values"])
-                print("Java", debug_java[i]["values"])
+        for test in range(10):
+            print("Test", test)
+            result, debug_java = test_agent(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
+            result, debug_python = test_onnx(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
+            assert len(debug_java) == len(debug_python)
+            for i in range(len(debug_java)):
+                assert len(debug_python[i]["features"]) == len(debug_java[i]["features"])
+                for j in range(len(debug_python[i]["features"])):
+                    if not np.allclose(debug_python[i]["features"][j], debug_java[i]["features"][j]):
+                        print(i, j, "Features are different")
+                        print("Python", list(debug_python[i]["features"][j]))
+                        print("Java", debug_java[i]["features"][j])
+                    if not np.allclose(debug_python[i]["values"][j], debug_java[i]["values"][j]):
+                        print(i, j, "Values are different")
+                        print("Python", list(debug_python[i]["values"][j]))
+                        print("Java", debug_java[i]["values"][j])
 
 
 def test_train_agent():

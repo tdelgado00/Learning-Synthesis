@@ -84,7 +84,6 @@ class Agent:
                 self.reset_target(env.nfeatures)
 
             steps += 1
-            print(seconds, time.time() - training_start - saving_time)
             if seconds is not None and time.time() - training_start - saving_time > seconds:
                 break
 
