@@ -1,0 +1,22 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,target q,reset target freq,experience replay,buffer size,ra feature,labels,idx
+0,2803,2259,7159,5636,15909,2952,71,22,356,249.45,6646.0,new,experiments/results/DP_2_2/5mill_L/0.onnx,DP,3,3,2.111447811126709,0,1e-05,20,0.1,21,True,10000,True,10000,True,True,0
+1,1293,297,2305,540,4290,208,3,318,8,118.78,3628.0,new,experiments/results/DP_2_2/5mill_L/5.onnx,DP,3,3,444.163081407547,250000,1e-05,20,0.1,21,True,10000,True,10000,True,True,5
+2,1190,761,2391,1569,2512,68,15,697,131,30.87,2036.0,new,experiments/results/DP_2_2/5mill_L/10.onnx,DP,3,3,870.4030799865723,500000,1e-05,20,0.1,21,True,10000,True,10000,True,True,10
+3,152,115,272,215,398,83,0,7,1,55.79,127.0,new,experiments/results/DP_2_2/5mill_L/15.onnx,DP,3,3,1295.9841327667236,750000,1e-05,20,0.1,21,True,10000,True,10000,True,True,15
+4,1003,129,1813,230,2637,304,6,21,0,217.06,2003.0,new,experiments/results/DP_2_2/5mill_L/20.onnx,DP,3,3,1727.4102702140808,1000000,1e-05,20,0.1,21,True,10000,True,10000,True,True,20
+5,515,77,774,125,859,21,4,34,0,153.72,569.0,new,experiments/results/DP_2_2/5mill_L/25.onnx,DP,3,3,2155.794536590576,1250000,1e-05,20,0.1,21,True,10000,True,10000,True,True,25
+6,2216,239,3814,431,8342,704,14,21,80,484.14,6411.0,new,experiments/results/DP_2_2/5mill_L/30.onnx,DP,3,3,2581.237237215042,1500000,1e-05,20,0.1,21,True,10000,True,10000,True,True,30
+7,2725,158,5396,284,18047,1313,22,3,93,658.39,14028.0,new,experiments/results/DP_2_2/5mill_L/35.onnx,DP,3,3,3009.250659227371,1750000,1e-05,20,0.1,21,True,10000,True,10000,True,True,35
+8,1718,238,3340,442,6988,838,6,3,68,438.13,4808.0,new,experiments/results/DP_2_2/5mill_L/40.onnx,DP,3,3,3439.3254063129425,2000000,1e-05,20,0.1,21,True,10000,True,10000,True,True,40
+9,790,205,1293,351,1983,96,9,22,0,188.63,1457.0,new,experiments/results/DP_2_2/5mill_L/45.onnx,DP,3,3,3868.4128608703613,2250000,1e-05,20,0.1,21,True,10000,True,10000,True,True,45
+10,2252,149,4458,267,11995,1393,9,3,176,128.79,7764.0,new,experiments/results/DP_2_2/5mill_L/50.onnx,DP,3,3,4300.740211486816,2500000,1e-05,20,0.1,21,True,10000,True,10000,True,True,50
+11,1162,187,2004,301,3752,203,5,36,0,150.7,3088.0,new,experiments/results/DP_2_2/5mill_L/55.onnx,DP,3,3,4734.09051656723,2750000,1e-05,20,0.1,21,True,10000,True,10000,True,True,55
+12,2816,351,6991,766,24333,2469,9,3,286,203.13,14544.0,new,experiments/results/DP_2_2/5mill_L/60.onnx,DP,3,3,5164.262616157532,3000000,1e-05,20,0.1,21,True,10000,True,10000,True,True,60
+13,2808,409,6954,918,21795,2923,10,1,289,282.27,9880.0,new,experiments/results/DP_2_2/5mill_L/65.onnx,DP,3,3,5597.799344301224,3250000,1e-05,20,0.1,21,True,10000,True,10000,True,True,65
+14,2613,385,6341,826,17380,2089,8,3,255,62.46,8707.0,new,experiments/results/DP_2_2/5mill_L/70.onnx,DP,3,3,6027.216222524643,3500000,1e-05,20,0.1,21,True,10000,True,10000,True,True,70
+15,2575,201,5607,392,16746,1784,4,1,245,154.67,10034.0,new,experiments/results/DP_2_2/5mill_L/75.onnx,DP,3,3,6458.48121547699,3750000,1e-05,20,0.1,21,True,10000,True,10000,True,True,75
+16,2715,304,6463,668,18794,2390,8,1,160,611.83,9595.0,new,experiments/results/DP_2_2/5mill_L/80.onnx,DP,3,3,6886.753112316132,4000000,1e-05,20,0.1,21,True,10000,True,10000,True,True,80
+17,2649,322,6448,678,20243,2347,1,1,227,587.59,11870.0,new,experiments/results/DP_2_2/5mill_L/85.onnx,DP,3,3,7315.535940885544,4250000,1e-05,20,0.1,21,True,10000,True,10000,True,True,85
+18,2731,415,6679,909,21433,2687,1,1,237,267.16,10959.0,new,experiments/results/DP_2_2/5mill_L/90.onnx,DP,3,3,7749.598963022232,4500000,1e-05,20,0.1,21,True,10000,True,10000,True,True,90
+19,2819,480,7121,1158,21153,2874,3,1,205,535.16,10802.0,new,experiments/results/DP_2_2/5mill_L/95.onnx,DP,3,3,8180.310409069061,4750000,1e-05,20,0.1,21,True,10000,True,10000,True,True,95
+20,2807,375,6649,804,20524,2642,5,1,181,660.04,11533.0,new,experiments/results/DP_2_2/5mill_L/100.onnx,DP,3,3,8611.17706489563,5000000,1e-05,20,0.1,21,True,10000,True,10000,True,True,100
