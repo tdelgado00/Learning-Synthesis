@@ -8,14 +8,14 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k, ra_feature=True, labels=False):
+    def __init__(self, problem, n, k, ra_feature=True, labels=False, context_features=False, state_labels=False):
         super(DCSSolverEnv, self).__init__()
         self.problem = problem
         self.n = n
         self.k = k
         self.problemFilename = filename([problem, n, k])
 
-        self.javaEnv = DCSForPython("", "labels/"+problem+".txt" if labels else "mock", ra_feature)
+        self.javaEnv = DCSForPython("", "labels/"+problem+".txt" if labels else "mock", ra_feature, context_features, state_labels)
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
         self.featuresBuffer = jpype.nio.convertToDirectBuffer(bytearray(self.nfeatures * 100000 * 4))
         self.featuresBuffer = self.featuresBuffer.asFloatBuffer()

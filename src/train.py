@@ -33,18 +33,21 @@ if __name__ == "__main__":
     nnsize = 20
     eta = 1e-5
     ra_feature = True
+    labels = True
+    file = "5mill_C"
 
     n, k = 2, 2
-    for labels, file in [(False, "5mill_RA"), (True, "5mill_L")]:
-        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            #train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
-            #            fixed_q_target=target, reset_target_freq=reset_target,
-            #            experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-            #            labels=labels, ra_feature=ra_feature,
-            #            nnsize=nnsize, eta=eta,
-            #            verbose=False)
-            #test_agents(problem, n, k, problem, 2, 2, file)
-            #test_agents(problem, n, k, problem, 3, 3, file, freq=5)
-            test_agents_q(problem, n, k, file, "states_labels.pkl")
-            #save_model_q_dfs(problem, n, k, file, "states_labels.pkl", last=True)
-            #save_model_q_dfs(problem, n, k, file, "states_labels.pkl", last=False)
+    for problem in ["AT", "DP"]:
+        train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
+                    fixed_q_target=target, reset_target_freq=reset_target,
+                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                    labels=labels, ra_feature=ra_feature,
+                    nnsize=nnsize, eta=eta,
+                    verbose=False)
+        test_agents(problem, n, k, problem, 2, 2, file)
+        test_agents(problem, n, k, problem, 2, 3, file)
+        test_agents(problem, n, k, problem, 3, 2, file)
+        test_agents(problem, n, k, problem, 3, 3, file)
+        # test_agents_q(problem, n, k, file, "states_context.pkl")
+        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
+        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)

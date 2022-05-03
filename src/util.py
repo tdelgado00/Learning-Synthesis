@@ -22,6 +22,9 @@ def feature_names(info, labels=None):
             labels = list(f)
         labels = [l[:-1] for l in labels]
         features = labels + features
+
+    if info["context features"]:
+        features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]+features
     
     if info["ra feature"]:
         features = ["ra type", "1 / ra distance", "in open"]+features
