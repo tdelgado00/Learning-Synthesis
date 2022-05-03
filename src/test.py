@@ -48,6 +48,8 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
 
     if path != "mock" and uses_labels(path):
         command += ["-l", "labels/"+problem+".txt"]
+    else:
+        command += ["-l", "mock"]
 
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -111,7 +113,7 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
         values = sess.run(None, {'X': obs})
         action = np.argmax(values)
         if debug is not None:
-            debug.append({"features": [[f for f in a] for a in obs], "values": [v[0] for v in values[0]]})
+            debug.append({"features": [[f for f in a] for a in obs], "values": [v[0] for v in values[0]], "selected": action})
         obs, reward, done, info = env.step(action)
 
     return (info if time.time() - start_time < timeout else {
@@ -217,6 +219,20 @@ def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/" + name + ".csv")
 
 
+def test_all_random(problem, up_to, timeout="10m", name="all_random"):
+    df = []
+    solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+    for n in range(up_to):
+        for k in range(up_to):
+            if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
+                print("Testing random with", problem, n+1, k+1)
+                df.append(test_agent("mock", problem, n + 1, k + 1, timeout=timeout)[0])
+                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                    solved[n][k] = True
+
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + name + ".csv")
+
 def test_heuristic_python(problem, n, k, heuristic, verbose=False):
     env = DCSSolverEnv(problem, n, k, True)
 
@@ -313,6 +329,10 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        test_all_agent(problem, "5mill_RA", 15, timeout="10m")
-        test_all_agent(problem, "5mill_L", 15, timeout="10m")
+    print(test_heuristic_python("DP", 3, 3, ra_feature_heuristic))
+    #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")
+    #    test_all_agent(problem, "5mill_L", 15, timeout="10m")
+
+    for problem in ["AT"]:#, "BW", "CM", "DP", "TA", "TL"]:
+        test_all_random(problem, 15, "1s")

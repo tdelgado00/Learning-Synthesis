@@ -17,8 +17,8 @@ class DCSSolverEnv:
 
         self.javaEnv = DCSForPython("", "labels/"+problem+".txt" if labels else "mock", ra_feature)
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
-        self.featuresBuffer = jpype.nio.convertToDirectBuffer(
-            bytearray(self.nfeatures * 100000 * 4)).asFloatBuffer()
+        self.featuresBuffer = jpype.nio.convertToDirectBuffer(bytearray(self.nfeatures * 100000 * 4))
+        self.featuresBuffer = self.featuresBuffer.asFloatBuffer()
         self.javaEnv.setFeaturesBuffer(self.featuresBuffer)
 
     def get_actions(self):

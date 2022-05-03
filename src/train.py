@@ -22,14 +22,6 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
     return agent
 
 
-agent_idx = {
-    "AT": 95,
-    "TA": 105,
-    "TL": 105,
-    "BW": 95,
-    "DP": 130
-}
-
 if __name__ == "__main__":
     max_steps = 5000000
     copy_freq = 50000
