@@ -7,8 +7,8 @@ from util import *
 
 def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
-                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, verbose=False):
-    env = DCSSolverEnv(problem, n, k, ra_feature, labels)
+                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False, verbose=False):
+    env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features)
     print("Number of features:", env.nfeatures)
 
     dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
@@ -16,7 +16,7 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
 
-    agent.train(env, {"ra feature": ra_feature, "labels": labels},
+    agent.train(env, {"ra feature": ra_feature, "labels": labels, "context features": context_features},
                 seconds=seconds, max_steps=max_steps, copy_freq=copy_freq)
 
     return agent
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     eta = 1e-5
     ra_feature = True
     labels = True
+    context_features = True
     file = "5mill_C"
 
     n, k = 2, 2
@@ -43,6 +44,7 @@ if __name__ == "__main__":
                     experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
                     labels=labels, ra_feature=ra_feature,
                     nnsize=nnsize, eta=eta,
+                    context_features=context_features,
                     verbose=False)
         test_agents(problem, n, k, problem, 2, 2, file)
         test_agents(problem, n, k, problem, 2, 3, file)

@@ -39,7 +39,8 @@ def test_target_and_buffer():
     batch_size = 3
     reset_target = 10
 
-    train_agent(problem, n, k, None, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True,
+    train_agent(problem, n, k, None, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True, labels=True,
+                context_features=True,
                 fixed_q_target=True, reset_target_freq=reset_target,
                 experience_replay=True, buffer_size=buffer_size, batch_size=batch_size, verbose=True)
     #test_agents(problem, n, k, problem, n, k, file)
@@ -47,7 +48,7 @@ def test_target_and_buffer():
 
 
 def tests():
-    #test_train_agent()
+    test_train_agent()
     test_java_and_python_coherent()
 
 
