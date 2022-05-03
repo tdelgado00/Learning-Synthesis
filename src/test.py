@@ -48,9 +48,11 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
 
     if path != "mock" and uses_labels(path):
         command += ["-l", "labels/"+problem+".txt"]
-
+    else:
+        command += ["-l", "mock"]
+    #print(command)
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
+    
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
     else:
@@ -313,6 +315,6 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    for problem in ["DP", "TA", "TL"]:
         test_all_agent(problem, "5mill_RA", 15, timeout="10m")
         test_all_agent(problem, "5mill_L", 15, timeout="10m")

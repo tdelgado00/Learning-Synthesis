@@ -20,7 +20,7 @@ def test_java_and_python_coherent():
                         print("Java", debug_java[i]["features"][j])
                     if not np.allclose(debug_python[i]["values"][j], debug_java[i]["values"][j]):
                         print(i, j, "Values are different")
-                        print("Python", list(debug_python[i]["values"][j]))
+                        print("Python", debug_python[i]["values"][j])
                         print("Java", debug_java[i]["values"][j])
 
 
@@ -46,7 +46,7 @@ def test_target_and_buffer():
 
 
 def tests():
-    test_train_agent()
+    #test_train_agent()
     test_java_and_python_coherent()
 
 
