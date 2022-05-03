@@ -52,6 +52,25 @@ def features_search(env, total):
         steps += 1
     print("Total:", count)
 
+
+def frontier_size_stats(problem, n, k, eps, ra_feature):
+    env = DCSSolverEnv(problem, n, k, ra_feature, False)
+    df = []
+    for i in range(eps):
+        obs = env.reset()
+        done = False
+        steps = 0
+        while not done:
+            df.append({"step": steps, "ep": i+1, "frontier size": len(obs)})
+            action = np.random.randint(len(obs))
+
+            obs2, reward, done, info = env.step(action)
+
+            obs = obs2
+            steps += 1
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/"+filename([problem, n, k])+"/frontiers"+("RA" if ra_feature else "")+".csv")
+
 def get_random_states(env, total=20000, sampled=2000):
     idxs = np.random.choice(range(total), sampled)
 
@@ -140,7 +159,13 @@ def save_model_q_dfs(problem, n, k, file, states_file, last=False):
 
 
 if __name__ == "__main__":
-    save_all_random_states(2, 2)
+    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+        print(problem)
+        if problem != "CM":
+            frontier_size_stats(problem, 3, 3, 5, True)
+            frontier_size_stats(problem, 3, 3, 5, False)
+
+    #save_all_random_states(2, 2)
 
     #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
     #features_search(DCSSolverEnv("DP", 2, 2, True), 100000)
