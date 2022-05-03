@@ -47,11 +47,9 @@ def test_target_and_buffer():
 
 
 def tests():
-    test_train_agent()
+    #test_train_agent()
     test_java_and_python_coherent()
 
 
 if __name__ == '__main__':
-    #for t in range(20):
-    #    tests()
-    test_java_and_python_coherent()
+    tests()

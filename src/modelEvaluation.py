@@ -137,9 +137,9 @@ def read_random_states(problem, n, k, file, info):
     if not info["ra feature"] and not info["labels"]:
         return [s[:, -12:] for s in states]
     elif info["ra feature"] and not info["labels"]:
-        return [s[:, :2]+s[:, -12:] for s in states]
+        return [s[:, list(range(3))+list(range(-12, 0))] for s in states]
     elif not info["ra feature"] and info["labels"]:
-        return [s[2:] for s in states]
+        return [s[3:] for s in states]
     else:
         return states
 
@@ -149,10 +149,10 @@ def save_model_q_dfs(problem, n, k, file, states_file, last=False):
     df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/" + filename(
         [problem2, n2, k2]) + ".csv")
     idx = best_agent_idx(df) if not last else last_agent_idx(df)
+    path = agent_path(problem, n, k, file, idx)
+    random_states = read_random_states(problem, n, k, states_file, get_agent_info(path))
 
-    random_states = read_random_states(problem, n, k, states_file, {"ra feature": True, "labels": True})
-
-    df_ra = get_agent_q_df(problem, agent_path(problem, n, k, file, idx), random_states)
+    df_ra = get_agent_q_df(problem, path, random_states)
 
     t = "last" if last else "best"
     df_ra.to_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/"+t+"_"+str(idx)+".csv")

@@ -50,9 +50,9 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
         command += ["-l", "labels/"+problem+".txt"]
     else:
         command += ["-l", "mock"]
-
+    
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
+    
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
     else:
@@ -329,10 +329,14 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == "__main__":
-    print(test_heuristic_python("DP", 3, 3, ra_feature_heuristic))
+    #for problem in ["DP", "TA", "TL"]:
+    #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")
+    #    test_all_agent(problem, "5mill_L", 15, timeout="10m")
+    
+    #print(test_heuristic_python("DP", 3, 3, ra_feature_heuristic))
     #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
     #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")
     #    test_all_agent(problem, "5mill_L", 15, timeout="10m")
 
-    for problem in ["AT"]:#, "BW", "CM", "DP", "TA", "TL"]:
-        test_all_random(problem, 15, "1s")
+    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+        test_all_random(problem, 15, "10m")
