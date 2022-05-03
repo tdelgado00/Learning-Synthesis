@@ -122,9 +122,9 @@ def eval_agent_q(path, random_states):
 def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, n, k, True, True))
+        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, False))
 
-        file = "experiments/results/" + filename([problem, n, k]) + "/states_labels.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_context.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)
@@ -159,12 +159,12 @@ def save_model_q_dfs(problem, n, k, file, states_file, last=False):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-        print(problem)
-        if problem != "CM":
-            frontier_size_stats(problem, 3, 3, 5, True)
-            frontier_size_stats(problem, 3, 3, 5, False)
-
+    #for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+    #    print(problem)
+    #    if problem != "CM":
+    #        frontier_size_stats(problem, 3, 3, 5, True)
+    #        frontier_size_stats(problem, 3, 3, 5, False)
+    save_all_random_states(2, 2)
     #save_all_random_states(2, 2)
 
     #features_search(DCSSolverEnv("TA", 2, 2, True), 100000)
