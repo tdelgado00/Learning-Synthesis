@@ -203,9 +203,8 @@ def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
 
 
 def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
-    df_3_3 = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/" + filename(
-        [problem, 3, 3]) + ".csv")
-    idx_agent = best_agent_idx(df_3_3)
+    idx_agent = best_agent_idx(problem, 2, 2, file)
+
     path = agent_path(problem, 2, 2, file, idx_agent)
 
     df = []
@@ -332,14 +331,13 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == "__main__":
-    #for problem in ["DP", "TA", "TL"]:
-    #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")
-    #    test_all_agent(problem, "5mill_L", 15, timeout="10m")
+    for problem in ["AT", "DP"]:
+        test_all_agent(problem, "5mill_C", 15, timeout="10m")
     
     #print(test_heuristic_python("DP", 3, 3, ra_feature_heuristic))
     #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
     #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")
     #    test_all_agent(problem, "5mill_L", 15, timeout="10m")
 
-    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        test_all_random(problem, 15, "10m")
+    #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    #    test_all_random(problem, 15, "10m")

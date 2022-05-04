@@ -1,5 +1,9 @@
+import os
+
 import numpy as np
 import json
+
+import pandas as pd
 
 
 def feature_names(info, labels=None):
@@ -47,8 +51,30 @@ def filename(parameters):
     return "_".join(list(map(str, parameters)))
 
 
-def best_agent_idx(df):
-    return df.loc[df["expanded transitions"] == df["expanded transitions"].min()]["idx"].iloc[0]
+def best_agent_idx(problem, train_n, train_k, file):
+    path = "experiments/results/" + filename([problem, train_n, train_k]) + "/" + file + "/"
+    df = pd.read_csv(path + problem+"_3_3.csv")
+    return df.loc[df["expanded transitions"] == df["expanded transitions"].min()]["idx"].iloc[-1]
+
+    #ranks = [[] for _ in range(101)]
+    #for f in os.listdir(path):
+    #    if f.endswith(".csv") and len(f.split("_")) == 3:
+    #        df = pd.read_csv(path + f)
+    #        n, k = tuple([int(x) for x in f[:-4].split("_")[1:]])
+    #        if n != train_n or k != train_k:
+    #            models = []
+    #            for idx, row in df.iterrows():
+    #                if row["idx"] == 70:
+    #                    print("Best dp", row["expanded transitions"], n, k)
+    #                models.append((row["expanded transitions"], row["idx"]))
+    #            models = sorted(models)
+    #            for i in range(len(models)):
+    #                ranks[models[i][1]].append(i+1)
+
+    #print(ranks)
+    #print(list(map(np.prod, ranks)))
+    #print(ranks[np.argmin(list(map(np.prod, ranks)))])
+    #return np.argmin(list(map(np.prod, ranks)))
 
 
 def last_agent_idx(df):
