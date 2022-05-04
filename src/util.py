@@ -60,6 +60,10 @@ def get_agent_info(path):
         info = json.load(f)
     return info
 
+def uses_context(path):
+    info = get_agent_info(path)
+    return "context features" in info.keys() and info["context features"]
+
 
 def uses_ra(path):
     info = get_agent_info(path)

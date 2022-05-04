@@ -50,6 +50,9 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
         command += ["-l", "labels/"+problem+".txt"]
     else:
         command += ["-l", "mock"]
+
+    if path != "mock" and uses_context(path):
+        command += ["-c"]
     
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     
