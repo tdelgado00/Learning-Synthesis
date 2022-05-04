@@ -101,19 +101,24 @@ def uses_labels(path):
     return "labels" in info.keys() and info["labels"]
 
 
+def indexOf(s, lines):
+    return list(map(lambda l: s in l, lines)).index(True)
+
+
 def read_results(lines):
+    i = indexOf("ExpandedStates", lines)
     results = {}
-    results["expanded states"] = int(lines[0].split(" ")[1])
-    results["used states"] = int(lines[1].split(" ")[1])
-    results["expanded transitions"] = int(lines[2].split(" ")[1])
-    results["used transitions"] = int(lines[3].split(" ")[1])
-    results["synthesis time(ms)"] = int(lines[4].split(" ")[3])
-    findNewLine = lines[5].split(" ")
+    results["expanded states"] = int(lines[i].split(" ")[1])
+    results["used states"] = int(lines[i+1].split(" ")[1])
+    results["expanded transitions"] = int(lines[i+2].split(" ")[1])
+    results["used transitions"] = int(lines[i+3].split(" ")[1])
+    results["synthesis time(ms)"] = int(lines[i+4].split(" ")[3])
+    findNewLine = lines[i+5].split(" ")
     results["findNewGoals"] = int(findNewLine[1][:-1])
     results["findNewErrors"] = int(findNewLine[3])
-    propagateLine = lines[6].split(" ")
+    propagateLine = lines[i+6].split(" ")
     results["propagateGoals"] = int(propagateLine[1][:-1])
     results["propagateErrors"] = int(propagateLine[3])
-    results["memory(mb)"] = float(lines[7].split(" ")[1])
-    results["heuristic time(ms)"] = float(lines[8].split(" ")[1]) if "heuristic" in lines[8] else np.nan
+    results["memory(mb)"] = float(lines[i+7].split(" ")[1])
+    results["heuristic time(ms)"] = float(lines[i+8].split(" ")[1]) if "heuristic" in lines[i+8] else np.nan
     return results

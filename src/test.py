@@ -12,9 +12,29 @@ from modelEvaluation import eval_agent_q, read_random_states
 from util import *
 
 
-def test_ra(problem, n, k, timeout="30m", old=False):
-    jar = "mtsaOld.jar" if old else "mtsa.jar"
-    command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", jar,
+def test_ra_nico(problem, n, k, timeout="30m"):
+    command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsaNico.jar",
+               "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.ReadyAbstractionHeuristic",
+               "-i", fsp_path(problem, n, k)]
+
+    proc = subprocess.run(command,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    if proc.returncode == 124:
+        results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
+    else:
+        results = read_results(proc.stdout.split("\n"))
+
+    results["algorithm"] = "RAsola"
+    results["heuristic"] = "r"
+    results["problem"] = problem
+    results["n"] = n
+    results["k"] = k
+    return results, None
+
+
+def test_ra(problem, n, k, timeout="30m"):
+    command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
                "ltsa.ui.LTSABatch", "-i", fsp_path(problem, n, k), "-c", "DirectedController", "-r"]
 
     proc = subprocess.run(command,
@@ -25,7 +45,7 @@ def test_ra(problem, n, k, timeout="30m", old=False):
     else:
         results = read_results(proc.stdout.split("\n"))
 
-    results["algorithm"] = "old" if old else "new"
+    results["algorithm"] = "OpenSet RA"
     results["heuristic"] = "r"
     results["problem"] = problem
     results["n"] = n
@@ -168,7 +188,6 @@ def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
     df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + filename([problem2, n2, k2]) + ".csv")
 
 
-
 def test_agents_q(problem, n, k, file, random_states_file, freq=1):
     df = []
 
@@ -186,19 +205,19 @@ def test_agents_q(problem, n, k, file, random_states_file, freq=1):
     df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + "q.csv")
 
 
-def test_all_ra(problem, up_to, old=False, timeout="10m", name="all_ra"):
+def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
         for k in range(up_to):
             if n == 0 or solved[n - 1][k] or k == 0 or solved[n][k - 1]:
-                print("Testing ra with", problem, n, k, "- Old:", old)
-                df.append(test_ra(problem, n + 1, k + 1, timeout=timeout, old=old)[0])
+                print("Testing ra with", problem, n, k)
+                df.append(func(problem, n + 1, k + 1, timeout=timeout)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    file = filename([name, up_to]) + (".csv" if not old else "_old.csv")
+    file = filename([name, up_to]) + ".csv"
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
 
@@ -331,13 +350,14 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == "__main__":
-    for problem in ["AT", "DP"]:
-        test_all_agent(problem, "5mill_C", 15, timeout="10m")
-    
+    #for problem in ["AT", "DP"]:
+    #    test_all_agent(problem, "5mill_C", 15, timeout="10m")
+
+
     #print(test_heuristic_python("DP", 3, 3, ra_feature_heuristic))
     #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
     #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")
     #    test_all_agent(problem, "5mill_L", 15, timeout="10m")
 
-    #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-    #    test_all_random(problem, 15, "10m")
+    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+        test_all_ra(problem, 15, timeout="10m", name="all_ra_sola", func=test_ra_nico)
