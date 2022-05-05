@@ -1,7 +1,7 @@
 from agent import Agent
 from environment import DCSSolverEnv
 from modelEvaluation import save_model_q_dfs
-from test import test_agents, test_agents_q, test_agent
+from test import test_agents, test_agents_q, test_agent, test_all_agent
 from util import *
 
 
@@ -24,7 +24,15 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
 
 def best_generalization_agent(problem, file):
     df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
-    # por cada idx necesito cantidad de elementos y suma de las expanded transitions, nada más.
+    max_idx = df["idx"].max()
+    solved = [0 for i in range(max_idx+1)]
+    expanded = [0 for i in range(max_idx+1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx+1)]
+    return max(perf, key=lambda t: (-t[0], t[1], t[2]))[2]
 
 
 def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
@@ -70,7 +78,7 @@ if __name__ == "__main__":
         #            nnsize=nnsize, eta=eta,
         #            context_features=context_features,
         #            verbose=False)
-        test_all_agents_generalization(problem, file, 15, "5s", 100)
+        #test_all_agents_generalization(problem, file, 15, "5s", 100)
         #test_agents(problem, n, k, problem, 2, 2, file)
         #test_agents(problem, n, k, problem, 2, 3, file)
         #test_agents(problem, n, k, problem, 3, 2, file)
@@ -78,3 +86,4 @@ if __name__ == "__main__":
         # test_agents_q(problem, n, k, file, "states_context.pkl")
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
+        test_all_agent(problem, "5mill_C", 15, timeout="10m")
