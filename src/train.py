@@ -1,7 +1,7 @@
 from agent import Agent
 from environment import DCSSolverEnv
 from modelEvaluation import save_model_q_dfs
-from test import test_agents, test_agents_q
+from test import test_agents, test_agents_q, test_agent
 from util import *
 
 
@@ -22,6 +22,30 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
     return agent
 
 
+def best_generalization_agent(problem, file):
+    df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
+    # por cada idx necesito cantidad de elementos y suma de las expanded transitions, nada más.
+
+
+def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
+    df = []
+    for i in range(max_idx + 1):
+        path = agent_path(problem, 2, 2, file, i)
+
+        solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+        for n in range(up_to):
+            for k in range(up_to):
+                if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
+                    print("Testing agent with", problem, n + 1, k + 1)
+                    df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
+                    df[-1]["idx"] = i
+                    if not np.isnan(df[-1]["synthesis time(ms)"]):
+                        solved[n][k] = True
+
+    df = pd.DataFrame(df)
+    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+
+
 if __name__ == "__main__":
     max_steps = 5000000
     copy_freq = 50000
@@ -39,17 +63,18 @@ if __name__ == "__main__":
 
     n, k = 2, 2
     for problem in ["AT", "DP"]:
-        train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
-                    fixed_q_target=target, reset_target_freq=reset_target,
-                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                    labels=labels, ra_feature=ra_feature,
-                    nnsize=nnsize, eta=eta,
-                    context_features=context_features,
-                    verbose=False)
-        test_agents(problem, n, k, problem, 2, 2, file)
-        test_agents(problem, n, k, problem, 2, 3, file)
-        test_agents(problem, n, k, problem, 3, 2, file)
-        test_agents(problem, n, k, problem, 3, 3, file)
+        #train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
+        #            fixed_q_target=target, reset_target_freq=reset_target,
+        #            experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+        #            labels=labels, ra_feature=ra_feature,
+        #            nnsize=nnsize, eta=eta,
+        #            context_features=context_features,
+        #            verbose=False)
+        test_all_agents_generalization(problem, file, 15, "5s", 100)
+        #test_agents(problem, n, k, problem, 2, 2, file)
+        #test_agents(problem, n, k, problem, 2, 3, file)
+        #test_agents(problem, n, k, problem, 3, 2, file)
+        #test_agents(problem, n, k, problem, 3, 3, file)
         # test_agents_q(problem, n, k, file, "states_context.pkl")
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
