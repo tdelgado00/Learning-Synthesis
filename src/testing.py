@@ -27,7 +27,8 @@ def test_java_and_python_coherent():
 
 def test_train_agent():
     print("Training agent")
-    train_agent("AT", 2, 2, "testing", seconds=3, copy_freq=100, ra_feature=True, labels=True, experience_replay=True, fixed_q_target=True)
+    train_agent("AT", 2, 2, "testing", seconds=3, copy_freq=100, ra_feature=True, labels=True, context_features=True,
+                state_labels=True, experience_replay=True, fixed_q_target=True)
     _, _ = test_agent(agent_path("AT", 2, 2, "testing", 1), "AT", 2, 2, debug=False)
 
 

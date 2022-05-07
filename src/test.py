@@ -9,8 +9,19 @@ from onnxruntime import InferenceSession
 
 from environment import DCSSolverEnv
 from modelEvaluation import eval_agent_q, read_random_states
-from train import best_generalization_agent
 from util import *
+
+def best_generalization_agent(problem, file):
+    df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
+    max_idx = df["idx"].max()
+    solved = [0 for i in range(max_idx+1)]
+    expanded = [0 for i in range(max_idx+1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx+1)]
+    return max(perf, key=lambda t: (-t[0], t[1], t[2]))[2]
 
 
 def test_ra_nico(problem, n, k, timeout="30m"):
@@ -74,7 +85,10 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
 
     if path != "mock" and uses_context(path):
         command += ["-c"]
-    
+
+    if path != "mock" and uses_state_labels(path):
+        command += ["-s"]
+
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     
     if proc.returncode == 124:
@@ -120,7 +134,7 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
     with open(path[:-5] + ".json", "r") as f:
         info = json.load(f)
 
-    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"])
+    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"], info["context features"], info["state labels"])
 
     agent = onnx.load(path)
 
@@ -223,7 +237,7 @@ def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
 
 
 def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
-    idx_agent = best_generalization_agent(problem, 2, 2, file)
+    idx_agent = best_generalization_agent(problem, file)
 
     path = agent_path(problem, 2, 2, file, idx_agent)
 

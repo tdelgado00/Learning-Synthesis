@@ -6,8 +6,8 @@ import json
 import pandas as pd
 
 
-def feature_names(info, labels=None):
-    features = [
+def feature_names(info, problem=None):
+    base_features = [
         "action controllable",
         "1 / depth",
         "state portion explored",
@@ -21,18 +21,24 @@ def feature_names(info, labels=None):
         "child portion controllable",
         "child portion explored",
     ]
-    if labels is not None:
-        with open("labels/"+labels+".txt", "r") as f:
+    if problem is not None:
+        with open("labels/"+problem+".txt", "r") as f:
             labels = list(f)
-        labels = [l[:-1] for l in labels]
-        features = labels + features
+        labels_features = [l[:-1] for l in labels]
 
-    if info["context features"]:
-        features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]+features
-    
-    if info["ra feature"]:
-        features = ["ra type", "1 / ra distance", "in open"]+features
+
+    context_features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]
+
+    ra_features = ["ra type", "1 / ra distance", "in open"]
+
+    features = (ra_features if info["ra feature"] else [])+\
+               (context_features if info["context features"] else [])+\
+               (labels_features if info["state labels"] else [])+\
+               (["state "+l for l in labels_features] if info["labels"] else [])+\
+               base_features
+
     return features
+
 
 
 def results_path(problem, n, k, file):
@@ -100,6 +106,10 @@ def uses_labels(path):
     info = get_agent_info(path)
     return "labels" in info.keys() and info["labels"]
 
+
+def uses_state_labels(path):
+    info = get_agent_info(path)
+    return "labels" in info.keys() and info["state labels"]
 
 def indexOf(s, lines):
     return list(map(lambda l: s in l, lines)).index(True)

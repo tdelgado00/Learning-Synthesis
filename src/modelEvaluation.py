@@ -122,9 +122,9 @@ def eval_agent_q(path, random_states):
 def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, False))
+        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, True))
 
-        file = "experiments/results/" + filename([problem, n, k]) + "/states_context.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_state_labels.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)

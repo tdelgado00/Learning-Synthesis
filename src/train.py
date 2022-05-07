@@ -7,8 +7,9 @@ from util import *
 
 def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
-                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False, verbose=False):
-    env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features)
+                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False, state_labels=False,
+                verbose=False):
+    env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels)
     print("Number of features:", env.nfeatures)
 
     dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
@@ -16,23 +17,10 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
 
-    agent.train(env, {"ra feature": ra_feature, "labels": labels, "context features": context_features},
+    agent.train(env, {"ra feature": ra_feature, "labels": labels, "context features": context_features, "state labels": state_labels},
                 seconds=seconds, max_steps=max_steps, copy_freq=copy_freq)
 
     return agent
-
-
-def best_generalization_agent(problem, file):
-    df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
-    max_idx = df["idx"].max()
-    solved = [0 for i in range(max_idx+1)]
-    expanded = [0 for i in range(max_idx+1)]
-    for x, cant in dict(df["idx"].value_counts()).items():
-        solved[x] = cant
-    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
-        expanded[x] = cant
-    perf = [(solved[i], expanded[i], i) for i in range(max_idx+1)]
-    return max(perf, key=lambda t: (-t[0], t[1], t[2]))[2]
 
 
 def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
@@ -55,6 +43,8 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
 
 
 if __name__ == "__main__":
+    #max_steps = 1000
+    #copy_freq = 100
     max_steps = 5000000
     copy_freq = 50000
     buffer_size = 10000
@@ -62,28 +52,26 @@ if __name__ == "__main__":
     reset_target = 10000
     target = True
     replay = True
-    nnsize = 20
+    nnsize = 30
     eta = 1e-5
     ra_feature = True
     labels = True
     context_features = True
+    state_labels = True
     file = "5mill_C"
 
     n, k = 2, 2
-    for problem in ["AT", "DP"]:
-        #train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
-        #            fixed_q_target=target, reset_target_freq=reset_target,
-        #            experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-        #            labels=labels, ra_feature=ra_feature,
-        #            nnsize=nnsize, eta=eta,
-        #            context_features=context_features,
-        #            verbose=False)
-        #test_all_agents_generalization(problem, file, 15, "5s", 100)
-        #test_agents(problem, n, k, problem, 2, 2, file)
-        #test_agents(problem, n, k, problem, 2, 3, file)
-        #test_agents(problem, n, k, problem, 3, 2, file)
-        #test_agents(problem, n, k, problem, 3, 3, file)
+    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+        train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
+                    fixed_q_target=target, reset_target_freq=reset_target,
+                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                    labels=labels, ra_feature=ra_feature,
+                    nnsize=nnsize, eta=eta,
+                    context_features=context_features,
+                    state_labels=True,
+                    verbose=False)
+        test_all_agents_generalization(problem, file, 15, "5s", 100)
+        test_all_agent(problem, "5mill_C", 15, timeout="10m")
         # test_agents_q(problem, n, k, file, "states_context.pkl")
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
-        test_all_agent(problem, "5mill_C", 15, timeout="10m")
