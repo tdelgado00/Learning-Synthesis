@@ -75,19 +75,22 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
     if debug:
         command += ["-d"]
 
-    if path != "mock" and uses_ra(path):
+    if path != "mock" and uses_feature(path, "ra feature"):
         command += ["-r"]
 
-    if path != "mock" and uses_labels(path):
+    if path != "mock" and uses_feature(path, "labels"):
         command += ["-l", "labels/"+problem+".txt"]
     else:
         command += ["-l", "mock"]
 
-    if path != "mock" and uses_context(path):
+    if path != "mock" and uses_feature(path, "context features"):
         command += ["-c"]
 
-    if path != "mock" and uses_state_labels(path):
+    if path != "mock" and uses_feature(path, "state labels"):
         command += ["-s"]
+
+    if path != "mock" and uses_feature(path, "je feature"):
+        command += ["-j"]
 
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     
@@ -105,7 +108,8 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
                 debug = None
                 results = read_results(lines[i:])
         except BaseException as err:
-            print(lines)
+            for line in lines:
+                print(line)
             raise
     results["algorithm"] = "new"
     results["heuristic"] = path
@@ -134,7 +138,7 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
     with open(path[:-5] + ".json", "r") as f:
         info = json.load(f)
 
-    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"], info["context features"], info["state labels"])
+    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"], info["context features"], info["state labels"], info["je feature"])
 
     agent = onnx.load(path)
 

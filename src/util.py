@@ -92,24 +92,11 @@ def get_agent_info(path):
         info = json.load(f)
     return info
 
-def uses_context(path):
+
+def uses_feature(path, feature):
     info = get_agent_info(path)
-    return "context features" in info.keys() and info["context features"]
+    return feature in info.keys() and info[feature]
 
-
-def uses_ra(path):
-    info = get_agent_info(path)
-    return "ra feature" in info.keys() and info["ra feature"]
-
-
-def uses_labels(path):
-    info = get_agent_info(path)
-    return "labels" in info.keys() and info["labels"]
-
-
-def uses_state_labels(path):
-    info = get_agent_info(path)
-    return "labels" in info.keys() and info["state labels"]
 
 def indexOf(s, lines):
     return list(map(lambda l: s in l, lines)).index(True)

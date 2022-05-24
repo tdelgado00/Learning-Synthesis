@@ -28,7 +28,7 @@ def test_java_and_python_coherent():
 def test_train_agent():
     print("Training agent")
     train_agent("AT", 2, 2, "testing", seconds=3, copy_freq=100, ra_feature=True, labels=True, context_features=True,
-                state_labels=True, experience_replay=True, fixed_q_target=True)
+                state_labels=True, je_feature=True, experience_replay=True, fixed_q_target=True)
     _, _ = test_agent(agent_path("AT", 2, 2, "testing", 1), "AT", 2, 2, debug=False)
 
 
@@ -41,7 +41,7 @@ def test_target_and_buffer():
     reset_target = 10
 
     train_agent(problem, n, k, None, max_steps=max_steps, copy_freq=copy_freq, ra_feature=True, labels=True,
-                context_features=True,
+                context_features=True, je_feature=True,
                 fixed_q_target=True, reset_target_freq=reset_target,
                 experience_replay=True, buffer_size=buffer_size, batch_size=batch_size, verbose=True)
     #test_agents(problem, n, k, problem, n, k, file)
