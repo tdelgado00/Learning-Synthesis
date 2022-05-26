@@ -8,13 +8,13 @@ from util import *
 def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
                 batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False, state_labels=False,
-                je_feature=False,
+                je_feature=False, optimizer="sgd",
                 verbose=False):
     env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature)
     print("Number of features:", env.nfeatures)
 
     dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
-    agent = Agent(eta=eta, nnsize=nnsize, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
+    agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
 
@@ -60,19 +60,21 @@ if __name__ == "__main__":
     labels = True
     context_features = True
     state_labels = True
+    je_feature=True
+    optimizer="sgd"
     file = "5mill_JE"
 
     n, k = 2, 2
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        print(problem)
         train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
                     fixed_q_target=target, reset_target_freq=reset_target,
                     experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
                     labels=labels, ra_feature=ra_feature,
                     nnsize=nnsize, eta=eta,
                     context_features=context_features,
-                    je_feature=True,
-                    state_labels=True,
+                    je_feature=je_feature,
+                    state_labels=state_labels,
+                    optimizer=optimizer,
                     verbose=False)
         test_all_agents_generalization(problem, file, 15, "5s", 100)
         test_all_agent(problem, file, 15, timeout="10m", name="all")
