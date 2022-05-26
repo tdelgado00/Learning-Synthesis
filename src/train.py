@@ -54,26 +54,28 @@ if __name__ == "__main__":
     reset_target = 10000
     target = True
     replay = True
-    nnsize = 30
+    nnsize = 20
     eta = 1e-5
     ra_feature = True
     labels = True
     context_features = True
     state_labels = True
-    file = "5mill_SL20"
+    file = "5mill_JE"
 
     n, k = 2, 2
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        #train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
-        #            fixed_q_target=target, reset_target_freq=reset_target,
-        #            experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-        #            labels=labels, ra_feature=ra_feature,
-        #            nnsize=nnsize, eta=eta,
-        #            context_features=context_features,
-        #            state_labels=True,
-        #            verbose=False)
-        #test_all_agents_generalization(problem, file, 15, "5s", 100)
-        test_all_agent(problem, file, 15, timeout="10m", name="allFaster2")
-        # test_agents_q(problem, n, k, file, "states_context.pkl")
-        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
-        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
+        print(problem)
+        train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
+                    fixed_q_target=target, reset_target_freq=reset_target,
+                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                    labels=labels, ra_feature=ra_feature,
+                    nnsize=nnsize, eta=eta,
+                    context_features=context_features,
+                    je_feature=True,
+                    state_labels=True,
+                    verbose=False)
+        test_all_agents_generalization(problem, file, 15, "5s", 100)
+        test_all_agent(problem, file, 15, timeout="10m", name="all")
+        #test_agents_q(problem, n, k, file, "states_context.pkl")
+        #save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
+        #save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
