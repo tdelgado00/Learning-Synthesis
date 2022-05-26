@@ -15,11 +15,11 @@ from replayBuffer import ReplayBuffer
 
 class Agent:
     def __init__(self, eta=1e-5, nnsize=20, epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
-                 experience_replay=False, buffer_size=10000, batch_size=32, verbose=False):
+                 experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", verbose=False):
 
         self.model = MLPRegressor(hidden_layer_sizes=(nnsize,),
-                                  solver="sgd",
-                                  learning_rate="constant",
+                                  solver=optimizer,
+                                  learning_rate="constant",  # only used with sgd
                                   learning_rate_init=eta)
 
         self.fixed_q_target = fixed_q_target
