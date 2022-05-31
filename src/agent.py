@@ -41,6 +41,7 @@ class Agent:
         self.save_idx = 0
 
         self.training_start = None
+        self.training_steps = 0
 
         self.verbose = verbose
 
@@ -74,19 +75,20 @@ class Agent:
             a = self.get_action(obs, self.epsilon)
             obs2, reward, done, _ = env.step(a)
             if self.experience_replay:
-                self.buffer.add(obs, a, reward, obs2, steps)
+                self.buffer.add(obs, a, reward, obs2, self.training_steps)
                 self.batch_update()
             else:
                 self.update(obs, a, reward, obs2)
             obs = obs2 if not done else env.reset()
 
-            if steps % copy_freq == 0 and self.dir is not None:
-                self.save(time.time() - self.training_start, steps, env.nfeatures, extra_info=agent_info)
+            if self.training_steps % copy_freq == 0 and self.dir is not None:
+                self.save(env.nfeatures, extra_info=agent_info)
 
-            if self.fixed_q_target and steps % self.reset_target_freq == 0:
+            if self.fixed_q_target and self.training_steps % self.reset_target_freq == 0:
                 self.reset_target(env.nfeatures)
 
             steps += 1
+            self.training_steps += 1
             if seconds is not None and time.time() - self.training_start - saving_time > seconds:
                 break
 
@@ -94,7 +96,7 @@ class Agent:
                 break
 
         if self.dir is not None and save_at_end:
-            self.save(time.time() - self.training_start, steps, env.nfeatures, extra_info=agent_info)
+            self.save(env.nfeatures, extra_info=agent_info)
         return obs.copy()
 
     # Takes action according to self.model
@@ -136,7 +138,7 @@ class Agent:
         self.model.partial_fit([obses[i][actions[i]] for i in range(len(actions))], rewards + values)
         self.has_learned_something = True
 
-    def save(self, training_time, steps, nfeatures, extra_info=None):
+    def save(self, nfeatures, extra_info=None):
         os.makedirs(self.dir, exist_ok=True)
         X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
         onx = to_onnx(self.model, X_test)
@@ -144,8 +146,8 @@ class Agent:
 
         with open(self.dir + "/" + str(self.save_idx) + ".json", "w") as f:
             info = {
-                "training time": training_time,
-                "training steps": steps,
+                "training time": time.time() - self.training_start,
+                "training steps": self.training_steps,
                 "eta": self.eta,
                 "nnsize": self.nnsize,
                 "epsilon": self.epsilon,
@@ -158,7 +160,7 @@ class Agent:
             info.update(extra_info if extra_info is not None else {})
             json.dump(info, f)
 
-        print("Agent", self.save_idx, "saved. Training time:", training_time)
+        print("Agent", self.save_idx, "saved. Training time:", time.time() - self.training_start, "Training steps:", self.training_steps)
         self.save_idx += 1
 
     def reset_target(self, nfeatures):

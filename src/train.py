@@ -50,11 +50,11 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
                   batch_size=batch_size, verbose=verbose)
 
     last_obs = {}
-    rounds = 10
+    rounds = 100
+    steps = max_steps / rounds / len(instances)
     for r in range(rounds):
         print("Starting round", r)
         for instance in instances:
-            steps = max_steps / rounds / len(instances)
             print("Training with", instance, "for", steps, "steps")
             last_obs[instance] = agent.train(env[instance], {"ra feature": ra_feature, "labels": labels,
                                                              "context features": context_features,
