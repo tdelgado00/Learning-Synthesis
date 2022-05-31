@@ -111,6 +111,8 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
             print(command)
             for line in lines:
                 print(line)
+            for line in proc.stderr.split("\n"):
+                print(line)
             raise
     results["algorithm"] = "new"
     results["heuristic"] = path

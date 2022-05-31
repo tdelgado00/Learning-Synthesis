@@ -11,7 +11,12 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
                 je_feature=False, optimizer="sgd",
                 verbose=False):
     env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature)
+    print("Starting trianing for", problem, n, k)
     print("Number of features:", env.nfeatures)
+    print("File:", dir)
+    print("nn size:", nnsize)
+    print("optimizer:",optimizer)
+    print("Features:", ra_feature, labels, context_features, state_labels, je_feature)
 
     dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
     agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
@@ -27,14 +32,15 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
 
 def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
     df = []
+    start = time.time()
     for i in range(max_idx + 1):
         path = agent_path(problem, 2, 2, file, i)
 
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+        print("Testing agent", i, "with 5s timeout. Time:", time.time()-start)
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    print("Testing agent with", problem, n + 1, k + 1)
                     df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
                     df[-1]["idx"] = i
                     if not np.isnan(df[-1]["synthesis time(ms)"]):
@@ -61,8 +67,8 @@ if __name__ == "__main__":
     context_features = True
     state_labels = True
     je_feature=True
-    optimizer="sgd"
-    file = "5mill_JE"
+    optimizer="adam"
+    file = "5mill_JEadam"
 
     n, k = 2, 2
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
