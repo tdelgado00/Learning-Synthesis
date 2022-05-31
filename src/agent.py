@@ -40,6 +40,8 @@ class Agent:
         self.dir = dir
         self.save_idx = 0
 
+        self.training_start = None
+
         self.verbose = verbose
 
     def test(self, env, timeout=30 * 60):
@@ -55,18 +57,19 @@ class Agent:
 
         return info if time.time() - start_time < timeout else "timeout"
 
-    def train(self, env, agent_info, seconds=None, max_steps=None, copy_freq=200000):
-        training_start = time.time()
+    def train(self, env, agent_info, seconds=None, max_steps=None, copy_freq=200000, last_obs=None, save_at_end=False):
+        if self.training_start is None:
+            self.training_start = time.time()
         saving_time = 0
 
         steps = 0
 
-        if self.experience_replay:
+        if self.experience_replay and self.buffer is None:
             self.buffer = ReplayBuffer(self.buffer_size)
             for obs, action, reward, obs2, step in get_random_experience(env, total=self.buffer_size // 5):
                 self.buffer.add(obs, action, reward, obs2, step)
 
-        obs = env.reset()
+        obs = env.reset() if (last_obs is None) else last_obs
         while True:
             a = self.get_action(obs, self.epsilon)
             obs2, reward, done, _ = env.step(a)
@@ -78,20 +81,21 @@ class Agent:
             obs = obs2 if not done else env.reset()
 
             if steps % copy_freq == 0 and self.dir is not None:
-                self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
+                self.save(time.time() - self.training_start, steps, env.nfeatures, extra_info=agent_info)
 
             if self.fixed_q_target and steps % self.reset_target_freq == 0:
                 self.reset_target(env.nfeatures)
 
             steps += 1
-            if seconds is not None and time.time() - training_start - saving_time > seconds:
+            if seconds is not None and time.time() - self.training_start - saving_time > seconds:
                 break
 
             if max_steps is not None and steps >= max_steps:
                 break
 
-        if self.dir is not None:
-            self.save(time.time() - training_start, steps, env.nfeatures, extra_info=agent_info)
+        if self.dir is not None and save_at_end:
+            self.save(time.time() - self.training_start, steps, env.nfeatures, extra_info=agent_info)
+        return obs.copy()
 
     # Takes action according to self.model
     def get_action(self, actionFeatures, epsilon):

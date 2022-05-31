@@ -3,11 +3,13 @@ from environment import DCSSolverEnv
 from modelEvaluation import save_model_q_dfs
 from test import test_agents, test_agents_q, test_agent, test_all_agent
 from util import *
+import time
 
 
 def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
-                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False, state_labels=False,
+                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
+                state_labels=False,
                 je_feature=False, optimizer="sgd",
                 verbose=False):
     env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature)
@@ -25,7 +27,40 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
 
     agent.train(env, {"ra feature": ra_feature, "labels": labels, "context features": context_features,
                       "state labels": state_labels, "je feature": je_feature},
-                seconds=seconds, max_steps=max_steps, copy_freq=copy_freq)
+                seconds=seconds, max_steps=max_steps, copy_freq=copy_freq, save_at_end=True)
+
+    return agent
+
+
+def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
+                   fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
+                   batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
+                   state_labels=False,
+                   je_feature=False, optimizer="sgd",
+                   verbose=False):
+    env = {}
+    for instance in instances:
+        problem, n, k = instance
+        env[instance] = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature,
+                                     True)
+
+    dir = "experiments/results/" + dir if dir is not None else None
+    agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
+                  reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
+                  batch_size=batch_size, verbose=verbose)
+
+    last_obs = {}
+    rounds = 10
+    for r in range(rounds):
+        print("Starting round", r)
+        for instance in instances:
+            steps = max_steps / rounds / len(instances)
+            print("Training with", instance, "for", steps, "steps")
+            last_obs[instance] = agent.train(env[instance], {"ra feature": ra_feature, "labels": labels,
+                                                             "context features": context_features,
+                                                             "state labels": state_labels, "je feature": je_feature},
+                                             seconds=seconds, max_steps=steps, copy_freq=copy_freq,
+                                             last_obs=last_obs.get(instance))
 
     return agent
 
@@ -51,8 +86,8 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
 
 
 if __name__ == "__main__":
-    #max_steps = 1000
-    #copy_freq = 100
+    #max_steps = 100000
+    #copy_freq = 1000
     max_steps = 5000000
     copy_freq = 50000
     buffer_size = 10000
@@ -67,23 +102,23 @@ if __name__ == "__main__":
     context_features = True
     state_labels = True
     je_feature=True
-    optimizer="adam"
-    file = "5mill_JEadam"
+    optimizer="sgd"
+    file = "AT RR"
 
-    n, k = 2, 2
-    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        train_agent(problem, n, k, file, max_steps=max_steps, copy_freq=copy_freq,
-                    fixed_q_target=target, reset_target_freq=reset_target,
-                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                    labels=labels, ra_feature=ra_feature,
-                    nnsize=nnsize, eta=eta,
-                    context_features=context_features,
-                    je_feature=je_feature,
-                    state_labels=state_labels,
-                    optimizer=optimizer,
-                    verbose=False)
-        test_all_agents_generalization(problem, file, 15, "5s", 100)
+    for problem in ["AT"]:  # , "BW", "CM", "DP", "TA", "TL"]:
+        train_agent_RR([(problem, n, k) for n, k in [(2, 2), (2, 3), (3, 2), (3, 3)]], file, max_steps=max_steps,
+                       copy_freq=copy_freq,
+                       fixed_q_target=target, reset_target_freq=reset_target,
+                       experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                       labels=labels, ra_feature=ra_feature,
+                       nnsize=nnsize, eta=eta,
+                       context_features=context_features,
+                       je_feature=je_feature,
+                       state_labels=state_labels,
+                       optimizer=optimizer,
+                       verbose=False)
+        test_all_agents_generalization(problem, file, 15, "5s", 99)
         test_all_agent(problem, file, 15, timeout="10m", name="all")
-        #test_agents_q(problem, n, k, file, "states_context.pkl")
-        #save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
-        #save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
+        # test_agents_q(problem, n, k, file, "states_context.pkl")
+        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
+        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
