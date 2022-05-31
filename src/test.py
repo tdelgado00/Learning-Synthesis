@@ -11,6 +11,7 @@ from environment import DCSSolverEnv
 from modelEvaluation import eval_agent_q, read_random_states
 from util import *
 
+
 def best_generalization_agent(problem, file):
     df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
     max_idx = df["idx"].max()
@@ -65,7 +66,7 @@ def test_ra(problem, n, k, timeout="30m"):
     return results, None
 
 
-def test_agent(path, problem, n, k, timeout="30m", debug=False):
+def test_agent(path, problem, n, k, timeout="30m", debug=False, use_nk_feature=False):
     command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
@@ -91,6 +92,9 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
 
     if path != "mock" and uses_feature(path, "je feature"):
         command += ["-j"]
+
+    if path != "mock" and (uses_feature(path, "nk feature") or use_nk_feature):
+        command += ["-n"]
 
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -246,7 +250,7 @@ def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
 def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
     idx_agent = best_generalization_agent(problem, file)
     print("Testing all", problem, "with agent", idx_agent)
-    path = agent_path(problem, 2, 2, file, idx_agent)
+    path = agent_path(file, idx_agent)
 
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
@@ -254,12 +258,12 @@ def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
         for k in range(up_to):
             if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
                 print("Testing agent with", problem, n+1, k+1)
-                df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
+                df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout, use_nk_feature=True)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/" + name + ".csv")
+    df.to_csv("experiments/results/" + file + "/" + name + ".csv")
 
 
 def test_all_random(problem, up_to, timeout="10m", name="all_random"):

@@ -49,8 +49,8 @@ def fsp_path(problem, n, k):
     return "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
 
 
-def agent_path(problem, n, k, dir, idx):
-    return "experiments/results/" + filename([problem, n, k]) + "/" + dir + "/" + str(idx) + ".onnx"
+def agent_path(dir, idx):
+    return "experiments/results/" + dir + "/" + str(idx) + ".onnx"
 
 
 def filename(parameters):

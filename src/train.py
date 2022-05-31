@@ -58,7 +58,8 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
             print("Training with", instance, "for", steps, "steps")
             last_obs[instance] = agent.train(env[instance], {"ra feature": ra_feature, "labels": labels,
                                                              "context features": context_features,
-                                                             "state labels": state_labels, "je feature": je_feature},
+                                                             "state labels": state_labels, "je feature": je_feature,
+                                                             "nk feature": True},
                                              seconds=seconds, max_steps=steps, copy_freq=copy_freq,
                                              last_obs=last_obs.get(instance))
 
@@ -69,20 +70,20 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
     df = []
     start = time.time()
     for i in range(max_idx + 1):
-        path = agent_path(problem, 2, 2, file, i)
+        path = agent_path(file, i)
 
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
         print("Testing agent", i, "with 5s timeout. Time:", time.time()-start)
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
+                    df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout, use_nk_feature=True)[0])
                     df[-1]["idx"] = i
                     if not np.isnan(df[-1]["synthesis time(ms)"]):
                         solved[n][k] = True
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+    df.to_csv("experiments/results/" + file + "/generalization_all.csv")
 
 
 if __name__ == "__main__":
@@ -106,18 +107,18 @@ if __name__ == "__main__":
     file = "AT RR"
 
     for problem in ["AT"]:  # , "BW", "CM", "DP", "TA", "TL"]:
-        train_agent_RR([(problem, n, k) for n, k in [(2, 2), (2, 3), (3, 2), (3, 3)]], file, max_steps=max_steps,
-                       copy_freq=copy_freq,
-                       fixed_q_target=target, reset_target_freq=reset_target,
-                       experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                       labels=labels, ra_feature=ra_feature,
-                       nnsize=nnsize, eta=eta,
-                       context_features=context_features,
-                       je_feature=je_feature,
-                       state_labels=state_labels,
-                       optimizer=optimizer,
-                       verbose=False)
-        test_all_agents_generalization(problem, file, 15, "5s", 99)
+        #train_agent_RR([(problem, n, k) for n, k in [(2, 2), (2, 3), (3, 2), (3, 3)]], file, max_steps=max_steps,
+        #               copy_freq=copy_freq,
+        #               fixed_q_target=target, reset_target_freq=reset_target,
+        #               experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+        #               labels=labels, ra_feature=ra_feature,
+        #               nnsize=nnsize, eta=eta,
+        #               context_features=context_features,
+        #               je_feature=je_feature,
+        #               state_labels=state_labels,
+        #               optimizer=optimizer,
+        #               verbose=False)
+        test_all_agents_generalization(problem, file, 15, "5s", 39)
         test_all_agent(problem, file, 15, timeout="10m", name="all")
         # test_agents_q(problem, n, k, file, "states_context.pkl")
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
