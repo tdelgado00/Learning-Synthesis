@@ -1,3 +1,5 @@
+import time
+
 import jpype
 import jpype.imports
 from util import *
@@ -17,14 +19,12 @@ class DCSSolverEnv:
 
         self.javaEnv = DCSForPython("", "labels/"+problem+".txt" if labels else "mock", ra_feature, context_features, state_labels, je_feature, nk_feature)
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
-        self.featuresBuffer = jpype.nio.convertToDirectBuffer(bytearray(self.nfeatures * 1000 * 4))
-        self.featuresBuffer = self.featuresBuffer.asFloatBuffer()
-        self.javaEnv.setFeaturesBuffer(self.featuresBuffer)
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
-        actions = np.asarray(self.featuresBuffer, dtype=np.float32)
-        return actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures)).copy()
+        actions = np.asarray(self.javaEnv.input_buffer)
+        r = actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures)).copy()
+        return r
 
     def step(self, action):
         self.javaEnv.expandAction(action)

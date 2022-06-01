@@ -22,6 +22,7 @@ class Agent:
                                   learning_rate="constant",  # only used with sgd
                                   learning_rate_init=eta)
 
+        self.optimizer = optimizer
         self.fixed_q_target = fixed_q_target
         self.reset_target_freq = reset_target_freq
         self.target = None
@@ -155,7 +156,8 @@ class Agent:
                 "target q": self.fixed_q_target,
                 "reset target freq": self.reset_target_freq,
                 "experience replay": self.experience_replay,
-                "buffer size": self.buffer_size
+                "buffer size": self.buffer_size,
+                "optimizer": self.optimizer
             }
             info.update(extra_info if extra_info is not None else {})
             json.dump(info, f)

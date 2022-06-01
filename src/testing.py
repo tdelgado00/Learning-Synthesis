@@ -1,3 +1,6 @@
+import time
+
+from src.util import filename
 from test import test_agent, test_onnx, agent_path
 from train import train_agent
 import numpy as np
@@ -8,8 +11,8 @@ def test_java_and_python_coherent():
     for problem, n, k, agent_dir, agent_idx in [("AT", 2, 2, "testing", 1)]:
         for test in range(10):
             print("Test", test)
-            result, debug_java = test_agent(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
-            result, debug_python = test_onnx(agent_path(problem, 2, 2, "testing", 1), problem, n, k, debug=True)
+            result, debug_java = test_agent(agent_path(filename([problem, 2, 2])+"/"+"testing", 1), problem, n, k, debug=True)
+            result, debug_python = test_onnx(agent_path(filename([problem, 2, 2])+"/"+"testing", 1), problem, n, k, debug=True)
             assert len(debug_java) == len(debug_python)
             for i in range(len(debug_java)):
                 if len(debug_python[i]["features"]) != len(debug_java[i]["features"]):
@@ -27,10 +30,11 @@ def test_java_and_python_coherent():
 
 def test_train_agent():
     print("Training agent")
-    train_agent("AT", 2, 2, "testing", seconds=3, copy_freq=100, ra_feature=True, labels=True, context_features=True,
+    start = time.time()
+    train_agent("AT", 2, 2, "testing", max_steps=1000, copy_freq=500, ra_feature=True, labels=True, context_features=True,
                 state_labels=True, je_feature=True, experience_replay=True, fixed_q_target=True)
-    _, _ = test_agent(agent_path("AT", 2, 2, "testing", 1), "AT", 2, 2, debug=False)
-
+    _, _ = test_agent(agent_path(filename(["AT", 2, 2])+"/"+"testing", 1), "AT", 2, 2, debug=False)
+    print(time.time() - start)
 
 def test_target_and_buffer():
     problem, n, k = "AT", 2, 2

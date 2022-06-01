@@ -263,7 +263,7 @@ def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/" + file + "/" + name + ".csv")
+    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/" + name + ".csv")
 
 
 def test_all_random(problem, up_to, timeout="10m", name="all_random"):
