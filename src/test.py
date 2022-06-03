@@ -1,28 +1,12 @@
-import pickle
 import subprocess
 import time
-import os
 
 import onnx
-import pandas as pd
 from onnxruntime import InferenceSession
 
 from environment import DCSSolverEnv
 from modelEvaluation import eval_agent_q, read_random_states
 from util import *
-
-
-def best_generalization_agent(problem, file):
-    df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
-    max_idx = df["idx"].max()
-    solved = [0 for i in range(max_idx+1)]
-    expanded = [0 for i in range(max_idx+1)]
-    for x, cant in dict(df["idx"].value_counts()).items():
-        solved[x] = cant
-    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
-        expanded[x] = cant
-    perf = [(solved[i], expanded[i], i) for i in range(max_idx+1)]
-    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
 
 
 def test_ra_nico(problem, n, k, timeout="30m"):
@@ -247,11 +231,10 @@ def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
 
-def test_all_agent(problem, file, up_to, timeout="10m", name="all"):
-    idx_agent = best_generalization_agent(problem, file)
+def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=None):
+    idx_agent = selection(problem, file)
     print("Testing all", problem, "with agent", idx_agent)
-    path = agent_path(file, idx_agent)
-
+    path = agent_path(filename([problem, 2, 2])+"/"+file, idx_agent)
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
@@ -376,7 +359,8 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == "__main__":
-    pass
+    test_all_agent("TL", "RR", 15, "5s", "all2")
+
     #print(test_heuristic_python("DP", 3, 3, ra_feature_heuristic))
     #for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
     #    test_all_agent(problem, "5mill_RA", 15, timeout="10m")

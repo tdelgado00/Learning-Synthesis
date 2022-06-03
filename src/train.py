@@ -6,6 +6,47 @@ from util import *
 import time
 
 
+def best_generalization_agent(problem, file):
+    df = pd.read_csv("experiments/results/"+filename([problem, 2, 2])+"/"+file+"/generalization_all.csv")
+    max_idx = df["idx"].max()
+    solved = [0 for i in range(max_idx+1)]
+    expanded = [0 for i in range(max_idx+1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx+1)]
+    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
+
+
+def best_vsRA(problem, file):
+    def to_matrix(df):
+        m = np.full((df["idx"].max() + 1, 15, 15), float("inf"))
+        for i, row in df.iterrows():
+            m[row["idx"], row["n"] - 1, row["k"] - 1] = row["expanded transitions"]
+        return m
+
+    def sgn(x, y):
+        if x == y:
+            return 0
+        elif x == float("inf"):
+            return -1
+        elif y == float("inf"):
+            return 1
+        else:
+            return 1 if x < y else -1
+
+    df_all = to_matrix(pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file +
+                                   "/generalization_all.csv"))
+
+    df_ra = df_comp(problem, ra_results)
+    df = []
+    for idx in range(101):
+        s = np.sum([sgn(df_all[idx, n - 1, k - 1], df_ra[n][k]) for n in range(1, 16) for k in range(1, 16)])
+        df.append({"idx": idx, "diffWithRA": s})
+    df = pd.DataFrame(df)
+    return df.loc[df["diffWithRA"] == df["diffWithRA"].max()].iloc[0]["idx"]
+
 def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
                 batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
@@ -111,22 +152,22 @@ if __name__ == "__main__":
     state_labels = True
     je_feature=True
     optimizer="sgd"
-    file = "AT RR"
+    file = "5mill_JE20"
 
-    for problem in ["AT", "BW", "TL", "TA", "DP", "CM"]:  # , "BW", "CM", "DP", "TA", "TL"]:
-        train_agent_RR([(problem, n, k) for n, k in [(2, 2), (2, 3), (3, 2), (3, 3)]], file, max_steps=max_steps,
-                       copy_freq=copy_freq,
-                       fixed_q_target=target, reset_target_freq=reset_target,
-                       experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                       labels=labels, ra_feature=ra_feature,
-                       nnsize=nnsize, eta=eta,
-                       context_features=context_features,
-                       je_feature=je_feature,
-                       state_labels=state_labels,
-                       optimizer=optimizer,
-                       verbose=False)
-        test_all_agents_generalization(problem, file, 15, "5s", 39)
-        test_all_agent(problem, file, 15, timeout="10m", name="all")
+    for problem in ["TL"]:
+        #train_agent_RR([(problem, n, k) for n, k in [(2, 2), (2, 3), (3, 2), (3, 3)]], file, max_steps=max_steps,
+        #               copy_freq=copy_freq,
+        #               fixed_q_target=target, reset_target_freq=reset_target,
+        #               experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+        #               labels=labels, ra_feature=ra_feature,
+        #               nnsize=nnsize, eta=eta,
+        #               context_features=context_features,
+        #               je_feature=je_feature,
+        #               state_labels=state_labels,
+        #               optimizer=optimizer,
+        #               verbose=False)
+        #test_all_agents_generalization(problem, file, 15, "5s", 39)
+        test_all_agent(problem, file, 15, timeout="10m", name="allBestDiffRA", selection=best_vsRA)
         # test_agents_q(problem, n, k, file, "states_context.pkl")
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
         # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
