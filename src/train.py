@@ -47,7 +47,7 @@ def best_vsRA(problem, file):
     df = pd.DataFrame(df)
     return df.loc[df["diffWithRA"] == df["diffWithRA"].max()].iloc[0]["idx"]
 
-def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
+def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=(20,),
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
                 batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
                 state_labels=False,
@@ -72,7 +72,7 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
     return agent
 
 
-def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=20,
+def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=(20,),
                    fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
                    batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
                    state_labels=False,
@@ -92,7 +92,7 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
     print("optimizer:",optimizer)
     print("Features:", ra_feature, labels, context_features, state_labels, je_feature)
 
-    dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + dir if dir is not None else None
+    dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
     agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
@@ -118,17 +118,18 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
     df = []
     start = time.time()
     for i in range(max_idx + 1):
-        path = agent_path(file, i)
+        path = agent_path(filename([problem, 2, 2])+"/"+file, i)
 
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
         print("Testing agent", i, "with 5s timeout. Time:", time.time()-start)
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout, use_nk_feature=True)[0])
+                    df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
                     df[-1]["idx"] = i
                     if not np.isnan(df[-1]["synthesis time(ms)"]):
                         solved[n][k] = True
+        print("Solved:", np.sum(solved))
 
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
@@ -144,7 +145,7 @@ if __name__ == "__main__":
     reset_target = 10000
     target = True
     replay = True
-    nnsize = 20
+    nnsize = (64, 32)
     eta = 1e-5
     ra_feature = True
     labels = True
@@ -152,22 +153,23 @@ if __name__ == "__main__":
     state_labels = True
     je_feature=True
     optimizer="sgd"
-    file = "5mill_JE20"
+    file = "5mill_JE_D"
 
-    for problem in ["TL"]:
-        #train_agent_RR([(problem, n, k) for n, k in [(2, 2), (2, 3), (3, 2), (3, 3)]], file, max_steps=max_steps,
-        #               copy_freq=copy_freq,
-        #               fixed_q_target=target, reset_target_freq=reset_target,
-        #               experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-        #               labels=labels, ra_feature=ra_feature,
-        #               nnsize=nnsize, eta=eta,
-        #               context_features=context_features,
-        #               je_feature=je_feature,
-        #               state_labels=state_labels,
-        #               optimizer=optimizer,
-        #               verbose=False)
-        #test_all_agents_generalization(problem, file, 15, "5s", 39)
-        test_all_agent(problem, file, 15, timeout="10m", name="allBestDiffRA", selection=best_vsRA)
-        # test_agents_q(problem, n, k, file, "states_context.pkl")
-        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
-        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
+    for problem in ["AT", "BW", "TA", "TL", "DP", "CM"]:
+        if problem != "AT":
+            train_agent(problem, 2, 2, file, max_steps=max_steps,
+                       copy_freq=copy_freq,
+                       fixed_q_target=target, reset_target_freq=reset_target,
+                       experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                       labels=labels, ra_feature=ra_feature,
+                       nnsize=nnsize, eta=eta,
+                       context_features=context_features,
+                       je_feature=je_feature,
+                       state_labels=state_labels,
+                       optimizer=optimizer,
+                       verbose=False)
+        test_all_agents_generalization(problem, file, 15, "5s", 99)
+        test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+        #test_agents_q(problem, n, k, file, "states_context.pkl")
+        #save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
+        #save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)

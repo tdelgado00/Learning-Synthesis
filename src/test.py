@@ -50,7 +50,7 @@ def test_ra(problem, n, k, timeout="30m"):
     return results, None
 
 
-def test_agent(path, problem, n, k, timeout="30m", debug=False, use_nk_feature=False):
+def test_agent(path, problem, n, k, timeout="30m", debug=False):
     command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
@@ -77,7 +77,7 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False, use_nk_feature=F
     if path != "mock" and uses_feature(path, "je feature"):
         command += ["-j"]
 
-    if path != "mock" and (uses_feature(path, "nk feature") or use_nk_feature):
+    if path != "mock" and uses_feature(path, "nk feature"):
         command += ["-n"]
 
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -241,7 +241,7 @@ def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=No
         for k in range(up_to):
             if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
                 print("Testing agent with", problem, n+1, k+1)
-                df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout, use_nk_feature=True)[0])
+                df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
 
