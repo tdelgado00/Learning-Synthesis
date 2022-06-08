@@ -17,7 +17,7 @@ class DCSSolverEnv:
         self.k = k
         self.problemFilename = filename([problem, n, k])
 
-        self.javaEnv = DCSForPython("", "labels/"+problem+".txt" if labels else "mock", ra_feature, context_features, state_labels, je_feature, nk_feature)
+        self.javaEnv = DCSForPython("", "labels/"+problem+".txt" if labels else "mock", 10000, ra_feature, context_features, state_labels, je_feature, nk_feature)
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
     def get_actions(self):
