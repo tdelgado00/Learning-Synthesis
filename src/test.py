@@ -51,7 +51,7 @@ def test_ra(problem, n, k, timeout="30m"):
 
 
 def test_agent(path, problem, n, k, timeout="30m", debug=False):
-    command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
+    command = ["timeout", timeout, "java", "-Xmx8g", "-XX:MaxDirectMemorySize=512m", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
                "-m", path
