@@ -1,10 +1,5 @@
 import subprocess
 import time
-
-import onnx
-from onnxruntime import InferenceSession
-
-from environment import DCSSolverEnv
 from modelEvaluation import eval_agent_q, read_random_states
 from util import *
 
@@ -124,40 +119,6 @@ def test_mono(problem, n, k):
     return results
 
 
-# Not using this function, we test with onnx from Java
-def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
-    with open(path[:-5] + ".json", "r") as f:
-        info = json.load(f)
-
-    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"], info["context features"], info["state labels"], info["je feature"])
-
-    agent = onnx.load(path)
-
-    start_time = time.time()
-    sess = InferenceSession(agent.SerializeToString())
-
-    obs = env.reset()
-    done = False
-    info = None
-
-    debug = None if not debug else []
-
-    while not done and time.time() - start_time < timeout:
-        values = sess.run(None, {'X': obs})
-        action = np.argmax(values)
-        if debug is not None:
-            debug.append({"features": [[f for f in a] for a in obs], "values": [v[0] for v in values[0]], "selected": action})
-        obs, reward, done, info = env.step(action)
-
-    return (info if time.time() - start_time < timeout else {
-        "problem": env.problem,
-        "n": env.n,
-        "k": env.k,
-        "synthesis time(ms)": np.nan,
-        "expanded transitions": np.nan
-    }), debug
-
-
 def parse_java_debug(debug):
     debug = [l for l in debug if l != "--------------------------"]
     steps = []
@@ -263,23 +224,6 @@ def test_all_random(problem, up_to, timeout="10m", name="all_random"):
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + name + ".csv")
 
-def test_heuristic_python(problem, n, k, heuristic, verbose=False):
-    env = DCSSolverEnv(problem, n, k, True)
-
-    obs = env.reset()
-    done = False
-    info = None
-    c = 0
-    while not done:
-        if verbose:
-            print("---------------------------")
-        action, count = heuristic(obs, verbose)
-        c += count
-        obs, reward, done, info = env.step(action)
-
-    print("Desempates por depth:", c)
-    return info, None
-
 
 def random_heuristic(obs):
     return np.random.randint(0, obs.shape[0])
@@ -323,16 +267,6 @@ def ra_feature_heuristic(obs, verbose=True):
         print(max_i)
     assert max_i != -1
     return max_i, count
-
-
-def heuristic_test_exp(problem, n, k, eps, heuristic, file, verbose=False):
-    df = []
-    for i in range(eps):
-        r = test_heuristic_python(problem, n, k, heuristic, verbose)[0]
-        r["idx"] = i
-        df.append(r)
-    df = pd.DataFrame(df)
-    df.to_csv("experiments/results/"+filename([problem, n, k])+"/"+file)
 
 
 def test_random_exp(problem, n, k, eps, file):
