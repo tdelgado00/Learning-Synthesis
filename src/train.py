@@ -52,9 +52,8 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
                 fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
                 batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
                 state_labels=False,
-                je_feature=False, optimizer="sgd",
-                verbose=False):
-    env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature)
+                je_feature=False, optimizer="sgd", nk_feature=False, verbose=False):
+    env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
     print("Starting trianing for", problem, n, k)
     print("Number of features:", env.nfeatures)
     print("File:", dir)
@@ -68,7 +67,7 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
                   batch_size=batch_size, verbose=verbose)
 
     agent.train(env, {"ra feature": ra_feature, "labels": labels, "context features": context_features,
-                      "state labels": state_labels, "je feature": je_feature, "nk feature": False},
+                      "state labels": state_labels, "je feature": je_feature, "nk feature": nk_feature},
                 seconds=seconds, max_steps=max_steps, copy_freq=copy_freq, save_at_end=True)
     return agent
 
@@ -76,21 +75,20 @@ def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsi
 def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=(20,),
                    fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
                    batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
-                   state_labels=False,
+                   state_labels=False, nk_feature=False,
                    je_feature=False, optimizer="sgd",
                    verbose=False):
     env = {}
     for instance in instances:
         problem, n, k = instance
-        env[instance] = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature,
-                                     True)
+        env[instance] = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
 
     print("Starting trianing for", instances)
     print("Number of features:", env[instances[0]].nfeatures)
     print("File:", dir)
     print("nn size:", nnsize)
     print("optimizer:", optimizer)
-    print("Features:", ra_feature, labels, context_features, state_labels, je_feature)
+    print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
     agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
@@ -99,19 +97,21 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
 
     last_obs = {}
     steps = 10000
-    rounds = int(np.ceil(max_steps / steps / len(instances)))
-    for r in range(rounds):
-        print("Starting round", r)
+    i = 0
+    total = max_steps / steps
+    start_time = time.time()
+    while True:
         for instance in instances:
-            print("Training with", instance, "for", steps, "steps")
+            print("Training with", instance, "for", steps, "steps", "i =", i, "time = ", time.time()-start_time)
             last_obs[instance] = agent.train(env[instance], {"ra feature": ra_feature, "labels": labels,
                                                              "context features": context_features,
                                                              "state labels": state_labels, "je feature": je_feature,
-                                                             "nk feature": True},
+                                                             "nk feature": nk_feature},
                                              seconds=seconds, max_steps=steps, copy_freq=copy_freq,
                                              last_obs=last_obs.get(instance))
-
-    return agent
+            i += 1
+            if i == total:
+                return agent
 
 
 def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
@@ -155,17 +155,20 @@ if __name__ == "__main__":
     reset_target = 10000
     target = True
     replay = True
-    nnsize = (64, 32)
+    nnsize = (20,)
     eta = 1e-5
     ra_feature = True
     labels = True
     context_features = True
     state_labels = True
     je_feature = True
+    nk_feature = False
     optimizer = "sgd"
-    file = "5mill_JE_D"
-
-    for problem in ["AT", "BW", "DP", "TA"]:
+    file = "5mill_RR10k_N"
+    
+    test_all_agent("AT", file, 15, timeout="10m", name="all", selection=best_generalization_agent)    
+    exit()
+    for problem in ["DP", "BW", "TA"]:
         train_agent_RR([(problem, n, k) for n, k in train_instances(problem)], file, max_steps=max_steps,
                     copy_freq=copy_freq,
                     fixed_q_target=target, reset_target_freq=reset_target,
@@ -176,6 +179,7 @@ if __name__ == "__main__":
                     je_feature=je_feature,
                     state_labels=state_labels,
                     optimizer=optimizer,
+                    nk_feature=nk_feature,
                     verbose=False)
         test_all_agents_generalization(problem, file, 15, "5s", 99)
         test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
