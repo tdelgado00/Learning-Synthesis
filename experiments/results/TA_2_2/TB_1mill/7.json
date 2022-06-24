@@ -1,0 +1,1 @@
+{"training time": 111.9403727054596, "training steps": 70000, "eta": 1e-05, "nnsize": 20, "epsilon": 0.1, "nfeatures": 15, "target q": true, "reset target freq": 10000, "ra feature": true}
