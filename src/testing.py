@@ -86,9 +86,12 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if proc.returncode == 124:
-        results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
+        results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False}
     else:
         lines = proc.stdout.split("\n")[2:]
+        if np.any(["OutOfMem" in line for line in lines]):
+            debug = None
+            results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": True}
         try:
             i = list(map((lambda l: "ExpandedStates" in l), lines)).index(True)
             j = list(map((lambda l: "DirectedController" in l), lines)).index(True)
@@ -98,6 +101,7 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
             else:
                 debug = None
                 results = read_results(lines[i:])
+            results["OutOfMem"] = True
         except BaseException as err:
             print(command)
             for line in lines:
@@ -105,6 +109,7 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
             for line in proc.stderr.split("\n"):
                 print(line)
             raise
+
     results["algorithm"] = "new"
     results["heuristic"] = path
     results["problem"] = problem
