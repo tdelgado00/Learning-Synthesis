@@ -24,18 +24,18 @@ def fill_df(df, m):
     return df
 
 
-def df_agent(problem, agent_file):
+def df_agent(problem, agent_file, metric="expanded transitions"):
     df_agent = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + agent_file)
     # df_agent = pd.read_csv("experiments/results 25 mar/"+filename([problems[i], 2, 2])+"/all_e_15.csv")
     df_agent = fill_df(df_agent, 15)
-    agent_t = df_agent.pivot("n", "k", "expanded transitions")
+    agent_t = df_agent.pivot("n", "k", metric)
     agent_t = agent_t.fillna(float("inf"))
     r = onlyifsolvedlast(agent_t)
     return r
 
 
-def df_comp(problem, comp_df):
-    comp_t = comp_df["expanded transitions", problem]
+def df_comp(problem, comp_df, metric="expanded transitions"):
+    comp_t = comp_df[metric, problem]
     comp_t = comp_t.fillna(float("inf"))
     return onlyifsolvedlast(comp_t)
 
@@ -55,20 +55,31 @@ def feature_names(info, problem=None):
         "child portion controllable",
         "child portion explored",
     ]
-    if problem is not None:
+    context_features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]
+    ra_features = ["ra type", "1 / ra distance", "in open"]
+    je_features = ["last state expanded from", "last state expanded to"]
+    nk_features = ["n", "k"]
+
+    check = lambda p : p in info.keys() and info[p]
+    ra = check("ra feature")
+    labels = check("labels")
+    state_labels = check("state labels")
+    context = check("context features")
+    je = check("je feature")
+    nk = check("nk feature")
+
+    if problem is not None and labels:
         with open("labels/" + problem + ".txt", "r") as f:
             labels = list(f)
         labels_features = [l[:-1] for l in labels]
 
-    context_features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]
-
-    ra_features = ["ra type", "1 / ra distance", "in open"]
-
-    features = (ra_features if info["ra feature"] else []) + \
-               (context_features if info["context features"] else []) + \
-               (labels_features if info["state labels"] else []) + \
-               (["state " + l for l in labels_features] if info["labels"] else []) + \
-               base_features
+    features = (ra_features if ra else []) + \
+               (context_features if context else []) + \
+               (["state " + l for l in labels_features] if labels else []) + \
+               (labels_features if state_labels else []) + \
+               base_features + \
+               (je_features if je else []) + \
+               (nk_features if nk else [])
 
     return features
 

@@ -122,9 +122,9 @@ def eval_agent_q(path, random_states):
 def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, True))
+        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, True, True, True))
 
-        file = "experiments/results/" + filename([problem, n, k]) + "/states_state_labels.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)
@@ -133,29 +133,54 @@ def save_all_random_states(n, k):
 def read_random_states(problem, n, k, file, info):
     with open(results_path(problem, n, k, file), "rb") as f:
         states = pickle.load(f)
-    
-    if not info["ra feature"] and not info["labels"]:
-        return [s[:, -12:] for s in states]
-    elif info["ra feature"] and not info["labels"]:
-        return [s[:, list(range(3))+list(range(-12, 0))] for s in states]
-    elif not info["ra feature"] and info["labels"]:
-        return [s[3:] for s in states]
-    else:
-        return states
+
+    with open("labels/"+problem+".txt", "r") as f:
+        nlabels = len(list(f))
+
+    check = lambda p : p in info.keys() and info[p]
+    ra = check("ra feature")
+    labels = check("labels")
+    state_labels = check("state labels")
+    context = check("context features")
+    je = check("je feature")
+    nk = check("nk feature")
+
+    context_idx = 3 if ra else 0
+    statelabels_idx = context_idx + (4 if context else 0)
+    labels_idx = statelabels_idx + (nlabels if state_labels else 0)
+    base_idx = labels_idx + (nlabels if labels else 0)
+    je_idx = base_idx + 12
+    nk_idx = je_idx + (2 if je else 0)
+
+    def parse_state(s):
+        idx = []
+        if ra:
+            idx += list(range(3))
+        if context:
+            idx += list(range(context_idx, context_idx+4))
+        if state_labels:
+            idx += list(range(statelabels_idx, statelabels_idx+nlabels))
+        if labels:
+            idx += list(range(labels_idx, labels_idx+nlabels))
+        idx += list(range(base_idx, base_idx+12))
+        if je:
+            idx += list(range(je_idx, je_idx+2))
+        if nk:
+            idx += list(range(nk_idx, nk_idx+2))
+        return s[:, idx]
+
+    return [parse_state(s) for s in states]
 
 
-def save_model_q_dfs(problem, n, k, file, states_file, last=False):
-    problem2, n2, k2 = problem, 3, 3
-    df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/" + filename(
-        [problem2, n2, k2]) + ".csv")
-    idx = best_agent_idx(df) if not last else last_agent_idx(df)
-    path = agent_path(problem, n, k, file, idx)
+def save_model_q_dfs(problem, n, k, file, states_file, agent_selector, selector_name="best"):
+    idx = agent_selector(problem, file)
+    path = agent_path(filename([problem, 2, 2]) + "/" + file, idx)
+
     random_states = read_random_states(problem, n, k, states_file, get_agent_info(path))
 
-    df_ra = get_agent_q_df(problem, path, random_states)
+    df = get_agent_q_df(problem, path, random_states)
 
-    t = "last" if last else "best"
-    df_ra.to_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/"+t+"_"+str(idx)+".csv")
+    df.to_csv("experiments/results/" + filename([problem, n, k]) + "/"+file+"/"+selector_name+".csv")
 
 
 if __name__ == "__main__":

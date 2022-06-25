@@ -1,7 +1,7 @@
 from agent import Agent
 from environment import DCSSolverEnv
 from modelEvaluation import save_model_q_dfs
-from test import test_agents, test_agents_q, test_agent, test_all_agent
+from testing import test_agent, test_all_agent, test_agents_q
 from util import *
 import time
 
@@ -81,7 +81,8 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
     env = {}
     for instance in instances:
         problem, n, k = instance
-        env[instance] = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
+        env[instance] = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature,
+                                     nk_feature)
 
     print("Starting trianing for", instances)
     print("Number of features:", env[instances[0]].nfeatures)
@@ -102,7 +103,7 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
     start_time = time.time()
     while True:
         for instance in instances:
-            print("Training with", instance, "for", steps, "steps", "i =", i, "time = ", time.time()-start_time)
+            print("Training with", instance, "for", steps, "steps", "i =", i, "time = ", time.time() - start_time)
             last_obs[instance] = agent.train(env[instance], {"ra feature": ra_feature, "labels": labels,
                                                              "context features": context_features,
                                                              "state labels": state_labels, "je feature": je_feature,
@@ -157,32 +158,31 @@ if __name__ == "__main__":
     replay = True
     nnsize = (20,)
     eta = 1e-5
-    ra_feature = True
+    ra_feature = False
     labels = True
     context_features = True
     state_labels = True
     je_feature = True
     nk_feature = False
     optimizer = "sgd"
-    file = "5mill_RR10k_N"
-    
-    test_all_agent("AT", file, 15, timeout="10m", name="all", selection=best_generalization_agent)    
-    exit()
-    for problem in ["DP", "BW", "TA"]:
-        train_agent_RR([(problem, n, k) for n, k in train_instances(problem)], file, max_steps=max_steps,
-                    copy_freq=copy_freq,
-                    fixed_q_target=target, reset_target_freq=reset_target,
-                    experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                    labels=labels, ra_feature=ra_feature,
-                    nnsize=nnsize, eta=eta,
-                    context_features=context_features,
-                    je_feature=je_feature,
-                    state_labels=state_labels,
-                    optimizer=optimizer,
-                    nk_feature=nk_feature,
-                    verbose=False)
-        test_all_agents_generalization(problem, file, 15, "5s", 99)
-        test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
-        # test_agents_q(problem, n, k, file, "states_context.pkl")
-        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=True)
-        # save_model_q_dfs(problem, n, k, file, "states_context.pkl", last=False)
+    n, k = 2, 2
+
+    # for file in ["5mill_RR10k_D_N", "RR", "5mill_RR10k_D", "5mill_RR10k_N"]:
+    for file in ["5mill_JE_NORA"]:
+        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+            train_agent(problem, n, k, file, max_steps=max_steps,
+                        copy_freq=copy_freq,
+                        fixed_q_target=target, reset_target_freq=reset_target,
+                        experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
+                        labels=labels, ra_feature=ra_feature,
+                        nnsize=nnsize, eta=eta,
+                        context_features=context_features,
+                        je_feature=je_feature,
+                        state_labels=state_labels,
+                        optimizer=optimizer,
+                        nk_feature=nk_feature,
+                        verbose=False)
+            test_all_agents_generalization(problem, file, 15, "5s", 99)
+            test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+            # test_agents_q(problem, n, k, file, "states.pkl")
+            # save_model_q_dfs(problem, n, k, file, "states.pkl", best_generalization_agent)
