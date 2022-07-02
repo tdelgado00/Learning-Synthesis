@@ -46,6 +46,19 @@ class Agent:
 
         self.verbose = verbose
 
+        self.training_data = []
+
+        self.params = {
+            "eta": eta,
+            "nnsize": nnsize,
+            "epsilon": epsilon,
+            "target q": fixed_q_target,
+            "reset target freq": reset_target_freq,
+            "experience replay": experience_replay,
+            "buffer size": buffer_size,
+            "optimizer": optimizer
+        }
+
     def test(self, env, timeout=30 * 60):
         start_time = time.time()
 
@@ -59,11 +72,9 @@ class Agent:
 
         return info if time.time() - start_time < timeout else "timeout"
 
-    def train(self, env, agent_info, seconds=None, max_steps=None, copy_freq=200000, last_obs=None, save_at_end=False):
+    def train(self, env, seconds=None, max_steps=None, copy_freq=200000, last_obs=None, save_at_end=False):
         if self.training_start is None:
             self.training_start = time.time()
-        saving_time = 0
-
         steps = 0
 
         if self.experience_replay and self.buffer is None:
@@ -74,30 +85,39 @@ class Agent:
         obs = env.reset() if (last_obs is None) else last_obs
         while True:
             a = self.get_action(obs, self.epsilon)
-            obs2, reward, done, _ = env.step(a)
+            obs2, reward, done, info = env.step(a)
+
             if self.experience_replay:
                 self.buffer.add(obs, a, reward, obs2, self.training_steps)
                 self.batch_update()
             else:
                 self.update(obs, a, reward, obs2)
-            obs = obs2 if not done else env.reset()
+
+            if done:
+                info.update({
+                    "training time": time.time() - self.training_start,
+                    "training steps": self.training_steps})
+                self.training_data.append(info)
+                obs = env.reset()
+            else:
+                obs = obs2
 
             if self.training_steps % copy_freq == 0 and self.dir is not None:
-                self.save(env.nfeatures, extra_info=agent_info)
+                self.save(env.info)
 
             if self.fixed_q_target and self.training_steps % self.reset_target_freq == 0:
                 self.reset_target(env.nfeatures)
 
             steps += 1
             self.training_steps += 1
-            if seconds is not None and time.time() - self.training_start - saving_time > seconds:
+            if seconds is not None and time.time() - self.training_start > seconds:
                 break
 
             if max_steps is not None and steps >= max_steps:
                 break
 
         if self.dir is not None and save_at_end:
-            self.save(env.nfeatures, extra_info=agent_info)
+            self.save(env.info)
         return obs.copy()
 
     # Takes action according to self.model
@@ -139,9 +159,9 @@ class Agent:
         self.model.partial_fit([obses[i][actions[i]] for i in range(len(actions))], rewards + values)
         self.has_learned_something = True
 
-    def save(self, nfeatures, extra_info=None):
+    def save(self, env_info):
         os.makedirs(self.dir, exist_ok=True)
-        X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
+        X_test = np.array([[0 for _ in range(env_info["nfeatures"])]]).astype(np.float32)
         onx = to_onnx(self.model, X_test)
         onnx.save(onx, self.dir + "/" + str(self.save_idx) + ".onnx")
 
@@ -149,17 +169,9 @@ class Agent:
             info = {
                 "training time": time.time() - self.training_start,
                 "training steps": self.training_steps,
-                "eta": self.eta,
-                "nnsize": self.nnsize,
-                "epsilon": self.epsilon,
-                "nfeatures": nfeatures,
-                "target q": self.fixed_q_target,
-                "reset target freq": self.reset_target_freq,
-                "experience replay": self.experience_replay,
-                "buffer size": self.buffer_size,
-                "optimizer": self.optimizer
             }
-            info.update(extra_info if extra_info is not None else {})
+            info.update(self.params)
+            info.update(env_info)
             json.dump(info, f)
 
         print("Agent", self.save_idx, "saved. Training time:", time.time() - self.training_start, "Training steps:", self.training_steps)

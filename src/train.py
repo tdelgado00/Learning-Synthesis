@@ -4,6 +4,7 @@ from modelEvaluation import save_model_q_dfs
 from testing import test_agent, test_all_agent, test_agents_q
 from util import *
 import time
+import pickle
 
 
 def best_generalization_agent(problem, file):
@@ -18,66 +19,27 @@ def best_generalization_agent(problem, file):
     perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
     return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
 
+def train_instances(problem, max_size=10000):
+    r = monolithic_results["expanded transitions", problem]
+    instances = []
+    for n in range(2, 16):
+        for k in range(2, 16):
+            if not np.isnan(r[k][n]) and r[k][n] <= 10000:
+                instances.append((n, k))
+    return instances
 
-def best_vsRA(problem, file):
-    def to_matrix(df):
-        m = np.full((df["idx"].max() + 1, 15, 15), float("inf"))
-        for i, row in df.iterrows():
-            m[row["idx"], row["n"] - 1, row["k"] - 1] = row["expanded transitions"]
-        return m
+def train_agent(instances, dir, seconds=None, total_steps=5000000,
+                copy_freq=50000,
+                eta=1e-5,
+                epsilon=0.1,
+                nnsize=(20,),
+                optimizer="sgd",
+                fixed_q_target=True, reset_target_freq=10000,
+                experience_replay=True, buffer_size=10000, batch_size=10,
+                ra_feature=False, labels=True, context_features=True,
+                state_labels=True, nk_feature=False, je_feature=True,
+                verbose=False):
 
-    def sgn(x, y):
-        if x == y:
-            return 0
-        elif x == float("inf"):
-            return -1
-        elif y == float("inf"):
-            return 1
-        else:
-            return 1 if x < y else -1
-
-    df_all = to_matrix(pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file +
-                                   "/generalization_all.csv"))
-
-    df_ra = df_comp(problem, ra_results)
-    df = []
-    for idx in range(101):
-        s = np.sum([sgn(df_all[idx, n - 1, k - 1], df_ra[n][k]) for n in range(1, 16) for k in range(1, 16)])
-        df.append({"idx": idx, "diffWithRA": s})
-    df = pd.DataFrame(df)
-    return df.loc[df["diffWithRA"] == df["diffWithRA"].max()].iloc[0]["idx"]
-
-
-def train_agent(problem, n, k, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=(20,),
-                fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
-                batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
-                state_labels=False,
-                je_feature=False, optimizer="sgd", nk_feature=False, verbose=False):
-    env = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
-    print("Starting trianing for", problem, n, k)
-    print("Number of features:", env.nfeatures)
-    print("File:", dir)
-    print("nn size:", nnsize)
-    print("optimizer:", optimizer)
-    print("Features:", ra_feature, labels, context_features, state_labels, je_feature)
-
-    dir = "experiments/results/" + filename([problem, n, k]) + "/" + dir if dir is not None else None
-    agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
-                  reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
-                  batch_size=batch_size, verbose=verbose)
-
-    agent.train(env, {"ra feature": ra_feature, "labels": labels, "context features": context_features,
-                      "state labels": state_labels, "je feature": je_feature, "nk feature": nk_feature},
-                seconds=seconds, max_steps=max_steps, copy_freq=copy_freq, save_at_end=True)
-    return agent
-
-
-def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsilon=0.1, nnsize=(20,),
-                   fixed_q_target=False, reset_target_freq=10000, experience_replay=False, buffer_size=10000,
-                   batch_size=32, copy_freq=200000, ra_feature=False, labels=False, context_features=False,
-                   state_labels=False, nk_feature=False,
-                   je_feature=False, optimizer="sgd",
-                   verbose=False):
     env = {}
     for instance in instances:
         problem, n, k = instance
@@ -92,27 +54,33 @@ def train_agent_RR(instances, dir, seconds=None, max_steps=None, eta=1e-5, epsil
     print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
+
     agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
 
-    last_obs = {}
-    steps = 10000
-    i = 0
-    total = max_steps / steps
-    start_time = time.time()
-    while True:
-        for instance in instances:
-            print("Training with", instance, "for", steps, "steps", "i =", i, "time = ", time.time() - start_time)
-            last_obs[instance] = agent.train(env[instance], {"ra feature": ra_feature, "labels": labels,
-                                                             "context features": context_features,
-                                                             "state labels": state_labels, "je feature": je_feature,
-                                                             "nk feature": nk_feature},
-                                             seconds=seconds, max_steps=steps, copy_freq=copy_freq,
-                                             last_obs=last_obs.get(instance))
-            i += 1
-            if i == total:
-                return agent
+    if len(instances) > 1:  # training round robin
+        last_obs = {}
+        steps = 10000
+        i = 0
+        total = total_steps / steps
+        start_time = time.time()
+        while i < total:
+            for instance in instances:
+                print("Training with", instance, "for", steps, "steps", "i =", i, "time =", time.time() - start_time)
+                last_obs[instance] = agent.train(env[instance],
+                                                 seconds=seconds, max_steps=steps, copy_freq=copy_freq,
+                                                 last_obs=last_obs.get(instance))
+                i += 1
+                if i == total:
+                    break
+    else:
+        agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
+                    save_at_end=True)
+
+    if dir is not None:
+        with open(dir + "/" + "training_data.pkl", "wb") as f:
+            pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
 
 
 def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
@@ -136,53 +104,12 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
 
 
-def train_instances(problem, max_size=10000):
-    r = monolithic_results["expanded transitions", problem]
-    instances = []
-    for n in range(2, 16):
-        for k in range(2, 16):
-            if not np.isnan(r[k][n]) and r[k][n] <= 10000:
-                instances.append((n, k))
-    return instances
-
-
 if __name__ == "__main__":
-    # max_steps = 100000
-    # copy_freq = 1000
-    max_steps = 5000000
-    copy_freq = 50000
-    buffer_size = 10000
-    batch_size = 10
-    reset_target = 10000
-    target = True
-    replay = True
-    nnsize = (20,)
-    eta = 1e-5
-    ra_feature = False
-    labels = True
-    context_features = True
-    state_labels = True
-    je_feature = True
-    nk_feature = False
-    optimizer = "sgd"
-    n, k = 2, 2
-
-    # for file in ["5mill_RR10k_D_N", "RR", "5mill_RR10k_D", "5mill_RR10k_N"]:
-    for file in ["5mill_JE_NORA"]:
+    for file in ["focused_1"]:
         for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            train_agent(problem, n, k, file, max_steps=max_steps,
-                        copy_freq=copy_freq,
-                        fixed_q_target=target, reset_target_freq=reset_target,
-                        experience_replay=replay, buffer_size=buffer_size, batch_size=batch_size,
-                        labels=labels, ra_feature=ra_feature,
-                        nnsize=nnsize, eta=eta,
-                        context_features=context_features,
-                        je_feature=je_feature,
-                        state_labels=state_labels,
-                        optimizer=optimizer,
-                        nk_feature=nk_feature,
-                        verbose=False)
+            train_agent([(problem, 2, 2)], file, verbose=False)
+            #train_agent(train_instances(problem, 10000), file, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
-            # test_agents_q(problem, n, k, file, "states.pkl")
-            # save_model_q_dfs(problem, n, k, file, "states.pkl", best_generalization_agent)
+            #test_agents_q(problem, n, k, file, "states.pkl")
+            #save_model_q_dfs(problem, n, k, file, "states.pkl", best_generalization_agent)
