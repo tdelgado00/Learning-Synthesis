@@ -137,7 +137,8 @@ def read_random_states(problem, n, k, file, info):
     with open("labels/"+problem+".txt", "r") as f:
         nlabels = len(list(f))
 
-    check = lambda p : p in info.keys() and info[p]
+    check = lambda p: p in info.keys() and info[p]
+
     ra = check("ra feature")
     labels = check("labels")
     state_labels = check("state labels")
@@ -145,31 +146,29 @@ def read_random_states(problem, n, k, file, info):
     je = check("je feature")
     nk = check("nk feature")
 
-    context_idx = 3 if ra else 0
-    statelabels_idx = context_idx + (4 if context else 0)
-    labels_idx = statelabels_idx + (nlabels if state_labels else 0)
-    base_idx = labels_idx + (nlabels if labels else 0)
+    context_idx = 3
+    statelabels_idx = context_idx + 4
+    labels_idx = statelabels_idx + nlabels
+    base_idx = labels_idx + nlabels
     je_idx = base_idx + 12
-    nk_idx = je_idx + (2 if je else 0)
+    nk_idx = je_idx + 2
 
-    def parse_state(s):
-        idx = []
-        if ra:
-            idx += list(range(3))
-        if context:
-            idx += list(range(context_idx, context_idx+4))
-        if state_labels:
-            idx += list(range(statelabels_idx, statelabels_idx+nlabels))
-        if labels:
-            idx += list(range(labels_idx, labels_idx+nlabels))
-        idx += list(range(base_idx, base_idx+12))
-        if je:
-            idx += list(range(je_idx, je_idx+2))
-        if nk:
-            idx += list(range(nk_idx, nk_idx+2))
-        return s[:, idx]
+    idx = []
+    if ra:
+        idx += list(range(3))
+    if context:
+        idx += list(range(context_idx, context_idx + 4))
+    if state_labels:
+        idx += list(range(statelabels_idx, statelabels_idx + nlabels))
+    if labels:
+        idx += list(range(labels_idx, labels_idx + nlabels))
+    idx += list(range(base_idx, base_idx + 12))
+    if je:
+        idx += list(range(je_idx, je_idx + 2))
+    if nk:
+        idx += list(range(nk_idx, nk_idx + 2))
 
-    return [parse_state(s) for s in states]
+    return [s[:, idx] for s in states]
 
 
 def save_model_q_dfs(problem, n, k, file, states_file, agent_selector, selector_name="best"):
