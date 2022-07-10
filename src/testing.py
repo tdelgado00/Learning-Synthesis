@@ -103,13 +103,14 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
                 results = read_results(lines[i:])
             results["OutOfMem"] = True
         except BaseException as err:
+            results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False, "Exception": True}
+            print("Exeption!")
             print(command)
             for line in lines:
                 print(line)
             for line in proc.stderr.split("\n"):
                 print(line)
-            raise
-
+            
     results["algorithm"] = "new"
     results["heuristic"] = path
     results["problem"] = problem

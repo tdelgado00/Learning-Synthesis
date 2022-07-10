@@ -25,7 +25,7 @@ def train_instances(problem, max_size=10000):
     for n in range(2, 16):
         for k in range(2, 16):
             if not np.isnan(r[k][n]) and r[k][n] <= 10000:
-                instances.append((n, k))
+                instances.append((problem, n, k))
     return instances
 
 def train_agent(instances, dir, seconds=None, total_steps=5000000,
@@ -39,7 +39,7 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
                 ra_feature=False, labels=True, context_features=True,
                 state_labels=True, nk_feature=False, je_feature=True,
                 verbose=False):
-
+    
     env = {}
     for instance in instances:
         problem, n, k = instance
@@ -47,18 +47,19 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
                                      nk_feature)
 
     print("Starting trianing for", instances)
-    print("Number of features:", env[instances[0]].nfeatures)
-    print("File:", dir)
-    print("nn size:", nnsize)
-    print("optimizer:", optimizer)
-    print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
+    print("File: ", file)
+    print("Env info:")
+    print(env[instances[0]].info)
+    
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
 
     agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
-
+    
+    print("Agent info:")
+    print(agent.params)
     if len(instances) > 1:  # training round robin
         last_obs = {}
         steps = 10000
@@ -105,11 +106,13 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
 
 
 if __name__ == "__main__":
-    for file in ["focused_1"]:
-        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    start = time.time()
+    for file in ["testing"]:
+        for problem in ["AT"]:#, "BW", "DP", "TA"]:
             train_agent([(problem, 2, 2)], file, verbose=False)
             #train_agent(train_instances(problem, 10000), file, nnsize=(64, 32), verbose=False)
-            test_all_agents_generalization(problem, file, 15, "5s", 99)
-            test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+            #test_all_agents_generalization(problem, file, 15, "5s", 99)
+            #test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
             #test_agents_q(problem, n, k, file, "states.pkl")
             #save_model_q_dfs(problem, n, k, file, "states.pkl", best_generalization_agent)
+    print("Total time:", time.time()-start)
