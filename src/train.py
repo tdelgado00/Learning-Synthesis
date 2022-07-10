@@ -49,18 +49,12 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
                                      nk_feature)
 
     print("Starting trianing for", instances)
-<<<<<<< HEAD
-    print("File: ", file)
-    print("Env info:")
-    print(env[instances[0]].info)
-    
-=======
     print("Number of features:", env[instances[0]].nfeatures)
     print("File:", dir)
     print("nn size:", nnsize)
     print("optimizer:", optimizer)
     print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature, prop_feature)
->>>>>>> a8d4587787947d4e8c5ff0e0a0fbc10724816b60
+
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
 
