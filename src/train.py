@@ -19,6 +19,7 @@ def best_generalization_agent(problem, file):
     perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
     return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
 
+
 def train_instances(problem, max_size=10000):
     r = monolithic_results["expanded transitions", problem]
     instances = []
@@ -27,6 +28,7 @@ def train_instances(problem, max_size=10000):
             if not np.isnan(r[k][n]) and r[k][n] <= 10000:
                 instances.append((n, k))
     return instances
+
 
 def train_agent(instances, dir, seconds=None, total_steps=5000000,
                 copy_freq=50000,
@@ -37,7 +39,7 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
                 ra_feature=False, labels=True, context_features=True,
-                state_labels=True, nk_feature=False, je_feature=True,
+                state_labels=True, nk_feature=False, je_feature=True, prop_feature=False,
                 verbose=False):
 
     env = {}
@@ -51,7 +53,7 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
     print("File:", dir)
     print("nn size:", nnsize)
     print("optimizer:", optimizer)
-    print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature)
+    print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature, prop_feature)
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
 
@@ -105,11 +107,12 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
 
 
 if __name__ == "__main__":
-    for file in ["focused_1"]:
-        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            train_agent([(problem, 2, 2)], file, verbose=False)
+    for file in ["prop"]:
+        for problem in ["TA"]:#["AT", "BW", "CM", "DP", "TA", "TL"]:
+        #for problem in ["AT", "BW", "DP", "TA"]:
+            train_agent([(problem, 2, 2)], file, prop_feature=True, verbose=False)
             #train_agent(train_instances(problem, 10000), file, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
-            #test_agents_q(problem, n, k, file, "states.pkl")
-            #save_model_q_dfs(problem, n, k, file, "states.pkl", best_generalization_agent)
+            #test_agents_q(problem, 2, 2, file, "states.pkl")
+            #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)

@@ -59,6 +59,7 @@ def feature_names(info, problem=None):
     ra_features = ["ra type", "1 / ra distance", "in open"]
     je_features = ["last state expanded from", "last state expanded to"]
     nk_features = ["n", "k"]
+    prop_features = ["in loop", "forced in FNG", "in PG ancestors", "forced in PG"]
 
     check = lambda p : p in info.keys() and info[p]
     ra = check("ra feature")
@@ -67,6 +68,7 @@ def feature_names(info, problem=None):
     context = check("context features")
     je = check("je feature")
     nk = check("nk feature")
+    p = check("prop feature")
 
     if problem is not None and labels:
         with open("labels/" + problem + ".txt", "r") as f:
@@ -79,7 +81,8 @@ def feature_names(info, problem=None):
                (labels_features if state_labels else []) + \
                base_features + \
                (je_features if je else []) + \
-               (nk_features if nk else [])
+               (nk_features if nk else []) + \
+               (prop_features if p else [])
 
     return features
 

@@ -122,9 +122,9 @@ def eval_agent_q(path, random_states):
 def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, True, True, True))
+        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, True, True, True, True))
 
-        file = "experiments/results/" + filename([problem, n, k]) + "/states.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_prop.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)
@@ -145,6 +145,7 @@ def read_random_states(problem, n, k, file, info):
     context = check("context features")
     je = check("je feature")
     nk = check("nk feature")
+    p = check("prop features")
 
     context_idx = 3
     statelabels_idx = context_idx + 4
@@ -152,6 +153,7 @@ def read_random_states(problem, n, k, file, info):
     base_idx = labels_idx + nlabels
     je_idx = base_idx + 12
     nk_idx = je_idx + 2
+    p_idx = nk_idx + 2
 
     idx = []
     if ra:
@@ -167,6 +169,8 @@ def read_random_states(problem, n, k, file, info):
         idx += list(range(je_idx, je_idx + 2))
     if nk:
         idx += list(range(nk_idx, nk_idx + 2))
+    if p:
+        idx += list(range(p_idx, p_idx + 4))
 
     return [s[:, idx] for s in states]
 
