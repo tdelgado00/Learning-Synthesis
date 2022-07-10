@@ -11,7 +11,7 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 class DCSSolverEnv:
     def __init__(self, problem, n, k, ra_feature=True, labels=False, context_features=False, state_labels=False,
-                 je_feature=False, nk_feature=False):
+                 je_feature=False, nk_feature=False, prop_feature=False):
         super(DCSSolverEnv, self).__init__()
         self.problem = problem
         self.n = n
@@ -19,7 +19,7 @@ class DCSSolverEnv:
         self.problemFilename = filename([problem, n, k])
 
         self.javaEnv = DCSForPython("", "labels/" + problem + ".txt" if labels else "mock", 10000, ra_feature,
-                                    context_features, state_labels, je_feature, nk_feature)
+                                    context_features, state_labels, je_feature, nk_feature, prop_feature)
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
         self.info = {
@@ -27,6 +27,7 @@ class DCSSolverEnv:
             "context features": context_features,
             "state labels": state_labels, "je feature": je_feature,
             "nk feature": nk_feature,
+            "prop feature": prop_feature,
             "nfeatures": self.nfeatures,
             "n": self.n,
             "k": self.k,
