@@ -58,7 +58,7 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
 
-    agent = Agent(eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
+    agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
     
@@ -111,9 +111,9 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
 
 if __name__ == "__main__":
     start = time.time()
-    for file in ["prop"]:
-        for problem in ["TA", "BW", "AT", "CM", "DP", "TL"]:
-            train_agent([(problem, 2, 2)], file, prop_feature=True, verbose=False)
+    for file in ["rmsprop"]:
+        for problem in ["AT", "BW", "CM", "TA", "TL", "DP"]:
+            train_agent([(problem, 2, 2)], file, optimizer="RMSprop", prop_feature=True, verbose=False)
             #train_agent(train_instances(problem, 10000), file, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)

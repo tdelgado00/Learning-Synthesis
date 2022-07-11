@@ -5,29 +5,24 @@ import numpy as np
 
 import os
 
-import onnx
-from onnxruntime import InferenceSession
-from skl2onnx import to_onnx
-from sklearn.neural_network import MLPRegressor
-from modelEvaluation import get_random_experience
 from replayBuffer import ReplayBuffer
+from modelEvaluation import get_random_experience
+from model import MLPModel, OnnxModel, TorchModel
 
 
 class Agent:
-    def __init__(self, eta=1e-5, nnsize=(20,), epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
+    def __init__(self, nfeatures, eta=1e-5, nnsize=(20,), epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
                  experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", verbose=False):
 
-        self.model = MLPRegressor(hidden_layer_sizes=nnsize,
-                                  solver=optimizer,
-                                  learning_rate="constant",  # only used with sgd
-                                  learning_rate_init=eta)
+        if optimizer == "RMSprop":
+            self.model = TorchModel(nfeatures, nnsize)
+        else:
+            self.model = MLPModel(nnsize, optimizer, eta)
 
         self.optimizer = optimizer
         self.fixed_q_target = fixed_q_target
         self.reset_target_freq = reset_target_freq
         self.target = None
-
-        self.has_learned_something = False
 
         self.experience_replay = experience_replay
         self.buffer_size = buffer_size
@@ -106,7 +101,9 @@ class Agent:
                 self.save(env.info)
 
             if self.fixed_q_target and self.training_steps % self.reset_target_freq == 0:
-                self.reset_target(env.nfeatures)
+                if self.verbose:
+                    print("Resetting target.")
+                self.target = OnnxModel(self.model)
 
             steps += 1
             self.training_steps += 1
@@ -121,49 +118,39 @@ class Agent:
         return obs.copy()
 
     # Takes action according to self.model
-    def get_action(self, actionFeatures, epsilon):
+    def get_action(self, s, epsilon):
         if np.random.rand() <= epsilon:
-            return np.random.randint(len(actionFeatures))
+            return np.random.randint(len(s))
         else:
-            return np.argmax(self.eval_model(actionFeatures))
-
-    def eval_model(self, actionFeatures):
-        if not self.has_learned_something or actionFeatures is None:
-            if self.verbose:
-                print("Model evaluation is 0", self.has_learned_something, actionFeatures is None)
-            return 0
-        return self.model.predict(actionFeatures)
-
-    def eval_target(self, actionFeatures):
-        if not self.has_learned_something or actionFeatures is None:
-            if self.verbose:
-                print("Target evaluation is 0", self.has_learned_something, actionFeatures is None)
-            return 0
-        return self.target.run(None, {'X': actionFeatures})[0]
+            return self.model.best(s)
 
     def update(self, obs, action, reward, obs2):
-        value = np.max(self.eval_target(obs2) if self.fixed_q_target else self.eval_model(obs2))
-        self.model.partial_fit([obs[action]], [value+reward])
-        self.has_learned_something = True
+        if self.target is not None:
+            value = self.target.eval(obs2)
+        else:
+            value = self.model.eval(obs2)
+
+        self.model.single_update(obs[action], value+reward)
+
         if self.verbose:
-            print("Normal update. Value:", value+reward)
+            print("Single update. Value:", value+reward)
 
     def batch_update(self):
-        obses, actions, rewards, obses2, steps = self.buffer.sample(self.batch_size)
-        if not self.fixed_q_target:
-            values = np.array([np.max(self.eval_model(state)) for state in obses2])
+        obses, actions, rewards, obss2, steps = self.buffer.sample(self.batch_size)
+
+        if self.target is not None:
+            values = self.target.evalBatch(obss2)
         else:
-            values = np.array([np.max(self.eval_target(state)) for state in obses2])
+            values = self.model.evalBatch(obss2)
+
         if self.verbose:
             print("Batch update. Values:", rewards+values, "Steps:", steps)
-        self.model.partial_fit([obses[i][actions[i]] for i in range(len(actions))], rewards + values)
-        self.has_learned_something = True
+
+        self.model.batch_update(np.array([obses[i][actions[i]] for i in range(len(actions))]), rewards + values)
 
     def save(self, env_info):
         os.makedirs(self.dir, exist_ok=True)
-        X_test = np.array([[0 for _ in range(env_info["nfeatures"])]]).astype(np.float32)
-        onx = to_onnx(self.model, X_test)
-        onnx.save(onx, self.dir + "/" + str(self.save_idx) + ".onnx")
+        OnnxModel(self.model).save(self.dir + "/" + str(self.save_idx))
 
         with open(self.dir + "/" + str(self.save_idx) + ".json", "w") as f:
             info = {
@@ -176,9 +163,3 @@ class Agent:
 
         print("Agent", self.save_idx, "saved. Training time:", time.time() - self.training_start, "Training steps:", self.training_steps)
         self.save_idx += 1
-
-    def reset_target(self, nfeatures):
-        if self.verbose:
-            print("Resetting target.")
-        X_test = np.array([[0 for _ in range(nfeatures)]]).astype(np.float32)
-        self.target = InferenceSession(to_onnx(self.model, X_test).SerializeToString())
