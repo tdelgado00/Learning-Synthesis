@@ -54,7 +54,7 @@ def features_search(env, total):
 
 
 def frontier_size_stats(problem, n, k, eps, ra_feature):
-    env = DCSSolverEnv(problem, n, k, ra_feature, False)
+    env = DCSSolverEnv(problem, n, k, ra_feature, False)  # deprecated
     df = []
     for i in range(eps):
         obs = env.reset()
@@ -122,9 +122,19 @@ def eval_agent_q(path, random_states):
 def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
-        states = get_random_states(DCSSolverEnv(problem, n, k, True, True, True, True, True, True, True))
+        features = {
+            "ra feature": True,
+            "context features": True,
+            "labels": True,
+            "state labels": True,
+            "je feature": True,
+            "nk feature": True,
+            "prop feature": True,
+            "visits feature": True
+        }
+        states = get_random_states(DCSSolverEnv(problem, n, k, features))
 
-        file = "experiments/results/" + filename([problem, n, k]) + "/states_prop.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_visits.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)

@@ -30,7 +30,7 @@ def train_instances(problem, max_size=10000):
     return instances
 
 
-def train_agent(instances, dir, seconds=None, total_steps=5000000,
+def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 copy_freq=50000,
                 eta=1e-5,
                 epsilon=0.1,
@@ -38,23 +38,19 @@ def train_agent(instances, dir, seconds=None, total_steps=5000000,
                 optimizer="sgd",
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
-                ra_feature=False, labels=True, context_features=True,
-                state_labels=True, nk_feature=False, je_feature=True, prop_feature=False,
+
                 verbose=False):
-    
     env = {}
     for instance in instances:
         problem, n, k = instance
-        env[instance] = DCSSolverEnv(problem, n, k, ra_feature, labels, context_features, state_labels, je_feature,
-                                     nk_feature)
+        env[instance] = DCSSolverEnv(problem, n, k, features)
 
     print("Starting trianing for", instances)
     print("Number of features:", env[instances[0]].nfeatures)
     print("File:", dir)
     print("nn size:", nnsize)
     print("optimizer:", optimizer)
-    print("Features:", ra_feature, labels, context_features, state_labels, je_feature, nk_feature, prop_feature)
-
+    print("Features:", features)
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
 
@@ -111,10 +107,20 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
 
 if __name__ == "__main__":
     start = time.time()
-    for file in ["rmsprop"]:
-        for problem in ["AT", "BW", "CM", "TA", "TL", "DP"]:
-            train_agent([(problem, 2, 2)], file, optimizer="RMSprop", prop_feature=True, verbose=False)
-            #train_agent(train_instances(problem, 10000), file, nnsize=(64, 32), verbose=False)
+    features = {
+        "ra feature": False,
+        "context features": True,
+        "labels": True,
+        "state labels": True,
+        "je feature": True,
+        "nk feature": False,
+        "prop feature": True,
+        "visits feature": True
+    }
+    for file in ["visits"]:
+        for problem in ["TA", "AT", "BW", "CM", "DP", "TL"]:
+            train_agent([(problem, 2, 2)], file, features, verbose=False)
+            #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
             #test_agents_q(problem, 2, 2, file, "states.pkl")

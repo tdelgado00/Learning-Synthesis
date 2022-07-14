@@ -83,6 +83,12 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
     if path != "mock" and uses_feature(path, "nk feature"):
         command += ["-n"]
 
+    if path != "mock" and uses_feature(path, "prop feature"):
+        command += ["-p"]
+
+    if path != "mock" and uses_feature(path, "visits feature"):
+        command += ["-v"]
+
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if proc.returncode == 124:
@@ -311,7 +317,7 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
     with open(path[:-5] + ".json", "r") as f:
         info = json.load(f)
 
-    env = DCSSolverEnv(problem, n, k, info["ra feature"], info["labels"], info["context features"], info["state labels"], info["je feature"])
+    env = DCSSolverEnv(problem, n, k, info)
 
     agent = onnx.load(path)
 
@@ -341,7 +347,7 @@ def test_onnx(path, problem, n, k, timeout=30 * 60, debug=None):
 
 
 def test_heuristic_python(problem, n, k, heuristic, verbose=False):
-    env = DCSSolverEnv(problem, n, k, True)
+    env = DCSSolverEnv(problem, n, k, True) # deprecated
 
     obs = env.reset()
     done = False

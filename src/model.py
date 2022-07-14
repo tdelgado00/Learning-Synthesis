@@ -79,7 +79,7 @@ class TorchModel(Model):
         self.model = NeuralNetwork(nfeatures, nnsize).to(self.device)
         print(self.model)
 
-        self.loss_fn = nn.SmoothL1Loss()
+        self.loss_fn = nn.SmoothL1Loss()  # MSELoss?
         self.optimizer = torch.optim.RMSprop(self.model.parameters())
 
         self.has_learned_something = False

@@ -10,29 +10,30 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k, ra_feature=True, labels=False, context_features=False, state_labels=False,
-                 je_feature=False, nk_feature=False, prop_feature=False):
+    def __init__(self, problem, n, k, features):
         super(DCSSolverEnv, self).__init__()
         self.problem = problem
         self.n = n
         self.k = k
         self.problemFilename = filename([problem, n, k])
 
-        self.javaEnv = DCSForPython("", "labels/" + problem + ".txt" if labels else "mock", 10000, ra_feature,
-                                    context_features, state_labels, je_feature, nk_feature, prop_feature)
+        self.javaEnv = DCSForPython("", "labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
+                                    features["ra feature"],
+                                    features["context features"],
+                                    features["state labels"],
+                                    features["je feature"],
+                                    features["nk feature"],
+                                    features["prop feature"],
+                                    features["visits feature"])
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
-        self.info = {
-            "ra feature": ra_feature, "labels": labels,
-            "context features": context_features,
-            "state labels": state_labels, "je feature": je_feature,
-            "nk feature": nk_feature,
-            "prop feature": prop_feature,
+        self.info = features
+        self.info.update({
             "nfeatures": self.nfeatures,
             "n": self.n,
             "k": self.k,
             "problem": self.problem
-        }
+        })
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
