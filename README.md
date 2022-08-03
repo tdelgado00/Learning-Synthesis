@@ -1,29 +1,7 @@
-# README #
+This repository contains the implemantation of a Reinforcement Learning approach for the Directed Controller Synthesis problem.
 
-This README would normally document whatever steps are necessary to get your application up and running.
+RL agents are heuristics for the On-the-fly DCS algorithm implemented at [MTSA](https://mtsa.dc.uba.ar/).
 
-### What is this repository for? ###
+This is a work in progress at [Lafhis](https://lafhis.dc.uba.ar/), University of Buenos Aires.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+Usage instructions coming soon.
