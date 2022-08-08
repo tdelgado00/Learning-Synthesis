@@ -115,7 +115,7 @@ class TorchModel(Model):
 
         self.optimizer.zero_grad()
         loss.backward()
-        clip_grad_norm_(self.model.nn.parameters(), 1.0)
+        clip_grad_norm_(self.model.parameters(), 1.0)
         self.optimizer.step()
         self.optimizer.zero_grad()
 
