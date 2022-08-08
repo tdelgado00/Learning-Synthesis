@@ -36,6 +36,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 epsilon=0.1,
                 nnsize=(20,),
                 optimizer="sgd",
+                model="sklearn",
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
 
@@ -114,12 +115,12 @@ if __name__ == "__main__":
         "state labels": True,
         "je feature": True,
         "nk feature": False,
-        "prop feature": True,
-        "visits feature": True
+        "prop feature": False,
+        "visits feature": False
     }
-    for file in ["visits"]:
-        for problem in ["TA", "AT", "BW", "CM", "DP", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, verbose=False)
+    for file in ["pytorch2"]:
+        for problem in ["AT", "TA", "BW", "CM", "DP", "TL"]:
+            train_agent([(problem, 2, 2)], file, features, optimizer="adam", model="pytorch", nnsize=(512, 512))
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)

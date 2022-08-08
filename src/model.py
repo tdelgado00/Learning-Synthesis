@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.onnx
+from torch.nn.utils import clip_grad_norm_
 
 
 class Model:
@@ -79,8 +80,8 @@ class TorchModel(Model):
         self.model = NeuralNetwork(nfeatures, nnsize).to(self.device)
         print(self.model)
 
-        self.loss_fn = nn.SmoothL1Loss()  # MSELoss?
-        self.optimizer = torch.optim.RMSprop(self.model.parameters())
+        self.loss_fn = nn.MSELoss()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
         self.has_learned_something = False
 
@@ -114,7 +115,10 @@ class TorchModel(Model):
 
         self.optimizer.zero_grad()
         loss.backward()
+        clip_grad_norm_(self.model.nn.parameters(), 1.0)
         self.optimizer.step()
+        self.optimizer.zero_grad()
+
         self.has_learned_something = True
 
     def to_onnx(self):

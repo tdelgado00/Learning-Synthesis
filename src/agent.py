@@ -12,12 +12,13 @@ from model import MLPModel, OnnxModel, TorchModel
 
 class Agent:
     def __init__(self, nfeatures, eta=1e-5, nnsize=(20,), epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
-                 experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", verbose=False):
+                 experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", model="sklearn", verbose=False):
 
-        if optimizer == "RMSprop":
-            self.model = TorchModel(nfeatures, nnsize)
-        else:
+        if model == "sklearn":
             self.model = MLPModel(nnsize, optimizer, eta)
+        else:
+            assert optimizer == "adam"
+            self.model = TorchModel(nfeatures, nnsize)
 
         self.optimizer = optimizer
         self.fixed_q_target = fixed_q_target
