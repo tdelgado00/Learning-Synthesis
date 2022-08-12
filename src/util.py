@@ -146,7 +146,6 @@ def uses_feature(path, feature):
     info = get_agent_info(path)
     return feature in info.keys() and info[feature]
 
-
 def indexOf(s, lines):
     return list(map(lambda l: s in l, lines)).index(True)
 

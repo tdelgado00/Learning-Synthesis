@@ -74,8 +74,9 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
     if path != "mock" and uses_feature(path, "context features"):
         command += ["-c"]
 
-    if path != "mock" and uses_feature(path, "state labels"):
-        command += ["-s"]
+    state_labels_info = get_agent_info(path).get("state labels")
+    if path != "mock" and state_labels_info is not None:
+        command += ["-s", str(state_labels_info)]
 
     if path != "mock" and uses_feature(path, "je feature"):
         command += ["-j"]
