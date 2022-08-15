@@ -68,15 +68,19 @@ class Agent:
 
         return info if time.time() - start_time < timeout else "timeout"
 
+    def initializeBuffer(self, envs):
+        exp_per_instance = self.buffer_size // len(envs)
+        print("Initializing buffer with", exp_per_instance, "observations per instance, and", len(envs), "instances.")
+
+        self.buffer = ReplayBuffer(self.buffer_size)
+        for env in envs.values():
+            for obs, action, reward, obs2, step in get_random_experience(env, total=exp_per_instance):
+                self.buffer.add(obs, action, reward, obs2, step)
+
     def train(self, env, seconds=None, max_steps=None, copy_freq=200000, last_obs=None, save_at_end=False):
         if self.training_start is None:
             self.training_start = time.time()
         steps = 0
-
-        if self.experience_replay and self.buffer is None:
-            self.buffer = ReplayBuffer(self.buffer_size)
-            for obs, action, reward, obs2, step in get_random_experience(env, total=self.buffer_size // 5):
-                self.buffer.add(obs, action, reward, obs2, step)
 
         obs = env.reset() if (last_obs is None) else last_obs
         while True:

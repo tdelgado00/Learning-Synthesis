@@ -25,7 +25,7 @@ def train_instances(problem, max_size=10000):
     instances = []
     for n in range(2, 16):
         for k in range(2, 16):
-            if not np.isnan(r[k][n]) and r[k][n] <= 10000:
+            if not np.isnan(r[k][n]) and r[k][n] <= max_size:
                 instances.append((problem, n, k))
     return instances
 
@@ -58,9 +58,13 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
     agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, model=model, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, verbose=verbose)
-    
+
     print("Agent info:")
     print(agent.params)
+
+    if experience_replay:
+        agent.initializeBuffer(env)
+
     if len(instances) > 1:  # training round robin
         last_obs = {}
         steps = 10000
@@ -118,9 +122,9 @@ if __name__ == "__main__":
         "prop feature": True,
         "visits feature": True
     }
-    for file in ["testing"]:
+    for file in ["testing2"]:
         for problem in ["AT", "TA", "BW", "CM", "DP", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, nnsize=(64, 64))
+            train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features, nnsize=(64, 32), buffer_size=40000)
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
