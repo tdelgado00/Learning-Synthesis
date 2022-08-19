@@ -1,8 +1,7 @@
-import time
-
 import jpype
 import jpype.imports
 from util import *
+import copy
 
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])
@@ -11,7 +10,6 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 class DCSSolverEnv:
     def __init__(self, problem, n, k, features):
-        super(DCSSolverEnv, self).__init__()
         self.problem = problem
         self.n = n
         self.k = k
@@ -27,7 +25,7 @@ class DCSSolverEnv:
                                     features["visits feature"])
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
-        self.info = features
+        self.info = dict(features)
         self.info.update({
             "nfeatures": self.nfeatures,
             "n": self.n,
