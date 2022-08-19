@@ -37,6 +37,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 nnsize=(20,),
                 optimizer="sgd",
                 model="sklearn",
+                quantum_steps=10000, 
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
 
@@ -67,15 +68,14 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
 
     if len(instances) > 1:  # training round robin
         last_obs = {}
-        steps = 10000
         i = 0
-        total = total_steps / steps
+        total = total_steps / quantum_steps
         start_time = time.time()
         while i < total:
             for instance in instances:
-                print("Training with", instance, "for", steps, "steps", "i =", i, "time =", time.time() - start_time)
+                print("Training with", instance, "for", quantum_steps, "steps", "i =", i, "time =", time.time() - start_time)
                 last_obs[instance] = agent.train(env[instance],
-                                                 seconds=seconds, max_steps=steps, copy_freq=copy_freq,
+                                                 seconds=seconds, max_steps=quantum_steps, copy_freq=copy_freq,
                                                  last_obs=last_obs.get(instance))
                 i += 1
                 if i == total:
@@ -116,15 +116,15 @@ if __name__ == "__main__":
         "ra feature": False,
         "context features": True,
         "labels": True,
-        "state labels": 3,
+        "state labels": 1,
         "je feature": True,
         "nk feature": False,
-        "prop feature": True,
-        "visits feature": True
+        "prop feature": False,
+        "visits feature": False
     }
-    for file in ["testing2"]:
-        for problem in ["AT", "TA", "BW", "CM", "DP", "TL"]:
-            train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features, nnsize=(64, 32), buffer_size=40000)
+    for file in ["RRu4k"]:
+        for problem in ["AT", "BW", "DP", "TA"]:
+            train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features, nnsize=(64, 32), buffer_size=40000, quantum_steps=10000)
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
