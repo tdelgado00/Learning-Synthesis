@@ -24,7 +24,7 @@ def get_random_experience(env, total):
 
         obs2, reward, done, info = env.step(action)
 
-        states.append((obs,  action, 0 if done else -1, obs2, -steps-1))
+        states.append((obs,  action, reward, obs2, -steps-1))
         obs = obs2
         steps += 1
 

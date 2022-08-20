@@ -42,12 +42,9 @@ class DCSSolverEnv:
     def step(self, action):
         self.javaEnv.expandAction(action)
         if not self.javaEnv.isFinished():
-            return self.get_actions(), self.reward(False), False, {}
+            return self.get_actions(), -1, False, {}
         else:
-            return None, self.reward(True), True, self.get_results()
-
-    def reward(self, done):
-        return 0 if done else -1
+            return None, -1, True, self.get_results()
 
     def reset(self):
         self.javaEnv.startSynthesis(self.problem, self.n, self.k)
