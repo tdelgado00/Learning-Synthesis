@@ -24,7 +24,7 @@ def fill_df(df, m):
     return df
 
 
-def df_agent(problem, agent_file, metric="expanded transitions"):
+def get_df_agent(problem, agent_file, metric="expanded transitions"):
     df_agent = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + agent_file)
     # df_agent = pd.read_csv("experiments/results 25 mar/"+filename([problems[i], 2, 2])+"/all_e_15.csv")
     df_agent = fill_df(df_agent, 15)
@@ -34,7 +34,7 @@ def df_agent(problem, agent_file, metric="expanded transitions"):
     return r
 
 
-def df_comp(problem, comp_df, metric="expanded transitions"):
+def get_df_comp(problem, comp_df, metric="expanded transitions"):
     comp_t = comp_df[metric, problem]
     comp_t = comp_t.fillna(float("inf"))
     return onlyifsolvedlast(comp_t)
@@ -90,7 +90,7 @@ def feature_names(info, problem=None):
     return features
 
 
-def results_path(problem, n, k, file):
+def results_path(problem, n=2, k=2, file=""):
     return "experiments/results/" + filename([problem, n, k]) + "/" + file
 
 
@@ -167,6 +167,29 @@ def read_results(lines):
     results["memory(mb)"] = float(lines[i + 7].split(" ")[1])
     results["heuristic time(ms)"] = float(lines[i + 8].split(" ")[1]) if "heuristic" in lines[i + 8] else np.nan
     return results
+
+
+def best_generalization_agent(problem, file):
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+    max_idx = df["idx"].max()
+    solved = [0 for i in range(max_idx + 1)]
+    expanded = [0 for i in range(max_idx + 1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
+    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
+
+
+def train_instances(problem, max_size=10000):
+    r = monolithic_results["expanded transitions", problem]
+    instances = []
+    for n in range(2, 16):
+        for k in range(2, 16):
+            if not np.isnan(r[k][n]) and r[k][n] <= max_size:
+                instances.append((problem, n, k))
+    return instances
 
 
 monolithic_results = {}

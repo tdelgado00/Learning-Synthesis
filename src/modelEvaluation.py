@@ -10,24 +10,30 @@ import pandas as pd
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
-def get_random_experience(env, total):
+def get_random_experience(env, total, nstep=1):
 
     states = []
-    done = True
-    obs = None
+    obs = env.reset()
     steps = 0
-    for i in range(total):
-        if done:
-            obs = env.reset()
 
+    last_steps = []
+    for i in range(total):
         action = np.random.randint(len(obs))
+        last_steps.append((obs, action))
 
         obs2, reward, done, info = env.step(action)
 
-        states.append((obs,  action, reward, obs2, -steps-1))
-        obs = obs2
+        if done:
+            for j in range(len(last_steps)):
+                states.append((last_steps[j][0], last_steps[j][1], -len(last_steps)+j, None))
+            last_steps = []
+            obs = env.reset()
+        else:
+            if len(last_steps) >= nstep:
+                states.append((last_steps[0][0], last_steps[0][1], -nstep, obs2))
+            last_steps = last_steps[len(last_steps)-nstep+1:]
+            obs = obs2
         steps += 1
-
     return states
 
 

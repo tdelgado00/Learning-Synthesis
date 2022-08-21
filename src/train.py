@@ -7,29 +7,6 @@ import time
 import pickle
 
 
-def best_generalization_agent(problem, file):
-    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
-    max_idx = df["idx"].max()
-    solved = [0 for i in range(max_idx + 1)]
-    expanded = [0 for i in range(max_idx + 1)]
-    for x, cant in dict(df["idx"].value_counts()).items():
-        solved[x] = cant
-    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
-        expanded[x] = cant
-    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
-    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
-
-
-def train_instances(problem, max_size=10000):
-    r = monolithic_results["expanded transitions", problem]
-    instances = []
-    for n in range(2, 16):
-        for k in range(2, 16):
-            if not np.isnan(r[k][n]) and r[k][n] <= max_size:
-                instances.append((problem, n, k))
-    return instances
-
-
 def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 copy_freq=50000,
                 eta=1e-5,
@@ -40,7 +17,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 quantum_steps=10000,
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
-
+                nstep=1,
                 verbose=False):
     env = {}
     for instance in instances:
@@ -58,7 +35,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
 
     agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, model=model, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
-                  batch_size=batch_size, verbose=verbose)
+                  batch_size=batch_size, nstep=nstep, verbose=verbose)
 
     print("Agent info:")
     print(agent.params)
@@ -109,7 +86,6 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
 
-
 if __name__ == "__main__":
     start = time.time()
     features = {
@@ -122,10 +98,11 @@ if __name__ == "__main__":
         "prop feature": False,
         "visits feature": False
     }
-    for file in ["RRu4k"]:
-        for problem in ["AT", "BW", "DP", "TA"]:
-            train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features,
-                        nnsize=(64, 32), buffer_size=40000, quantum_steps=10000)
+    for file in ["3stepQ"]:
+        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+            train_agent([(problem, 2, 2)], file, features, nnsize=(20,), nstep=3)
+            #train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features,
+            #            nnsize=(64, 32), buffer_size=40000, quantum_steps=10000, nstep=3)
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)

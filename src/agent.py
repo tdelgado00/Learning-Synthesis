@@ -12,7 +12,7 @@ from model import MLPModel, OnnxModel, TorchModel
 
 class Agent:
     def __init__(self, nfeatures, eta=1e-5, nnsize=(20,), epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
-                 experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", model="sklearn", verbose=False):
+                 experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", model="sklearn", nstep=1, verbose=False):
 
         if model == "sklearn":
             self.model = MLPModel(nnsize, optimizer, eta)
@@ -40,9 +40,13 @@ class Agent:
         self.training_start = None
         self.training_steps = 0
 
+        self.nstep = nstep
+
         self.verbose = verbose
 
         self.training_data = []
+
+        self.best_training_perf = float("inf")
 
         self.params = {
             "eta": eta,
@@ -52,7 +56,8 @@ class Agent:
             "reset target freq": reset_target_freq,
             "experience replay": experience_replay,
             "buffer size": buffer_size,
-            "optimizer": optimizer
+            "optimizer": optimizer,
+            "nstep": nstep
         }
 
     def test(self, env, timeout=30 * 60):
@@ -74,26 +79,43 @@ class Agent:
 
         self.buffer = ReplayBuffer(self.buffer_size)
         for env in envs.values():
-            for obs, action, reward, obs2, step in get_random_experience(env, total=exp_per_instance):
-                self.buffer.add(obs, action, reward, obs2, step)
+            random_experience = get_random_experience(env, total=exp_per_instance, nstep=self.nstep)
+            for obs, action, reward, obs2 in random_experience:
+                self.buffer.add(obs, action, reward, obs2)
+        print("Done.")
 
     def train(self, env, seconds=None, max_steps=None, copy_freq=200000, last_obs=None, save_at_end=False):
         if self.training_start is None:
             self.training_start = time.time()
+
         steps = 0
 
         obs = env.reset() if (last_obs is None) else last_obs
+
+        last_steps = []
         while True:
             a = self.get_action(obs, self.epsilon)
+            last_steps.append((obs, a))
+
             obs2, reward, done, info = env.step(a)
 
             if self.experience_replay:
-                self.buffer.add(obs, a, reward, obs2, self.training_steps)
+                if done:
+                    for j in range(len(last_steps)):
+                        self.buffer.add(last_steps[j][0], last_steps[j][1], -len(last_steps) + j, None)
+                    last_steps = []
+                else:
+                    if len(last_steps) >= self.nstep:
+                        self.buffer.add(last_steps[0][0], last_steps[0][1], -self.nstep, obs2)
+                    last_steps = last_steps[len(last_steps) - self.nstep + 1:]
                 self.batch_update()
             else:
                 self.update(obs, a, reward, obs2)
 
             if done:
+                if info["expanded transitions"] < self.best_training_perf:
+                    self.best_training_perf = info["expanded transitions"]
+                    print("New best!", self.best_training_perf, "Steps:", self.training_steps)
                 info.update({
                     "training time": time.time() - self.training_start,
                     "training steps": self.training_steps})
@@ -141,17 +163,16 @@ class Agent:
             print("Single update. Value:", value+reward)
 
     def batch_update(self):
-        obses, actions, rewards, obss2, steps = self.buffer.sample(self.batch_size)
-
+        obss, actions, rewards, obss2 = self.buffer.sample(self.batch_size)
         if self.target is not None:
             values = self.target.evalBatch(obss2)
         else:
             values = self.model.evalBatch(obss2)
 
         if self.verbose:
-            print("Batch update. Values:", rewards+values, "Steps:", steps)
+            print("Batch update. Values:", rewards+values)
 
-        self.model.batch_update(np.array([obses[i][actions[i]] for i in range(len(actions))]), rewards + values)
+        self.model.batch_update(np.array([obss[i][actions[i]] for i in range(len(actions))]), rewards + values)
 
     def save(self, env_info):
         os.makedirs(self.dir, exist_ok=True)
