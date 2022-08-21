@@ -37,7 +37,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 nnsize=(20,),
                 optimizer="sgd",
                 model="sklearn",
-                quantum_steps=10000, 
+                quantum_steps=10000,
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
 
@@ -122,9 +122,11 @@ if __name__ == "__main__":
         "prop feature": False,
         "visits feature": False
     }
-    for file in ["RRu4k"]:
-        for problem in ["AT", "BW", "DP", "TA"]:
-            train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features, nnsize=(64, 32), buffer_size=40000, quantum_steps=10000)
+    for file in ["focused_R"]:
+        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+            train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
+            #train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features,
+            #            nnsize=(64, 32), buffer_size=40000, quantum_steps=10000)
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
