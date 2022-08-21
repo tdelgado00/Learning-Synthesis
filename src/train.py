@@ -100,9 +100,7 @@ if __name__ == "__main__":
     }
     for file in ["3stepQ"]:
         for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, nnsize=(20,), nstep=3)
-            #train_agent([(problem, 2, 2), (problem, 2, 3), (problem, 3, 2), (problem, 3, 3)], file, features,
-            #            nnsize=(64, 32), buffer_size=40000, quantum_steps=10000, nstep=3)
+            train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
