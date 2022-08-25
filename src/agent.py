@@ -11,7 +11,8 @@ from model import MLPModel, OnnxModel, TorchModel
 
 
 class Agent:
-    def __init__(self, nfeatures, eta=1e-5, nnsize=(20,), epsilon=0.1, dir=None, fixed_q_target=False, reset_target_freq=10000,
+    def __init__(self, nfeatures, eta=1e-5, nnsize=(20,), first_epsilon=0.1, last_epsilon=0.1,
+                 epsilon_decay_steps=250000, dir=None, fixed_q_target=False, reset_target_freq=10000,
                  experience_replay=False, buffer_size=10000, batch_size=32, optimizer="sgd", model="sklearn", nstep=1, verbose=False):
 
         if model == "sklearn":
@@ -32,7 +33,9 @@ class Agent:
 
         self.eta = eta
         self.nnsize = nnsize
-        self.epsilon = epsilon
+        self.first_epsilon = first_epsilon
+        self.last_epsilon = last_epsilon
+        self.epsilon_decay_steps = epsilon_decay_steps
 
         self.dir = dir
         self.save_idx = 0
@@ -51,7 +54,9 @@ class Agent:
         self.params = {
             "eta": eta,
             "nnsize": nnsize,
-            "epsilon": epsilon,
+            "first epsilon": first_epsilon,
+            "last epsilon": last_epsilon,
+            "epsilon decay steps": epsilon_decay_steps,
             "target q": fixed_q_target,
             "reset target freq": reset_target_freq,
             "experience replay": experience_replay,
@@ -92,9 +97,10 @@ class Agent:
 
         obs = env.reset() if (last_obs is None) else last_obs
 
+        epsilon = self.first_epsilon
         last_steps = []
         while True:
-            a = self.get_action(obs, self.epsilon)
+            a = self.get_action(obs, epsilon)
             last_steps.append((obs, a))
 
             obs2, reward, done, info = env.step(a)
@@ -139,6 +145,9 @@ class Agent:
 
             if max_steps is not None and steps >= max_steps:
                 break
+
+            if epsilon > self.last_epsilon + 1e-10:
+                epsilon -= (self.first_epsilon - self.last_epsilon) / self.epsilon_decay_steps
 
         if self.dir is not None and save_at_end:
             self.save(env.info)

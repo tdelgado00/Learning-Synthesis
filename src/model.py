@@ -69,6 +69,28 @@ class MLPModel(Model):
         return self.model.n_features_in_
 
 
+class OnnxModel(Model):
+    def __init__(self, model):
+        super().__init__()
+        assert model.has_learned_something
+
+        self.onnx_model, self.session = model.to_onnx()
+
+    def save(self, path):
+        onnx.save(self.onnx_model, path + ".onnx")
+
+    def predict(self, s):
+        if s is None:
+            return 0
+        return self.session.run(None, {'X': s})[0]
+
+    def evalBatch(self, ss):
+        return np.array([self.eval(s) for s in ss])
+
+    def eval(self, s):
+        return np.max(self.predict(s))
+
+
 class TorchModel(Model):
 
     def __init__(self, nfeatures, nnsize):
@@ -81,7 +103,7 @@ class TorchModel(Model):
         print(self.model)
 
         self.loss_fn = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1.5e-4)
 
         self.has_learned_something = False
 
@@ -139,28 +161,6 @@ class TorchModel(Model):
         return self.nfeatures
 
 
-class OnnxModel(Model):
-    def __init__(self, model):
-        super().__init__()
-        assert model.has_learned_something
-
-        self.onnx_model, self.session = model.to_onnx()
-
-    def save(self, path):
-        onnx.save(self.onnx_model, path + ".onnx")
-
-    def predict(self, s):
-        if s is None:
-            return 0
-        return self.session.run(None, {'X': s})[0]
-
-    def evalBatch(self, ss):
-        return np.array([self.eval(s) for s in ss])
-
-    def eval(self, s):
-        return np.max(self.predict(s))
-
-
 class NeuralNetwork(nn.Module):
     def __init__(self, nfeatures, nnsize):
         super(NeuralNetwork, self).__init__()
@@ -175,3 +175,4 @@ class NeuralNetwork(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
+
