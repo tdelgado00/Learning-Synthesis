@@ -1,6 +1,5 @@
 from agent import Agent
 from environment import DCSSolverEnv
-from modelEvaluation import save_model_q_dfs
 from testing import test_agent, test_all_agent, test_agents_q
 from util import *
 import time
@@ -10,7 +9,9 @@ import pickle
 def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 copy_freq=50000,
                 eta=1e-5,
-                epsilon=0.1,
+                first_epsilon=0.1,
+                last_epsilon=0.1,
+                epsilon_decay_steps=250000,
                 nnsize=(20,),
                 optimizer="sgd",
                 model="sklearn",
@@ -33,7 +34,9 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
 
     dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
 
-    agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, model=model, epsilon=epsilon, dir=dir, fixed_q_target=fixed_q_target,
+    agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, model=model,
+                  first_epsilon=first_epsilon, last_epsilon=last_epsilon, epsilon_decay_steps=epsilon_decay_steps,
+                  dir=dir, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, nstep=nstep, verbose=verbose)
 
@@ -98,12 +101,12 @@ if __name__ == "__main__":
         "prop feature": False,
         "visits feature": False
     }
-    for file in ["3stepQ"]:
+    for file in ["focused_1", "focused_2", "focused_3", "focused_4"]:
         for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
+            #train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
-            test_all_agents_generalization(problem, file, 15, "5s", 99)
-            test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+            #test_all_agents_generalization(problem, file, 15, "5s", 99)
+            test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
     print("Total time:", time.time()-start)

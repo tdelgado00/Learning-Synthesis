@@ -168,6 +168,14 @@ def read_results(lines):
     results["heuristic time(ms)"] = float(lines[i + 8].split(" ")[1]) if "heuristic" in lines[i + 8] else np.nan
     return results
 
+def best_agent_2_2(problem, file):
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+    df = df.loc[(df["n"] == 2) & (df["k"] == 2)]
+    m = df["expanded transitions"].min(skipna=True)
+    df = df.loc[df["expanded transitions"] == m]
+    idxs = list(df["idx"])
+    print(idxs)
+    return max(idxs)
 
 def best_generalization_agent(problem, file):
     df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
