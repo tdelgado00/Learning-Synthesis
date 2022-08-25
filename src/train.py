@@ -98,12 +98,12 @@ if __name__ == "__main__":
         "prop feature": False,
         "visits feature": False
     }
-    for file in ["3stepQ"]:
+    for file in ["focused_1", "focused_2", "focused_3", "focused_4"]:
         for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
+            #train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
-            test_all_agents_generalization(problem, file, 15, "5s", 99)
-            test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+            #test_all_agents_generalization(problem, file, 15, "5s", 99)
+            test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
     print("Total time:", time.time()-start)
