@@ -101,12 +101,29 @@ if __name__ == "__main__":
         "prop feature": False,
         "visits feature": False
     }
-    for file in ["focused_1", "focused_2", "focused_3", "focused_4"]:
-        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+    # RQ 1.5
+    #for file in ["focused_1", "focused_2", "focused_3", "focused_4"]:
+    #    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
             #train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
             #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
             #test_all_agents_generalization(problem, file, 15, "5s", 99)
-            test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
+    #        test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
-    print("Total time:", time.time()-start)
+    
+    for file in ["pytorch_sgd"]:
+        for problem in ["TA", "CM", "AT", "BW", "TL"]:
+            train_agent([(problem, 2, 2)], file, features, nnsize=(20,), optimizer="sgd", model="pytorch")
+            test_all_agents_generalization(problem, file, 15, "5s", 99)
+            test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+            #test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
+            #test_agents_q(problem, 2, 2, file, "states.pkl")
+            #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
+    
+    #for file in ["pytorch_epsdec"]:
+    #    for problem in ["DP", "BW", "CM", "AT", "TA", "TL"]:
+    #        if problems != "DP":
+    #            train_agent([(problem, 2, 2)], file, features, nnsize=(20,), optimizer="sgd", model="pytorch", first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000)
+    #        test_all_agents_generalization(problem, file, 15, "5s", 99)
+    #        test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+    #print("Total time:", time.time()-start)

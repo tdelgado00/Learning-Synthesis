@@ -103,8 +103,9 @@ class TorchModel(Model):
         print(self.model)
 
         self.loss_fn = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1.5e-4)
-
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1e-8, weight_decay=1e-4) #eps = 1.5e-4
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-5, momentum=0.9, nesterov=True, weight_decay=1e-4)
+        # Adam could be better for deeper neural networks
         self.has_learned_something = False
 
     def evalBatch(self, ss):
@@ -132,14 +133,14 @@ class TorchModel(Model):
 
         ss = torch.tensor(ss).to(self.device)
         values = torch.tensor(values, dtype=torch.float, device=self.device).reshape(len(ss), 1)
+        
+        self.optimizer.zero_grad()
         pred = self.model(ss)
+        
         loss = self.loss_fn(pred, values)
-
-        self.optimizer.zero_grad()
         loss.backward()
-        clip_grad_norm_(self.model.parameters(), 1.0)
+        # clip_grad_norm_(self.model.parameters(), 1.0)
         self.optimizer.step()
-        self.optimizer.zero_grad()
 
         self.has_learned_something = True
 

@@ -18,7 +18,6 @@ class Agent:
         if model == "sklearn":
             self.model = MLPModel(nnsize, optimizer, eta)
         else:
-            assert optimizer == "adam"
             self.model = TorchModel(nfeatures, nnsize)
 
         self.optimizer = optimizer

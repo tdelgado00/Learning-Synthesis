@@ -170,7 +170,7 @@ def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
     files = [f for f in os.listdir(dir) if f.endswith(".onnx")]
     for i in range(0, len(files), freq):
         print("Testing", i, "with", problem2, n2, k2)
-        path = agent_path(problem, n, k, file, i)
+        path = dir + "/" + str(i) + ".onnx" 
         result, debug = test_agent(path, problem2, n2, k2, timeout="10m")
 
         if result == "timeout":
