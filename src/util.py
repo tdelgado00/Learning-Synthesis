@@ -6,40 +6,6 @@ import json
 import pandas as pd
 
 
-def onlyifsolvedlast(res):
-    for n in range(1, 16):
-        for k in range(1, 16):
-            if (n > 1 and res[n - 1][k] == float("inf")) or (k > 1 and res[n][k - 1] == float("inf")):
-                res[n][k] = float("inf")
-    return res
-
-
-def fill_df(df, m):
-    added = []
-    for n in range(1, m + 1):
-        for k in range(1, m + 1):
-            if len(df.loc[(df["n"] == n) & (df["k"] == k)]) == 0:
-                added.append({"n": n, "k": k, "expanded transitions": float("inf"), "synthesis time(ms)": float("inf")})
-    df = pd.concat([df, pd.DataFrame(added)], ignore_index=True)
-    return df
-
-
-def get_df_agent(problem, agent_file, metric="expanded transitions"):
-    df_agent = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + agent_file)
-    # df_agent = pd.read_csv("experiments/results 25 mar/"+filename([problems[i], 2, 2])+"/all_e_15.csv")
-    df_agent = fill_df(df_agent, 15)
-    agent_t = df_agent.pivot("n", "k", metric)
-    agent_t = agent_t.fillna(float("inf"))
-    r = onlyifsolvedlast(agent_t)
-    return r
-
-
-def get_df_comp(problem, comp_df, metric="expanded transitions"):
-    comp_t = comp_df[metric, problem]
-    comp_t = comp_t.fillna(float("inf"))
-    return onlyifsolvedlast(comp_t)
-
-
 def feature_names(info, problem=None):
     base_features = [
         "action controllable",
@@ -111,26 +77,6 @@ def best_agent_idx(problem, train_n, train_k, file):
     df = pd.read_csv(path + problem + "_3_3.csv")
     return df.loc[df["expanded transitions"] == df["expanded transitions"].min()]["idx"].iloc[-1]
 
-    # ranks = [[] for _ in range(101)]
-    # for f in os.listdir(path):
-    #    if f.endswith(".csv") and len(f.split("_")) == 3:
-    #        df = pd.read_csv(path + f)
-    #        n, k = tuple([int(x) for x in f[:-4].split("_")[1:]])
-    #        if n != train_n or k != train_k:
-    #            models = []
-    #            for idx, row in df.iterrows():
-    #                if row["idx"] == 70:
-    #                    print("Best dp", row["expanded transitions"], n, k)
-    #                models.append((row["expanded transitions"], row["idx"]))
-    #            models = sorted(models)
-    #            for i in range(len(models)):
-    #                ranks[models[i][1]].append(i+1)
-
-    # print(ranks)
-    # print(list(map(np.prod, ranks)))
-    # print(ranks[np.argmin(list(map(np.prod, ranks)))])
-    # return np.argmin(list(map(np.prod, ranks)))
-
 
 def last_agent_idx(df):
     return df["idx"].max()
@@ -168,6 +114,7 @@ def read_results(lines):
     results["heuristic time(ms)"] = float(lines[i + 8].split(" ")[1]) if "heuristic" in lines[i + 8] else np.nan
     return results
 
+
 def best_agent_2_2(problem, file):
     df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
     df = df.loc[(df["n"] == 2) & (df["k"] == 2)]
@@ -199,40 +146,15 @@ def train_instances(problem, max_size=10000):
                 instances.append((problem, n, k))
     return instances
 
-
-monolithic_results = {}
-for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    df = pd.read_csv("experiments/results/ResultsPaper/" + problem + ".csv")
-    df = df.loc[df["controllerType"] == "mono"]
-    df["n"] = df["testcase"].apply(lambda t: int(t.split("-")[1]))
-    df["k"] = df["testcase"].apply(lambda t: int(t.split("-")[2]))
-    df = fill_df(df, 15)
-    monolithic_results["expanded transitions", problem] = df.pivot("n", "k", "expandedTransitions")
-    monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
-
-ra_results = {}
-for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/all_ra_afterfix_15.csv")
-    df = fill_df(df, 15)
-    ra_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
-    ra_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesis time(ms)")
-
-ra_sola_results = {}
-for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/all_ra_sola_15.csv")
-    df = fill_df(df, 15)
-    ra_sola_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
-    ra_sola_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesis time(ms)")
-
-random_results_small = {}
-for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    for n, k in [(2, 2), (3, 3)]:
-        df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/random.csv")
-        random_results_small[(problem, n, k)] = list(df["expanded transitions"])
-
-random_results = {}
-for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/all_random.csv")
-    df = fill_df(df, 15)
-    random_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
-    random_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesis time(ms)")
+def all_solved_instances(dfs):
+    instances = []
+    for n in range(1, 16):
+        for k in range(1, 16):
+            good = True
+            for df, cant in dfs:
+                if ((df["n"] == n) & (df["k"] == k)).sum() < cant:
+                    good = False
+                    break
+            if good:
+                instances.append((n, k))
+    return instances

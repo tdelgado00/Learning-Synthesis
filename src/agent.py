@@ -32,6 +32,8 @@ class Agent:
 
         self.eta = eta
         self.nnsize = nnsize
+
+        self.epsilon = first_epsilon
         self.first_epsilon = first_epsilon
         self.last_epsilon = last_epsilon
         self.epsilon_decay_steps = epsilon_decay_steps
@@ -48,7 +50,7 @@ class Agent:
 
         self.training_data = []
 
-        self.best_training_perf = float("inf")
+        self.best_training_perf = {}
 
         self.params = {
             "eta": eta,
@@ -88,18 +90,17 @@ class Agent:
                 self.buffer.add(obs, action, reward, obs2)
         print("Done.")
 
-    def train(self, env, seconds=None, max_steps=None, copy_freq=200000, last_obs=None, save_at_end=False):
+    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, save_at_end=False):
         if self.training_start is None:
             self.training_start = time.time()
 
-        steps = 0
+        steps, eps = 0, 0
 
         obs = env.reset() if (last_obs is None) else last_obs
 
-        epsilon = self.first_epsilon
         last_steps = []
         while True:
-            a = self.get_action(obs, epsilon)
+            a = self.get_action(obs, self.epsilon)
             last_steps.append((obs, a))
 
             obs2, reward, done, info = env.step(a)
@@ -118,12 +119,16 @@ class Agent:
                 self.update(obs, a, reward, obs2)
 
             if done:
-                if info["expanded transitions"] < self.best_training_perf:
-                    self.best_training_perf = info["expanded transitions"]
-                    print("New best!", self.best_training_perf, "Steps:", self.training_steps)
+                instance = (env.info["problem"], env.info["n"], env.info["k"])
+                if instance not in self.best_training_perf.keys() or \
+                        info["expanded transitions"] < self.best_training_perf[instance]:
+                    self.best_training_perf[instance] = info["expanded transitions"]
+                    print("New best at instance "+str(instance)+"!", self.best_training_perf[instance], "Steps:", self.training_steps)
                 info.update({
                     "training time": time.time() - self.training_start,
-                    "training steps": self.training_steps})
+                    "training steps": self.training_steps,
+                    "instance": instance
+                    })
                 self.training_data.append(info)
                 obs = env.reset()
             else:
@@ -139,14 +144,20 @@ class Agent:
 
             steps += 1
             self.training_steps += 1
+            if done:
+                eps += 1
+
             if seconds is not None and time.time() - self.training_start > seconds:
                 break
 
             if max_steps is not None and steps >= max_steps:
                 break
 
-            if epsilon > self.last_epsilon + 1e-10:
-                epsilon -= (self.first_epsilon - self.last_epsilon) / self.epsilon_decay_steps
+            if max_eps is not None and eps >= max_eps:
+                break
+
+            if self.epsilon > self.last_epsilon + 1e-10:
+                self.epsilon -= (self.first_epsilon - self.last_epsilon) / self.epsilon_decay_steps
 
         if self.dir is not None and save_at_end:
             self.save(env.info)

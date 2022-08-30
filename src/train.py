@@ -1,5 +1,6 @@
 from agent import Agent
 from environment import DCSSolverEnv
+from plots import read_monolithic
 from testing import test_agent, test_all_agent, test_agents_q
 from util import *
 import time
@@ -19,6 +20,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 fixed_q_target=True, reset_target_freq=10000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
                 nstep=1,
+                incremental=True,
                 verbose=False):
     env = {}
     for instance in instances:
@@ -49,17 +51,31 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
     if len(instances) > 1:  # training round robin
         last_obs = {}
         i = 0
-        total = total_steps / quantum_steps
         start_time = time.time()
-        while i < total:
-            for instance in instances:
-                print("Training with", instance, "for", quantum_steps, "steps", "i =", i, "time =", time.time() - start_time)
-                last_obs[instance] = agent.train(env[instance],
-                                                 seconds=seconds, max_steps=quantum_steps, copy_freq=copy_freq,
+
+        if not incremental:
+            total = total_steps / quantum_steps
+            while i < total:
+                for instance in instances:
+                    print("Training with", instance, "for", quantum_steps, "steps", "i =", i, "time =",
+                          time.time() - start_time)
+                    last_obs[instance] = agent.train(env[instance], max_steps=quantum_steps, copy_freq=copy_freq, last_obs=last_obs.get(instance))
+                    i += 1
+                    if i == total:
+                        break
+        else:
+            trans = read_monolithic()[("expanded transitions", instances[0][0])]
+            diffs = np.array([trans[k][n] for problem, n, k in instances])
+            print("Instance difficulties are", diffs)
+            while agent.training_steps < total_steps:
+                t = agent.training_steps / total_steps
+                probs = diffs**(t*2-1)
+                probs /= np.sum(probs)
+                print("Sampling probabilities are", probs)
+                instance = instances[np.random.choice(list(range(len(instances))), p=probs)]
+                print("Training with", instance, "for 1 episode. time =", time.time() - start_time)
+                last_obs[instance] = agent.train(env[instance], max_eps=1, copy_freq=copy_freq,
                                                  last_obs=last_obs.get(instance))
-                i += 1
-                if i == total:
-                    break
     else:
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
                     save_at_end=True)
@@ -89,6 +105,7 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
     df = pd.DataFrame(df)
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
 
+
 if __name__ == "__main__":
     start = time.time()
     features = {
@@ -101,6 +118,7 @@ if __name__ == "__main__":
         "prop feature": False,
         "visits feature": False
     }
+
     # RQ 1.5
     #for file in ["focused_1", "focused_2", "focused_3", "focused_4"]:
     #    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
@@ -111,19 +129,16 @@ if __name__ == "__main__":
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
     
-    for file in ["pytorch_sgd"]:
-        for problem in ["TA", "CM", "AT", "BW", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, nnsize=(20,), optimizer="sgd", model="pytorch")
+    for file in ["incremental"]:
+        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+            s = 1 if problem == "CM" else 2
+            instances = [(problem, n, k) for n in range(s, s+2) for k in range(s, s+2)]
+            train_agent(instances, file, features, optimizer="sgd", model="pytorch", first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, incremental=True)
+            #train_agent([(problem, 2, 2), (problem, 3, 3)], file, features, optimizer="sgd", model="pytorch",
+            #            first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, incremental=True)
             test_all_agents_generalization(problem, file, 15, "5s", 99)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+
             #test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
-    
-    #for file in ["pytorch_epsdec"]:
-    #    for problem in ["DP", "BW", "CM", "AT", "TA", "TL"]:
-    #        if problems != "DP":
-    #            train_agent([(problem, 2, 2)], file, features, nnsize=(20,), optimizer="sgd", model="pytorch", first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000)
-    #        test_all_agents_generalization(problem, file, 15, "5s", 99)
-    #        test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
-    #print("Total time:", time.time()-start)
