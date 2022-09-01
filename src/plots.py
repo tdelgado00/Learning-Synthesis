@@ -249,8 +249,10 @@ def get_trans(df, n, k):
     return df.loc[(df["n"] == n) & (df["k"] == k)]["expanded transitions"].iat[0]
 
 
-def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2):
+def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2, metric="expanded transitions"):
     print("Plotting test transitions")
+    if n >= 3 or k >= 3:
+        used_problems = [p for p in used_problems if p != "CM"]
     f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
     fout = open(path + "test trans.txt", "w+")
 
@@ -258,13 +260,17 @@ def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2):
         problem = used_problems[i]
         ax = axs[i] if len(used_problems) > 1 else axs
 
-        df = pd.concat([data["all"][problem][file] for file, group in used_files], ignore_index=True)
-        df = df.loc[(df["n"] == n) & (df["k"] == k)]
-        df["reward"] = -df["expanded transitions"]
+        dfs = [data["all"][problem][file] for file, group in used_files]
+        dfs = [df.loc[(df["n"] == n) & (df["k"] == k)].copy() for df in dfs]
+        if metric == "mean transitions":
+            dfs = [add_convolution(df, 30) for df in dfs]
+        df = pd.concat(dfs, ignore_index=True)
+
+        df["reward"] = -df[metric]
 
         sns.lineplot(data=df, x="training steps", y="reward", ax=ax, ci="sd", hue="group")
 
-        ra = get_trans(data["ra 10m"][problem], 2, 2)
+        ra = get_trans(data["ra 10m"][problem], n, k)
         plot_line(-ra, "RA", "red", ax, 15)
 
         fout.write(problem + "\n")
@@ -272,18 +278,21 @@ def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2):
         for file, dfg in df.groupby("file"):
             fout.write(file + " " + str(dfg["expanded transitions"].min()) + "\n")
 
-        random_min = min(data["random small"][(problems[i], n, k)])
-        random_mean = np.mean(data["random small"][(problems[i], n, k)])
-
-        plot_line(-random_min, "Random max", "green", ax, 15)
-        plot_line(-random_mean, "Random mean", "green", ax, 15)
+        if (n, k) in [(2, 2), (3, 3)]:
+            random_min = min(data["random small"][(problems[i], n, k)])
+            random_mean = np.mean(data["random small"][(problems[i], n, k)])
+            plot_line(-random_min, "Random max", "green", ax, 15)
+            plot_line(-random_mean, "Random mean", "green", ax, 15)
 
         ax.set_title(" ".join([problem, str(n), str(k)]), fontdict={"fontsize": 18})
 
     handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
     plt.legend(handles, labels, prop={'size': 15}, loc="lower right")
     plt.tight_layout()
-    plt.savefig(path + "2 2.jpg")
+    if metric == "mean transitions":
+        plt.savefig(path + " ".join(["mean", str(n), str(k)]) + ".jpg")
+    else:
+        plt.savefig(path + " ".join([str(n), str(k)]) + ".jpg")
 
 
 def plot_training_transitions(used_problems, used_files, data, path):
@@ -439,6 +448,8 @@ def plot_15_15(used_problems, path, files1, file2, name):
             sns.heatmap(data=trans_df[p] if trans else solved_df[p],
                         cmap=cmap,
                         annot=trans, annot_kws={"size": 6},
+                        xticklabels=list(range(1, 16)),
+                        yticklabels=list(range(1, 16)),
                         ax=ax, cbar=True, vmin=vmin if trans else 0, vmax=vmax if trans else 5)
 
             # for problem, n, k in train_instances(p):
@@ -500,7 +511,7 @@ def solved_table(used_problems, used_files, data, path):
             results[p]["ra"].append(metric(data["ra 10m"][p]))
 
     for group in groups:
-        n = len(results["AT"][group])
+        n = len(results[used_problems[0]][group])
         if group != "multiple":
             results["all"][group] = [0 for j in range(n)]
             for j in range(n):
@@ -552,17 +563,20 @@ def pipeline_plot_15_15(files1, file2, name):
 
 
 if __name__ == "__main__":
-    path = "experiments/figures/epsdec/"
+    path = "experiments/figures/tmp/"
     if not os.path.exists(path):
         print("Creating dir", path)
         os.makedirs(path)
 
     problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+    problems = ["AT", "CM"]
 
     focused_files = ["focused_1", "focused_2", "focused_3", "focused_4", "focused_5", "focused_6", "focused_7"]
     files = [(f, "focused") for f in focused_files]
 
     files += [("pytorch_epsdec", "pytorch epsdec")]
+
+    files += [("incremental_n", "incremental_n")]
 
     data = {}
     data["mono"] = read_monolithic()
@@ -572,11 +586,16 @@ if __name__ == "__main__":
     data["random small"] = read_random_small()
     data["agent 10m"] = read_agents_10m(problems, files)
 
-    under_test = "pytorch_epsdec"
+    under_test = "incremental_n"
 
     pipeline = [
-        solved_table,
-        plot_test_transitions,
+        # solved_table,
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="mean transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="mean transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="expanded transitions"),
+        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="mean transitions"),
         train_transitions_min,
         plot_training_transitions,
         plot_solved_training,
