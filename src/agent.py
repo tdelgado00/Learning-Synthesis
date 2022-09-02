@@ -127,7 +127,8 @@ class Agent:
                 info.update({
                     "training time": time.time() - self.training_start,
                     "training steps": self.training_steps,
-                    "instance": instance
+                    "instance": instance,
+                    "loss": self.model.current_loss(),
                     })
                 self.training_data.append(info)
                 obs = env.reset()

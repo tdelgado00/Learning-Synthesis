@@ -26,6 +26,9 @@ class Model:
     def best(self, s):
         raise NotImplementedError
 
+    def current_loss(self):
+        raise NotImplementedError
+
 
 class MLPModel(Model):
 
@@ -68,6 +71,9 @@ class MLPModel(Model):
     def nfeatures(self):
         return self.model.n_features_in_
 
+    def current_loss(self):
+        raise NotImplementedError
+
 
 class OnnxModel(Model):
     def __init__(self, model):
@@ -90,12 +96,16 @@ class OnnxModel(Model):
     def eval(self, s):
         return np.max(self.predict(s))
 
+    def current_loss(self):
+        raise NotImplementedError
+
 
 class TorchModel(Model):
 
     def __init__(self, nfeatures, nnsize):
         super().__init__()
         self.nfeatures = nfeatures
+        self.n, self.k = None, None
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Using", self.device, "device")
@@ -106,7 +116,10 @@ class TorchModel(Model):
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1e-8, weight_decay=1e-4) #eps = 1.5e-4
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-5, momentum=0.9, nesterov=True, weight_decay=1e-4)
         # Adam could be better for deeper neural networks
+
         self.has_learned_something = False
+
+        self.losses = []
 
     def evalBatch(self, ss):
         return np.array([self.eval(s) for s in ss])
@@ -142,6 +155,7 @@ class TorchModel(Model):
         # clip_grad_norm_(self.model.parameters(), 1.0)
         self.optimizer.step()
 
+        self.losses.append(loss.item())
         self.has_learned_something = True
 
     def to_onnx(self):
@@ -161,6 +175,12 @@ class TorchModel(Model):
     def nfeatures(self):
         return self.nfeatures
 
+    # should be called only at the end of each episode
+    def current_loss(self):
+        avg_loss = np.mean(self.losses)
+        self.losses = []
+        return avg_loss
+
 
 class NeuralNetwork(nn.Module):
     def __init__(self, nfeatures, nnsize):
@@ -176,4 +196,3 @@ class NeuralNetwork(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
-
