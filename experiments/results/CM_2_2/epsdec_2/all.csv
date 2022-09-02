@@ -1,0 +1,27 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),OutOfMem,algorithm,heuristic,problem,n,k
+0,26.0,17.0,34.0,21.0,145.0,6.0,1.0,1.0,2.0,13.5,21.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,1
+1,57.0,31.0,77.0,39.0,170.0,6.0,8.0,1.0,4.0,16.48,35.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,2
+2,95.0,42.0,137.0,54.0,205.0,8.0,19.0,1.0,4.0,18.48,60.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,3
+3,156.0,56.0,232.0,72.0,239.0,11.0,38.0,1.0,9.0,21.92,79.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,4
+4,239.0,100.0,377.0,133.0,314.0,36.0,54.0,1.0,9.0,22.92,109.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,5
+5,336.0,138.0,536.0,183.0,410.0,41.0,92.0,1.0,11.0,47.02,147.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,6
+6,397.0,170.0,641.0,233.0,515.0,37.0,110.0,24.0,10.0,68.13,186.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,7
+7,456.0,177.0,734.0,244.0,538.0,26.0,140.0,27.0,7.0,77.23,196.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,8
+8,612.0,254.0,1030.0,352.0,864.0,71.0,202.0,17.0,11.0,95.61,212.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,9
+9,711.0,302.0,1178.0,422.0,1045.0,58.0,226.0,43.0,9.0,123.08,253.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,10
+10,1077.0,357.0,1929.0,501.0,2838.0,309.0,304.0,1.0,19.0,124.94,360.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,11
+11,1083.0,413.0,1938.0,582.0,2842.0,237.0,362.0,1.0,15.0,104.82,398.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,12
+12,1159.0,463.0,1933.0,655.0,1746.0,84.0,390.0,57.0,15.0,57.05,342.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,13
+13,1309.0,527.0,2195.0,748.0,2288.0,78.0,459.0,66.0,16.0,37.37,365.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,14
+14,1412.0,528.0,2358.0,753.0,2243.0,54.0,517.0,69.0,16.0,151.06,420.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,1,15
+15,161.0,75.0,289.0,132.0,276.0,53.0,0.0,1.0,63.0,26.48,104.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,2,1
+16,755.0,221.0,1453.0,413.0,892.0,163.0,90.0,1.0,364.0,45.68,284.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,2,2
+17,2466.0,460.0,5258.0,886.0,3169.0,331.0,591.0,1.0,970.0,174.91,868.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,2,3
+18,6186.0,806.0,14442.0,1583.0,17118.0,575.0,2529.0,1.0,2168.0,294.96,2758.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,2,4
+19,,,,,,,,,,,,False,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,2,5
+20,1157.0,355.0,2883.0,922.0,1738.0,594.0,0.0,1.0,842.0,151.16,484.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,3,1
+21,14790.0,1681.0,41656.0,4741.0,183501.0,6889.0,268.0,1.0,14371.0,306.2,11497.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,3,2
+22,,,,,,,,,,,,False,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,3,3
+23,7149.0,1787.0,22561.0,6620.0,66139.0,4648.0,0.0,1.0,6904.0,281.64,5318.0,True,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,4,1
+24,,,,,,,,,,,,False,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,4,2
+25,,,,,,,,,,,,False,new,experiments/results/CM_2_2/epsdec_2/51.onnx,CM,5,1
