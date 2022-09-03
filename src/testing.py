@@ -53,7 +53,7 @@ def test_ra(problem, n, k, timeout="30m"):
     return results, None
 
 
-def test_agent(path, problem, n, k, timeout="30m", debug=False):
+def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=False):
     command = ["timeout", timeout, "java", "-Xmx8g", "-XX:MaxDirectMemorySize=512m", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
@@ -93,33 +93,40 @@ def test_agent(path, problem, n, k, timeout="30m", debug=False):
     if path != "mock" and uses_feature(path, "visits feature"):
         command += ["-v"]
 
+    command += ["-f", str(max_frontier)]
+
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False}
     else:
         lines = proc.stdout.split("\n")[2:]
-        if np.any(["OutOfMem" in line for line in lines]):
+        err_lines = proc.stderr.split("\n")
+        if np.any(["OutOfMem" in line for line in err_lines]):
             debug = None
             results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": True}
-        try:
-            i = list(map((lambda l: "ExpandedStates" in l), lines)).index(True)
-            j = list(map((lambda l: "DirectedController" in l), lines)).index(True)
-            if debug:
-                debug = parse_java_debug(lines[:j])
-                results = read_results(lines[i:])
-            else:
-                debug = None
-                results = read_results(lines[i:])
-            results["OutOfMem"] = True
-        except BaseException as err:
-            results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False, "Exception": True}
-            print("Exeption!")
-            print(command)
-            for line in lines:
-                print(line)
-            for line in proc.stderr.split("\n"):
-                print(line)
+        else:
+            try:
+                i = list(map((lambda l: "ExpandedStates" in l), lines)).index(True)
+                j = list(map((lambda l: "DirectedController" in l), lines)).index(True)
+                if debug:
+                    debug = parse_java_debug(lines[:j])
+                    results = read_results(lines[i:])
+                else:
+                    debug = None
+                    results = read_results(lines[i:])
+                results["OutOfMem"] = False
+            except BaseException as err:
+                results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False, "Exception": True}
+                print("Exeption!")
+                print(" ".join(command))
+                if np.any([("Frontier" in line) for line in err_lines]):
+                    print("Frontier did not fit in the buffer.")
+                else:
+                    for line in lines:
+                        print(line)
+                    for line in err_lines:
+                        print(line)
             
     results["algorithm"] = "new"
     results["heuristic"] = path
@@ -216,7 +223,7 @@ def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
 
-def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=None):
+def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=None, max_frontier=1000000):
     idx_agent = selection(problem, file)
     print("Testing all", problem, "with agent", idx_agent)
     path = agent_path(filename([problem, 2, 2])+"/"+file, idx_agent)
@@ -226,7 +233,7 @@ def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=No
         for k in range(up_to):
             if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
                 print("Testing agent with", problem, n+1, k+1)
-                df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
+                df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
 

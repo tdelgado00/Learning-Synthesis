@@ -85,7 +85,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
             pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
 
 
-def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
+def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100, max_frontier=1000000):
     df = []
     start = time.time()
     for i in range(max_idx + 1):
@@ -96,7 +96,7 @@ def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100):
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, timeout=timeout)[0])
+                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
                     df[-1]["idx"] = i
                     if not np.isnan(df[-1]["synthesis time(ms)"]):
                         solved[n][k] = True
