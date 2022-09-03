@@ -11,8 +11,8 @@ class ReplayBuffer(object):
     def __len__(self):
         return len(self._storage)
 
-    def add(self, obs, action, reward, obs2):
-        data = (obs, action, reward, obs2)
+    def add(self, action_features, reward, obs2):
+        data = (action_features, reward, obs2)
         if self._next_idx >= len(self._storage):
             self._storage.append(data)
         else:
@@ -20,19 +20,18 @@ class ReplayBuffer(object):
         self._next_idx = (self._next_idx + 1) % self._maxsize
 
     def _encode_sample(self, idxes):
-        obses_t, actions, rewards, obses_tp1 = [], [], [], []
+        action_featuress, rewards, obss = [], [], []
         for i in idxes:
             data = self._storage[i]
-            obs_t, action, reward, obs_tp1 = data
-            obses_t.append(obs_t)
-            actions.append(action)
+            action_features, reward, obs = data
+            action_featuress.append(action_features)
             rewards.append(reward)
-            obses_tp1.append(obs_tp1)
-        return obses_t, np.array(actions), np.array(rewards), obses_tp1
+            obss.append(obs)
+        return action_featuress, np.array(rewards), obss
 
     def sample(self, batch_size):
         idxes = [random.randint(0, len(self._storage) - 1) for _ in range(batch_size)]
         return self._encode_sample(idxes)
 
     def __repr__(self):
-        return " - ".join([str(data[1:3]) for data in self._storage])
+        return " - ".join([str(data[:2]) for data in self._storage])

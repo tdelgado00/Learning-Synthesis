@@ -19,18 +19,18 @@ def get_random_experience(env, total, nstep=1):
     last_steps = []
     for i in range(total):
         action = np.random.randint(len(obs))
-        last_steps.append((obs, action))
+        last_steps.append(obs[action])
 
         obs2, reward, done, info = env.step(action)
 
         if done:
             for j in range(len(last_steps)):
-                states.append((last_steps[j][0], last_steps[j][1], -len(last_steps)+j, None))
+                states.append((last_steps[j], -len(last_steps)+j, None))
             last_steps = []
             obs = env.reset()
         else:
             if len(last_steps) >= nstep:
-                states.append((last_steps[0][0], last_steps[0][1], -nstep, obs2))
+                states.append((last_steps[0], -nstep, obs2))
             last_steps = last_steps[len(last_steps)-nstep+1:]
             obs = obs2
         steps += 1

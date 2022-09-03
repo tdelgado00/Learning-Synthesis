@@ -86,8 +86,8 @@ class Agent:
         self.buffer = ReplayBuffer(self.buffer_size)
         for env in envs.values():
             random_experience = get_random_experience(env, total=exp_per_instance, nstep=self.nstep)
-            for obs, action, reward, obs2 in random_experience:
-                self.buffer.add(obs, action, reward, obs2)
+            for action_features, reward, obs2 in random_experience:
+                self.buffer.add(action_features, reward, obs2)
         print("Done.")
 
     def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, save_at_end=False):
@@ -101,18 +101,18 @@ class Agent:
         last_steps = []
         while True:
             a = self.get_action(obs, self.epsilon)
-            last_steps.append((obs, a))
+            last_steps.append(obs[a])
 
             obs2, reward, done, info = env.step(a)
 
             if self.experience_replay:
                 if done:
                     for j in range(len(last_steps)):
-                        self.buffer.add(last_steps[j][0], last_steps[j][1], -len(last_steps) + j, None)
+                        self.buffer.add(last_steps[j], -len(last_steps) + j, None)
                     last_steps = []
                 else:
                     if len(last_steps) >= self.nstep:
-                        self.buffer.add(last_steps[0][0], last_steps[0][1], -self.nstep, obs2)
+                        self.buffer.add(last_steps[0], -self.nstep, obs2)
                     last_steps = last_steps[len(last_steps) - self.nstep + 1:]
                 self.batch_update()
             else:
@@ -183,7 +183,7 @@ class Agent:
             print("Single update. Value:", value+reward)
 
     def batch_update(self):
-        obss, actions, rewards, obss2 = self.buffer.sample(self.batch_size)
+        action_featuress, rewards, obss2 = self.buffer.sample(self.batch_size)
         if self.target is not None:
             values = self.target.evalBatch(obss2)
         else:
@@ -192,7 +192,7 @@ class Agent:
         if self.verbose:
             print("Batch update. Values:", rewards+values)
 
-        self.model.batch_update(np.array([obss[i][actions[i]] for i in range(len(actions))]), rewards + values)
+        self.model.batch_update(np.array(action_featuress), rewards + values)
 
     def save(self, env_info):
         os.makedirs(self.dir, exist_ok=True)
