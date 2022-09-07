@@ -2,6 +2,7 @@ import jpype
 import jpype.imports
 from util import *
 import copy
+from plots import read_monolithic
 
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])
@@ -9,11 +10,13 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k, features):
+    def __init__(self, problem, n, k, features, normalize_reward=False):
         self.problem = problem
         self.n = n
         self.k = k
         self.problemFilename = filename([problem, n, k])
+        self.normalize_reward = normalize_reward
+        self.problem_size = read_monolithic()[("expanded transitions", problem)][k][n]
 
         self.javaEnv = DCSForPython("", "labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
                                     features["ra feature"],
@@ -42,9 +45,12 @@ class DCSSolverEnv:
     def step(self, action):
         self.javaEnv.expandAction(action)
         if not self.javaEnv.isFinished():
-            return self.get_actions(), -1, False, {}
+            return self.get_actions(), self.reward(), False, {}
         else:
-            return None, -1, True, self.get_results()
+            return None, self.reward(), True, self.get_results()
+
+    def reward(self):
+        return -1 if not self.normalize_reward else -1 / self.problem_size
 
     def reset(self):
         self.javaEnv.startSynthesis(self.problem, self.n, self.k)

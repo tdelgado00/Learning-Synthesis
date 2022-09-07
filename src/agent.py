@@ -18,7 +18,7 @@ class Agent:
         if model == "sklearn":
             self.model = MLPModel(nnsize, optimizer, eta)
         else:
-            self.model = TorchModel(nfeatures, nnsize)
+            self.model = TorchModel(nfeatures, nnsize, eta)
 
         self.optimizer = optimizer
         self.fixed_q_target = fixed_q_target

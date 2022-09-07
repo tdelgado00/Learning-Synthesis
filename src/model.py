@@ -102,7 +102,7 @@ class OnnxModel(Model):
 
 class TorchModel(Model):
 
-    def __init__(self, nfeatures, nnsize):
+    def __init__(self, nfeatures, nnsize, eta=1e-5):
         super().__init__()
         self.nfeatures = nfeatures
         self.n, self.k = None, None
@@ -111,10 +111,11 @@ class TorchModel(Model):
         print("Using", self.device, "device")
         self.model = NeuralNetwork(nfeatures, nnsize).to(self.device)
         print(self.model)
-
+        print("Learning rate:", eta)
         self.loss_fn = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1e-8, weight_decay=1e-4) #eps = 1.5e-4
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-5, momentum=0.9, nesterov=True, weight_decay=1e-4)
+        # self.loss_fn = nn.HuberLoss()
+        # self.optimizer = torch.optim.Adam(self.model.parameters(), lr=eta, eps=1e-8, weight_decay=1e-4) #eps = 1.5e-4
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=eta, momentum=0.9, nesterov=True, weight_decay=1e-4)
         # Adam could be better for deeper neural networks
 
         self.has_learned_something = False
