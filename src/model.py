@@ -113,7 +113,7 @@ class TorchModel(Model):
         print(self.model)
 
         self.loss_fn = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1e-8, weight_decay=1e-4) #eps = 1.5e-4
+        # self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5, eps=1e-8, weight_decay=1e-4) #eps = 1.5e-4
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-5, momentum=0.9, nesterov=True, weight_decay=1e-4)
         # Adam could be better for deeper neural networks
 

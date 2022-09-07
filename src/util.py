@@ -4,24 +4,44 @@ import numpy as np
 import json
 
 import pandas as pd
+from plots import read_monolithic
 
 
 def feature_names(info, problem=None):
-    base_features = [
-        "action controllable",
-        "1 / depth",
-        "state portion explored",
-        "state portion controllable",
-        "state marked",
-        "child marked",
-        "child goal",
-        "child error",
-        "child none",
-        "child deadlock",
-        "child portion controllable",
-        "child portion explored",
-    ]
-    context_features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]
+    if info["all boolean"]:
+        base_features = [
+            "action controllable",
+            "state trans explored",
+            "state unexp uncontrollable",
+            "state uncontrollable",
+            "state marked",
+            "child marked",
+            "child goal",
+            "child error",
+            "child none",
+            "child deadlock",
+            "child unexp uncontrollable",
+            "child uncontrollable",
+            "child trans explored",
+        ]
+        context_features = ["goal found", "marked found", "loop closed"]
+    else:
+        base_features = [
+            "action controllable",
+            "1 / depth",
+            "state portion explored",
+            "state portion controllable",
+            "state marked",
+            "child marked",
+            "child goal",
+            "child error",
+            "child none",
+            "child deadlock",
+            "child portion controllable",
+            "child portion explored",
+        ]
+        context_features = ["goals found", "marked states found", "pot winning loops found", "frontier / explored"]
+
     ra_features = ["ra type", "1 / ra distance", "in open"]
     je_features = ["last state expanded from", "last state expanded to"]
     nk_features = ["n", "k"]
@@ -138,7 +158,7 @@ def best_generalization_agent(problem, file):
 
 
 def train_instances(problem, max_size=10000):
-    r = monolithic_results["expanded transitions", problem]
+    r = read_monolithic()["expanded transitions", problem]
     instances = []
     for n in range(2, 16):
         for k in range(2, 16):

@@ -15,14 +15,15 @@ class DCSSolverEnv:
         self.k = k
         self.problemFilename = filename([problem, n, k])
 
-        self.javaEnv = DCSForPython("", "labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
+        self.javaEnv = DCSForPython("labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
                                     features["ra feature"],
                                     features["context features"],
                                     features["state labels"],
                                     features["je feature"],
                                     features["nk feature"],
                                     features["prop feature"],
-                                    features["visits feature"])
+                                    features["visits feature"],
+                                    features["only boolean"])
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
         self.info = dict(features)
@@ -47,7 +48,7 @@ class DCSSolverEnv:
             return None, -1, True, self.get_results()
 
     def reset(self):
-        self.javaEnv.startSynthesis(self.problem, self.n, self.k)
+        self.javaEnv.startSynthesis("fsp/"+self.problem+"/"+"-".join([self.problem, str(self.n), str(self.k)])+".fsp")
         return self.get_actions()
 
     def close(self):

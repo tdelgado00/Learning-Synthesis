@@ -21,6 +21,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
                 nstep=1,
                 incremental=True,
+                early_stopping=False,
                 verbose=False):
     env = {}
     for instance in instances:
@@ -55,11 +56,11 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
 
         if not incremental:
             total = total_steps / quantum_steps
-            while i < total:
+            while i < total and (not early_stopping or not agent.converged):
                 for instance in instances:
                     print("Training with", instance, "for", quantum_steps, "steps", "i =", i, "time =",
                           time.time() - start_time)
-                    last_obs[instance] = agent.train(env[instance], max_steps=quantum_steps, copy_freq=copy_freq, last_obs=last_obs.get(instance))
+                    last_obs[instance] = agent.train(env[instance], max_steps=quantum_steps, copy_freq=copy_freq, last_obs=last_obs.get(instance), early_stopping=early_stopping)
                     i += 1
                     if i == total:
                         break
@@ -67,28 +68,31 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
             trans = read_monolithic()[("expanded transitions", instances[0][0])]
             diffs = np.array([trans[k][n] for problem, n, k in instances])
             print("Instance difficulties are", diffs)
-            while agent.training_steps < total_steps:
+            while agent.training_steps < total_steps and (not early_stopping or not agent.converged):
                 t = agent.training_steps / total_steps
                 probs = diffs**(t*2-1)
                 probs /= np.sum(probs)
-                print("Sampling probabilities are", probs)
+                # print("Sampling probabilities are", probs)
                 instance = instances[np.random.choice(list(range(len(instances))), p=probs)]
-                print("Training with", instance, "for 1 episode. time =", time.time() - start_time)
+                # print("Training with", instance, "for 1 episode. time =", time.time() - start_time)
                 last_obs[instance] = agent.train(env[instance], max_eps=1, copy_freq=copy_freq,
-                                                 last_obs=last_obs.get(instance))
+                                                 last_obs=last_obs.get(instance), early_stopping=early_stopping)
     else:
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
-                    save_at_end=True)
+                    save_at_end=True, early_stopping=early_stopping)
 
     if dir is not None:
         with open(dir + "/" + "training_data.pkl", "wb") as f:
             pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
 
 
-def test_all_agents_generalization(problem, file, up_to, timeout, max_idx=100, max_frontier=1000000):
+def test_all_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000):
     df = []
     start = time.time()
-    for i in range(max_idx + 1):
+    agents_saved = sorted([int(f[:-5]) for f in os.listdir(results_path(problem, file=file)) if "onnx" in f])
+    np.random.seed(0)
+    tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
+    for i in tested_agents:
         path = agent_path(filename([problem, 2, 2]) + "/" + file, i)
 
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
@@ -116,7 +120,8 @@ if __name__ == "__main__":
         "je feature": True,
         "nk feature": False,
         "prop feature": False,
-        "visits feature": False
+        "visits feature": False,
+        "only boolean": True,
     }
 
     # RQ 1.5
@@ -129,16 +134,16 @@ if __name__ == "__main__":
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
     
-    for file in ["incremental"]:
-        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            s = 1 if problem == "CM" else 2
-            instances = [(problem, n, k) for n in range(s, s+2) for k in range(s, s+2)]
-            train_agent(instances, file, features, optimizer="sgd", model="pytorch", first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, incremental=True)
-            #train_agent([(problem, 2, 2), (problem, 3, 3)], file, features, optimizer="sgd", model="pytorch",
-            #            first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, incremental=True)
-            test_all_agents_generalization(problem, file, 15, "5s", 99)
+    for file in ["boolean"]:
+        for problem in ["DP", "TA", "BW", "CM", "AT", "TL"]:
+            #s = 1 if problem == "CM" else 2
+            #instances = [(problem, n, k) for n in range(s, s+2) for k in range(s, s+2)]
+            #train_agent(instances, file, features, optimizer="sgd", model="pytorch", first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, incremental=True)
+            train_agent([(problem, 2, 2)], file, features, optimizer="sgd", model="pytorch",
+                        first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, early_stopping=True,
+                        copy_freq=5000)
+            test_all_agents_generalization(problem, file, 15, "5s", 100)
             test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
-
             #test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
             #test_agents_q(problem, 2, 2, file, "states.pkl")
             #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)

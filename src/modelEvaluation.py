@@ -129,18 +129,19 @@ def save_all_random_states(n, k):
     for problem in ["AT", "DP", "TL", "TA", "BW", "CM"]:
         print(problem)
         features = {
-            "ra feature": True,
+            "ra feature": False,
             "context features": True,
             "labels": True,
-            "state labels": True,
+            "state labels": 1,
             "je feature": True,
-            "nk feature": True,
-            "prop feature": True,
-            "visits feature": True
+            "nk feature": False,
+            "prop feature": False,
+            "visits feature": False,
+            "only boolean": True
         }
         states = get_random_states(DCSSolverEnv(problem, n, k, features))
 
-        file = "experiments/results/" + filename([problem, n, k]) + "/states_visits.pkl"
+        file = "experiments/results/" + filename([problem, n, k]) + "/states_b.pkl"
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, "wb") as f:
             pickle.dump(states, f)

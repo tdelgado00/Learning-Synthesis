@@ -51,6 +51,8 @@ class Agent:
         self.training_data = []
 
         self.best_training_perf = {}
+        self.last_best = None
+        self.converged = False
 
         self.params = {
             "eta": eta,
@@ -90,9 +92,10 @@ class Agent:
                 self.buffer.add(action_features, reward, obs2)
         print("Done.")
 
-    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, save_at_end=False):
+    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, early_stopping=False, save_at_end=False):
         if self.training_start is None:
             self.training_start = time.time()
+            self.last_best = 0
 
         steps, eps = 0, 0
 
@@ -124,6 +127,7 @@ class Agent:
                         info["expanded transitions"] < self.best_training_perf[instance]:
                     self.best_training_perf[instance] = info["expanded transitions"]
                     print("New best at instance "+str(instance)+"!", self.best_training_perf[instance], "Steps:", self.training_steps)
+                    self.last_best = self.training_steps
                 info.update({
                     "training time": time.time() - self.training_start,
                     "training steps": self.training_steps,
@@ -155,6 +159,13 @@ class Agent:
                 break
 
             if max_eps is not None and eps >= max_eps:
+                break
+
+            if self.training_steps > 500000 and (self.training_steps - self.last_best) / self.training_steps > 0.33:
+                print("Converged!")
+                self.converged = True
+
+            if early_stopping and self.converged:
                 break
 
             if self.epsilon > self.last_epsilon + 1e-10:
