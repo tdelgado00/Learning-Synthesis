@@ -93,6 +93,9 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
     if path != "mock" and uses_feature(path, "visits feature"):
         command += ["-v"]
 
+    if path != "mock" and uses_feature(path, "only boolean"):
+        command += ["-b"]
+
     command += ["-f", str(max_frontier)]
 
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)

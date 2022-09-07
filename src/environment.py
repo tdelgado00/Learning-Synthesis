@@ -18,14 +18,15 @@ class DCSSolverEnv:
         self.normalize_reward = normalize_reward
         self.problem_size = read_monolithic()[("expanded transitions", problem)][k][n]
 
-        self.javaEnv = DCSForPython("", "labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
+        self.javaEnv = DCSForPython("labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
                                     features["ra feature"],
                                     features["context features"],
                                     features["state labels"],
                                     features["je feature"],
                                     features["nk feature"],
                                     features["prop feature"],
-                                    features["visits feature"])
+                                    features["visits feature"],
+                                    features["only boolean"])
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
         self.info = dict(features)
@@ -53,7 +54,7 @@ class DCSSolverEnv:
         return -1 if not self.normalize_reward else -1 / self.problem_size
 
     def reset(self):
-        self.javaEnv.startSynthesis(self.problem, self.n, self.k)
+        self.javaEnv.startSynthesis("fsp/"+self.problem+"/"+"-".join([self.problem, str(self.n), str(self.k)])+".fsp")
         return self.get_actions()
 
     def close(self):
