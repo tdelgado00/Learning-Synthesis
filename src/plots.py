@@ -159,7 +159,6 @@ def read_training(data, used_problems, used_files):
             df = read_training_for_file(problem, file, multiple)
             if df is None:
                 continue
-            df = df[["expanded transitions", "training steps", "file", "problem", "n", "k"]]
             df["group"] = group
             data["train"][problem][file] = df
 
@@ -236,17 +235,22 @@ def train_transitions_min(used_problems, used_files, data, save_dir):
                 f.write(file + " " + str(data["train"][problem][file]["expanded transitions"].min()) + "\n")
 
 
-def read_agents_10m(problems, files):
+def read_agents_10m(problems, files, name="all"):
     agents_10m = {}
     for p in problems:
         agents_10m[p] = {}
         for file, g in files:
-            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/all.csv")
+            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/"+name+".csv")
     return agents_10m
 
 
 def get_trans(df, n, k):
-    return df.loc[(df["n"] == n) & (df["k"] == k)]["expanded transitions"].iat[0]
+    loc = df.loc[(df["n"] == n) & (df["k"] == k)]["expanded transitions"]
+    if len(loc) == 0:
+        return np.nan
+    else:
+        assert len(loc) == 1
+        return loc.iat[0]
 
 
 def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2, metric="expanded transitions"):
@@ -263,7 +267,7 @@ def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2, metri
         dfs = [data["all"][problem][file] for file, group in used_files]
         dfs = [df.loc[(df["n"] == n) & (df["k"] == k)].copy() for df in dfs]
         if metric == "mean transitions":
-            dfs = [add_convolution(df, 30) for df in dfs]
+            dfs = [add_convolution(df, 10) for df in dfs]
         df = pd.concat(dfs, ignore_index=True)
 
         df["reward"] = -df[metric]
@@ -293,6 +297,55 @@ def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2, metri
         plt.savefig(path + " ".join(["mean", str(n), str(k)]) + ".jpg")
     else:
         plt.savefig(path + " ".join([str(n), str(k)]) + ".jpg")
+
+
+# Tabla: Cada approach es una fila, cada instancia es una columna. Una tabla por cada problema.
+def save_transitions_table(used_problems, used_files, data, path):
+    print("Saving transitions table")
+    print(path)
+    instances = [(2, 2), (2, 3), (3, 2), (3, 3), (4, 4)]
+    fout = open(path+"transitions_table.txt", "w+")
+    for i in range(len(used_problems)):
+        df = []
+        p = used_problems[i]
+        for f, g in used_files:
+            results = data["agent 10m"][p][f].pivot("n", "k", "expanded transitions")
+            agent_row = {(n, k): results[k][n] for n, k in instances}
+            agent_row["approach"] = g
+            df.append(agent_row)
+                
+        ra_row = {(n, k): get_trans(data["ra 10m"][p], n, k) for n, k in instances}
+        random_row = {(n, k): get_trans(data["random 10m"][p], n, k) for n, k in instances} # todo: esto debería estar ejecutado muchas veces
+        ra_row["approach"], random_row["approach"] = "RA", "random"
+        df += [ra_row, random_row]
+        df = pd.DataFrame(df)
+        df = df.groupby("approach").mean()
+        fout.write(p + "\n")
+        fout.write(df.style.format(precision=2).to_latex() + "\n")
+    fout.close()
+
+
+def plot_loss(used_problems, used_files, data, path):
+    print("Plotting loss")
+    f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
+
+    for i in range(len(used_problems)):
+        p = used_problems[i]
+        ax = axs[i] if len(used_problems) > 1 else axs
+        df = pd.concat(list(data["train"][p].values()), ignore_index=True)
+        df.dropna(subset=["loss"])
+        print(df.columns)
+        sns.lineplot(data=df, x="training steps", y="loss", ax=ax, hue="group", ci="sd", alpha=0.6)
+
+        ax.get_legend().remove()
+        # if i != 0:
+        #    ax.get_yaxis().set_visible(False)
+        ax.set_title(used_problems[i], fontdict={"fontsize": 18})
+
+    handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
+    plt.legend(handles, labels, prop={'size': 15}, loc="lower right")
+    plt.tight_layout()
+    plt.savefig(path + "/loss.jpg")
 
 
 def plot_training_transitions(used_problems, used_files, data, path):
@@ -429,7 +482,7 @@ def plot_15_15(used_problems, path, files1, file2, name):
         if file2 == "ra":
             df2 = get_pivot(data["ra 10m"][p])
         elif file2 == "random":
-            df2 = get_pivot(data["ra 10m"][p])
+            df2 = get_pivot(data["random 10m"][p])
         else:
             df2 = get_pivot(data["agent 10m"][p][file2])
 
@@ -528,7 +581,7 @@ def solved_table(used_problems, used_files, data, path):
             f.write(problem + "\n")
             random = results[problem]["random"][0]
             ra = results[problem]["ra"][0] / random
-            agent = np.array(results[problem]["focused"]) / random
+            agent = np.array(results[problem]["RL"]) / random
             f.write(str(np.round(np.mean(agent), 2)) + " ")
             f.write(str(np.round(ra, 2)) + " ")
             f.write(str(ttest_1samp(agent - ra, 0, alternative="two-sided").pvalue) + "\n")
@@ -563,21 +616,23 @@ def pipeline_plot_15_15(files1, file2, name):
 
 
 if __name__ == "__main__":
-    path = "experiments/figures/tmp/"
+    path = "experiments/figures/paper/"
     if not os.path.exists(path):
         print("Creating dir", path)
         os.makedirs(path)
 
     problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
-    problems = ["AT", "CM"]
 
     focused_files = ["focused_1", "focused_2", "focused_3", "focused_4", "focused_5", "focused_6", "focused_7"]
-    files = [(f, "focused") for f in focused_files]
-
-    files += [("pytorch_epsdec", "pytorch epsdec")]
-
-    files += [("incremental_n", "incremental_n")]
-
+    ffiles = ["pytorch_epsdec", "epsdec_2", "epsdec_3", "epsdec_4"]
+    
+    files = []
+    files += [(f, "RL") for f in ffiles]
+    files += [(f, "focused") for f in focused_files]
+    #files += [("epsdec_1kk", "epsdec 1kk")]
+    #files = [("epsdec_1kk", "epsdec 1kk"), ("huber", "huber")]
+    #files = [("huber", "huber")]
+    
     data = {}
     data["mono"] = read_monolithic()
     read_ra_and_random(problems, data)
@@ -586,22 +641,26 @@ if __name__ == "__main__":
     data["random small"] = read_random_small()
     data["agent 10m"] = read_agents_10m(problems, files)
 
-    under_test = "incremental_n"
+    under_test = "huber"
 
     pipeline = [
-        # solved_table,
+        solved_table,
         lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
         lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="mean transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="mean transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="expanded transitions"),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="mean transitions"),
+        #lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
+        #lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="mean transitions"),
+        #lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="expanded transitions"),
+        #lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="mean transitions"),
         train_transitions_min,
         plot_training_transitions,
+        save_transitions_table,
         plot_solved_training,
-        pipeline_plot_15_15(focused_files, under_test, "focused vs under test"),
-        pipeline_plot_15_15([under_test], "ra", "under test vs ra"),
-        pipeline_plot_15_15([under_test], "random", "under test vs random")
+        plot_loss,
+        pipeline_plot_15_15(ffiles, "ra", "RL vs RA"),
+        pipeline_plot_15_15(ffiles, "random", "RL vs Random"),
+        #pipeline_plot_15_15(ffiles, under_test, "baseline vs under test"),
+        #pipeline_plot_15_15([under_test], "ra", "under test vs ra"),
+        #pipeline_plot_15_15([under_test], "random", "under test vs random")
     ]
 
     for e in pipeline:
