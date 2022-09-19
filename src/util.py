@@ -4,11 +4,12 @@ import numpy as np
 import json
 
 import pandas as pd
-from plots import read_monolithic
+import pickle
 
 
 def feature_names(info, problem=None):
-    if info["all boolean"]:
+    check = lambda p : p in info.keys() and info[p]
+    if check("only boolean"):
         base_features = [
             "action controllable",
             "state trans explored",
@@ -48,7 +49,6 @@ def feature_names(info, problem=None):
     prop_features = ["in loop", "forced in FNG", "child in loop", "child forced in FNG", "in PG ancestors", "forced in PG", "in forced to clausure"]
     visits_features = ["expl percentage", "state visits", "child visits"]
 
-    check = lambda p : p in info.keys() and info[p]
     ra = check("ra feature")
     labels = check("labels")
     state_labels = check("state labels")
@@ -178,3 +178,168 @@ def all_solved_instances(dfs):
             if good:
                 instances.append((n, k))
     return instances
+
+
+def read_test(data, problems, files):
+    print("Reading test files")
+
+    data["all"] = {}
+
+    old_files = ["base_features_2h", "ra_feature2opt_2h", "5mill_RA", "5mill_L"]
+
+    for p in problems:
+        data["all"][p] = {}
+        for file, group in files:
+            if file in old_files:
+                path = results_path(p) + file + "/" + filename([p, 2, 2]) + ".csv"
+            else:
+                path = results_path(p) + file + "/generalization_all.csv"
+            try:
+                df = pd.read_csv(path)
+            except:
+                print("File not found", path)
+                continue
+            df = df.dropna(subset=["expanded transitions"])
+            df["instance"] = df.apply((lambda r: (r["problem"], r["n"], r["k"])), axis=1)
+            df["total transitions"] = df.apply(
+                lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]], axis=1)
+            df["group"] = group
+            df["file"] = file
+            #if not ("focused" in file or "epsdec" in file or "5kk" in file):
+            df["idx"] = df["idx"] / df["idx"].max() * 100
+            df["idx"] = df["idx"].astype(int)
+            df["expanded transitions / total"] = df["expanded transitions"] / df["total transitions"]
+            df["min transitions"] = df.groupby("instance")["expanded transitions"].cummin()
+            data["all"][p][file] = df
+
+
+def read_ra_and_random(used_problems, data):
+    data.update({name: {} for name in ["ra 5s", "random 5s", "ra 10m", "random 10m"]})
+    for p in used_problems:
+        data["ra 5s"][p] = pd.read_csv(results_path(p) + "/RA_5s_15.csv")
+        data["random 5s"][p] = pd.read_csv(results_path(p) + "/random_5s.csv")
+
+        data["ra 10m"][p] = pd.read_csv(results_path(p) + "/all_ra_afterfix_15.csv")
+        data["random 10m"][p] = [pd.read_csv(results_path(p) + "random/all random "+str(i)+".csv") for i in range(4)]
+
+        for l in [data[name][p] for name in ["ra 5s", "random 5s", "ra 10m", "random 10m"]]:
+            for df in [l] if type(l) != list else l:
+                df["instance"] = df.apply(lambda r: (r["problem"], r["n"], r["k"]), axis=1)
+                df["total transitions"] = df.apply(
+                    lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]], axis=1)
+                df.dropna(subset=["expanded transitions"])
+            
+
+
+def read_training_for_file(problem, file, multiple):
+    if file == "5mill_JE_NORA":  # we didn't save training data
+        return None
+    with open(results_path(problem, file=file) + "/training_data.pkl", "rb") as f:
+        training_data, agent_params, env_params = pickle.load(f)
+    df = pd.DataFrame(training_data)
+    df["file"] = file
+    df["problem"] = problem
+    df["multiple"] = multiple
+    if multiple:
+        instances = train_instances(problem)
+        df["n"] = df.apply(lambda r: instances[int(r["idx"]) % len(instances)][1], axis=1)
+        df["k"] = df.apply(lambda r: instances[int(r["idx"]) % len(instances)][2], axis=1)
+    else:
+        df["n"] = 2
+        df["k"] = 2
+    return df
+
+
+def read_training(data, used_problems, used_files, base=10000, window_size=10):
+    print("Reading training")
+    data.update({"train": {}, "bucket train": {}})
+    for problem in used_problems:
+        data["train"][problem] = {}
+        for file, group in used_files:
+            multiple = "RR" in group
+            df = read_training_for_file(problem, file, multiple)
+            if df is None:
+                continue
+            df["group"] = group
+            data["train"][problem][file] = df
+
+
+    normalized = False
+    for problem in used_problems:
+        data["bucket train"][problem] = {}
+        for file, group in used_files:
+            if problem not in data["train"].keys() or not file in data["train"][problem].keys():
+                continue
+            big_df = data["train"][problem][file]
+
+            big_df["training steps"] = big_df["training steps"] // base * base
+
+            grouped_df = big_df.groupby("training steps")
+            df = pd.DataFrame({"training steps": grouped_df["training steps"].first()})
+            df["expanded transitions"] = grouped_df["expanded transitions"].mean()
+
+            # in each group problem, n and k should be constant
+            df["n"] = grouped_df["n"].first()
+            df["k"] = grouped_df["k"].first()
+            df["problem"] = grouped_df["problem"].first()
+
+            df["total transitions"] = df.apply(
+                lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]],
+                axis=1)
+
+            df["min transitions"] = df["expanded transitions"].cummin()
+            df["group"] = big_df["group"].iat[0]
+            df["file"] = big_df["file"].iat[0]
+
+            if normalized:
+                df['norm transitions'] = df.groupby('total transitions')["expanded transitions"].apply(
+                    lambda x: (x - x.mean()) / x.std())
+                df["mean transitions"] = list(
+                    np.convolve(list(df["norm transitions"]), np.ones(window_size), mode='valid') / window_size) + [
+                                             np.nan for _ in range(window_size - 1)]
+            else:
+                df["mean transitions"] = list(
+                    np.convolve(list(df["expanded transitions"]), np.ones(window_size), mode='valid') / window_size) + \
+                                         [np.nan for _ in range(window_size - 1)]
+            data["bucket train"][problem][file] = df
+
+def read_random_small():
+    random_results_small = {}
+    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+        for n, k in [(2, 2), (3, 3)]:
+            df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/random.csv")
+            random_results_small[(problem, n, k)] = list(df["expanded transitions"])
+    return random_results_small
+
+
+def read_monolithic():
+    monolithic_results = {}
+    for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
+        df = pd.read_csv("experiments/results/ResultsPaper/" + problem + ".csv")
+        df = df.loc[df["controllerType"] == "mono"]
+        df["n"] = df["testcase"].apply(lambda t: int(t.split("-")[1]))
+        df["k"] = df["testcase"].apply(lambda t: int(t.split("-")[2]))
+        df["expanded transitions"] = df["expandedTransitions"]
+        df = df.dropna(subset=["expanded transitions"])
+        df = fill_df(df, 15)
+        monolithic_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
+        monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
+    return monolithic_results
+
+
+def read_agents_10m(problems, files, name="all"):
+    agents_10m = {}
+    for p in problems:
+        agents_10m[p] = {}
+        for file, g in files:
+            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/"+name+".csv")
+    return agents_10m
+
+def fill_df(df, m):
+    added = []
+    for n in range(1, m + 1):
+        for k in range(1, m + 1):
+            if len(df.loc[(df["n"] == n) & (df["k"] == k)]) == 0:
+                added.append({"n": n, "k": k, "expanded transitions": float("inf"), "synthesis time(ms)": float("inf")})
+    df = pd.concat([df, pd.DataFrame(added)], ignore_index=True)
+    return df
