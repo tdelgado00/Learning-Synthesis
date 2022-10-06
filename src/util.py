@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import json
 
@@ -84,22 +82,46 @@ def fsp_path(problem, n, k):
     return "fsp/" + problem + "/" + problem + "-" + str(n) + "-" + str(k) + ".fsp"
 
 
-def agent_path(dir, idx):
-    return "experiments/results/" + dir + "/" + str(idx) + ".onnx"
+def agent_path(problem, file, idx, n=2, k=2):
+    return results_path(problem, n, k, file) + "/" + str(idx) + ".onnx"
 
 
 def filename(parameters):
     return "_".join(list(map(str, parameters)))
 
 
-def best_agent_idx(problem, train_n, train_k, file):
-    path = "experiments/results/" + filename([problem, train_n, train_k]) + "/" + file + "/"
-    df = pd.read_csv(path + problem + "_3_3.csv")
-    return df.loc[df["expanded transitions"] == df["expanded transitions"].min()]["idx"].iloc[-1]
-
-
-def last_agent_idx(df):
+def last_agent(df):
     return df["idx"].max()
+
+
+def best_agent_2_2(problem, file):
+    return best_agent_n_k(problem, file, 2, 2)
+
+
+def best_agent_3_3(problem, file):
+    return best_agent_n_k(problem, file, 3, 3)
+
+
+def best_agent_n_k(problem, file, n=2, k=2):
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+    df = df.loc[(df["n"] == n) & (df["k"] == k)]
+    m = df["expanded transitions"].min(skipna=True)
+    df = df.loc[df["expanded transitions"] == m]
+    idxs = list(df["idx"])
+    return max(idxs)
+
+
+def best_generalization_agent(problem, file):
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+    max_idx = df["idx"].max()
+    solved = [0 for _ in range(max_idx + 1)]
+    expanded = [0 for _ in range(max_idx + 1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
+    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
 
 
 def get_agent_info(path):
@@ -112,12 +134,11 @@ def uses_feature(path, feature):
     info = get_agent_info(path)
     return feature in info.keys() and info[feature]
 
-def indexOf(s, lines):
-    return list(map(lambda l: s in l, lines)).index(True)
-
 
 def read_results(lines):
-    i = indexOf("ExpandedStates", lines)
+    def indexOf(s):
+        return list(map(lambda l: s in l, lines)).index(True)
+    i = indexOf("ExpandedStates")
     results = {}
     results["expanded states"] = int(lines[i].split(" ")[1])
     results["used states"] = int(lines[i + 1].split(" ")[1])
@@ -135,28 +156,6 @@ def read_results(lines):
     return results
 
 
-def best_agent_2_2(problem, file):
-    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
-    df = df.loc[(df["n"] == 2) & (df["k"] == 2)]
-    m = df["expanded transitions"].min(skipna=True)
-    df = df.loc[df["expanded transitions"] == m]
-    idxs = list(df["idx"])
-    print(idxs)
-    return max(idxs)
-
-def best_generalization_agent(problem, file):
-    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
-    max_idx = df["idx"].max()
-    solved = [0 for i in range(max_idx + 1)]
-    expanded = [0 for i in range(max_idx + 1)]
-    for x, cant in dict(df["idx"].value_counts()).items():
-        solved[x] = cant
-    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
-        expanded[x] = cant
-    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
-    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
-
-
 def train_instances(problem, max_size=10000):
     r = read_monolithic()["expanded transitions", problem]
     instances = []
@@ -165,6 +164,7 @@ def train_instances(problem, max_size=10000):
             if not np.isnan(r[k][n]) and r[k][n] <= max_size:
                 instances.append((problem, n, k))
     return instances
+
 
 def all_solved_instances(dfs):
     instances = []
@@ -205,30 +205,29 @@ def read_test(data, problems, files):
                 lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]], axis=1)
             df["group"] = group
             df["file"] = file
-            #if not ("focused" in file or "epsdec" in file or "5kk" in file):
-            df["idx"] = df["idx"] / df["idx"].max() * 100
-            df["idx"] = df["idx"].astype(int)
+            idxs = list(df["idx"].unique())
+            df["idx"] = df["idx"].apply(lambda i: idxs.index(i))
             df["expanded transitions / total"] = df["expanded transitions"] / df["total transitions"]
             df["min transitions"] = df.groupby("instance")["expanded transitions"].cummin()
             data["all"][p][file] = df
 
 
 def read_ra_and_random(used_problems, data):
-    data.update({name: {} for name in ["ra 5s", "random 5s", "ra 10m", "random 10m"]})
+    data.update({name: {} for name in ["ra 5s", "random 5s", "ra 10m", "random 10m", "ra 30m"]})
     for p in used_problems:
         data["ra 5s"][p] = pd.read_csv(results_path(p) + "/RA_5s_15.csv")
         data["random 5s"][p] = pd.read_csv(results_path(p) + "/random_5s.csv")
 
         data["ra 10m"][p] = pd.read_csv(results_path(p) + "/all_ra_afterfix_15.csv")
-        data["random 10m"][p] = [pd.read_csv(results_path(p) + "random/all random "+str(i)+".csv") for i in range(4)]
+        data["ra 30m"][p] = pd.read_csv(results_path(p) + "/all_ra_30m_15.csv")
+        data["random 10m"][p] = [pd.read_csv(results_path(p) + "random/all random "+str(i)+".csv") for i in range(5)]
 
-        for l in [data[name][p] for name in ["ra 5s", "random 5s", "ra 10m", "random 10m"]]:
+        for l in [data[name][p] for name in ["ra 5s", "random 5s", "ra 10m", "random 10m", "ra 30m"]]:
             for df in [l] if type(l) != list else l:
                 df["instance"] = df.apply(lambda r: (r["problem"], r["n"], r["k"]), axis=1)
                 df["total transitions"] = df.apply(
                     lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]], axis=1)
                 df.dropna(subset=["expanded transitions"])
-            
 
 
 def read_training_for_file(problem, file, multiple):
@@ -264,50 +263,11 @@ def read_training(data, used_problems, used_files, base=10000, window_size=10):
             data["train"][problem][file] = df
 
 
-    normalized = False
-    for problem in used_problems:
-        data["bucket train"][problem] = {}
-        for file, group in used_files:
-            if problem not in data["train"].keys() or not file in data["train"][problem].keys():
-                continue
-            big_df = data["train"][problem][file]
-
-            big_df["training steps"] = big_df["training steps"] // base * base
-
-            grouped_df = big_df.groupby("training steps")
-            df = pd.DataFrame({"training steps": grouped_df["training steps"].first()})
-            df["expanded transitions"] = grouped_df["expanded transitions"].mean()
-
-            # in each group problem, n and k should be constant
-            df["n"] = grouped_df["n"].first()
-            df["k"] = grouped_df["k"].first()
-            df["problem"] = grouped_df["problem"].first()
-
-            df["total transitions"] = df.apply(
-                lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]],
-                axis=1)
-
-            df["min transitions"] = df["expanded transitions"].cummin()
-            df["group"] = big_df["group"].iat[0]
-            df["file"] = big_df["file"].iat[0]
-
-            if normalized:
-                df['norm transitions'] = df.groupby('total transitions')["expanded transitions"].apply(
-                    lambda x: (x - x.mean()) / x.std())
-                df["mean transitions"] = list(
-                    np.convolve(list(df["norm transitions"]), np.ones(window_size), mode='valid') / window_size) + [
-                                             np.nan for _ in range(window_size - 1)]
-            else:
-                df["mean transitions"] = list(
-                    np.convolve(list(df["expanded transitions"]), np.ones(window_size), mode='valid') / window_size) + \
-                                         [np.nan for _ in range(window_size - 1)]
-            data["bucket train"][problem][file] = df
-
 def read_random_small():
     random_results_small = {}
     for problem in ["AT", "TA", "TL", "DP", "BW", "CM"]:
-        for n, k in [(2, 2), (3, 3)]:
-            df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/random.csv")
+        for n, k in [(2, 2)]:
+            df = pd.read_csv("experiments/results/" + filename([problem, n, k]) + "/random1.0")
             random_results_small[(problem, n, k)] = list(df["expanded transitions"])
     return random_results_small
 
@@ -334,6 +294,7 @@ def read_agents_10m(problems, files, name="all"):
         for file, g in files:
             agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/"+name+".csv")
     return agents_10m
+
 
 def fill_df(df, m):
     added = []

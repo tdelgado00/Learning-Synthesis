@@ -35,3 +35,30 @@ class ReplayBuffer(object):
 
     def __repr__(self):
         return " - ".join([str(data[:2]) for data in self._storage])
+
+    @staticmethod
+    def get_experience_from_random_policy(env, total_steps, nstep=1):
+        """ A random policy is run for total_steps steps, saving the observations in the format of the replay buffer """
+        states = []
+        obs = env.reset()
+        steps = 0
+
+        last_steps = []
+        for i in range(total_steps):
+            action = np.random.randint(len(obs))
+            last_steps.append(obs[action])
+
+            obs2, reward, done, info = env.step(action)
+
+            if done:
+                for j in range(len(last_steps)):
+                    states.append((last_steps[j], -len(last_steps) + j, None))
+                last_steps = []
+                obs = env.reset()
+            else:
+                if len(last_steps) >= nstep:
+                    states.append((last_steps[0], -nstep, obs2))
+                last_steps = last_steps[len(last_steps) - nstep + 1:]
+                obs = obs2
+            steps += 1
+        return states

@@ -6,7 +6,6 @@ import numpy as np
 import os
 
 from replayBuffer import ReplayBuffer
-from modelEvaluation import get_random_experience
 from model import MLPModel, OnnxModel, TorchModel
 
 
@@ -87,7 +86,7 @@ class Agent:
 
         self.buffer = ReplayBuffer(self.buffer_size)
         for env in envs.values():
-            random_experience = get_random_experience(env, total=exp_per_instance, nstep=self.nstep)
+            random_experience = ReplayBuffer.get_experience_from_random_policy(env, total_steps=exp_per_instance, nstep=self.nstep)
             for action_features, reward, obs2 in random_experience:
                 self.buffer.add(action_features, reward, obs2)
         print("Done.")

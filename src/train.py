@@ -1,13 +1,12 @@
 from agent import Agent
 from environment import DCSSolverEnv
-from plots import read_monolithic
-from testing import test_agent, test_all_agent, test_agents_q
+from testing import test_agent, test_agent_all_instances, test_training_agents_generalization
 from util import *
 import time
 import pickle
 
 
-def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
+def train_agent(instances, file, features, seconds=None, total_steps=5000000,
                 copy_freq=50000,
                 eta=1e-5,
                 first_epsilon=0.1,
@@ -21,7 +20,7 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 experience_replay=True, buffer_size=10000, batch_size=10,
                 nstep=1,
                 incremental=True,
-                early_stopping=False,
+                early_stopping=False, base_value=False,
                 verbose=False):
     env = {}
     for instance in instances:
@@ -30,16 +29,17 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
 
     print("Starting trianing for", instances)
     print("Number of features:", env[instances[0]].nfeatures)
-    print("File:", dir)
+    print("File:", file)
     print("nn size:", nnsize)
     print("optimizer:", optimizer)
     print("Features:", features)
 
-    dir = "experiments/results/" + filename([instances[0][0], 2, 2]) + "/" + dir if dir is not None else None
+    if file is not None:
+        file = results_path(instances[0][0], file=file)
 
     agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, model=model,
                   first_epsilon=first_epsilon, last_epsilon=last_epsilon, epsilon_decay_steps=epsilon_decay_steps,
-                  dir=dir, fixed_q_target=fixed_q_target,
+                  dir=file, fixed_q_target=fixed_q_target,
                   reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
                   batch_size=batch_size, nstep=nstep, verbose=verbose)
 
@@ -72,42 +72,16 @@ def train_agent(instances, dir, features, seconds=None, total_steps=5000000,
                 t = agent.training_steps / total_steps
                 probs = diffs**(t*2-1)
                 probs /= np.sum(probs)
-                # print("Sampling probabilities are", probs)
                 instance = instances[np.random.choice(list(range(len(instances))), p=probs)]
-                # print("Training with", instance, "for 1 episode. time =", time.time() - start_time)
                 last_obs[instance] = agent.train(env[instance], max_eps=1, copy_freq=copy_freq,
                                                  last_obs=last_obs.get(instance), early_stopping=early_stopping)
     else:
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
                     save_at_end=True, early_stopping=early_stopping)
 
-    if dir is not None:
-        with open(dir + "/" + "training_data.pkl", "wb") as f:
+    if file is not None:
+        with open(file + "/" + "training_data.pkl", "wb") as f:
             pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
-
-
-def test_all_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000):
-    df = []
-    start = time.time()
-    agents_saved = sorted([int(f[:-5]) for f in os.listdir(results_path(problem, file=file)) if "onnx" in f])
-    np.random.seed(0)
-    tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
-    for i in tested_agents:
-        path = agent_path(filename([problem, 2, 2]) + "/" + file, i)
-
-        solved = [[False for _ in range(up_to)] for _ in range(up_to)]
-        print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
-        for n in range(up_to):
-            for k in range(up_to):
-                if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
-                    df[-1]["idx"] = i
-                    if not np.isnan(df[-1]["synthesis time(ms)"]):
-                        solved[n][k] = True
-        print("Solved:", np.sum(solved))
-
-    df = pd.DataFrame(df)
-    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
 
 
 if __name__ == "__main__":
@@ -124,26 +98,10 @@ if __name__ == "__main__":
         "only boolean": True,
     }
 
-    # RQ 1.5
-    #for file in ["focused_1", "focused_2", "focused_3", "focused_4"]:
-    #    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            #train_agent([(problem, 2, 2)], file, features, nnsize=(20,))
-            #train_agent(train_instances(problem, 10000), file, features, nnsize=(64, 32), verbose=False)
-            #test_all_agents_generalization(problem, file, 15, "5s", 99)
-    #        test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
-            #test_agents_q(problem, 2, 2, file, "states.pkl")
-            #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
-    
-    for file in ["boolean"]:
+    for file in ["testing"]:
         for problem in ["DP", "TA", "BW", "CM", "AT", "TL"]:
-            #s = 1 if problem == "CM" else 2
-            #instances = [(problem, n, k) for n in range(s, s+2) for k in range(s, s+2)]
-            #train_agent(instances, file, features, optimizer="sgd", model="pytorch", first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, incremental=True)
             train_agent([(problem, 2, 2)], file, features, optimizer="sgd", model="pytorch",
                         first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, early_stopping=True,
                         copy_freq=5000)
-            test_all_agents_generalization(problem, file, 15, "5s", 100)
-            test_all_agent(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
-            #test_all_agent(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
-            #test_agents_q(problem, 2, 2, file, "states.pkl")
-            #save_model_q_dfs(problem, 2, 2, file, "states.pkl", best_generalization_agent)
+            test_training_agents_generalization(problem, file, 15, "5s", 100)
+            test_agent_all_instances(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
