@@ -74,12 +74,15 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
     if path != "mock" and uses_feature(path, "context features"):
         command += ["-c"]
 
-    state_labels_info = get_agent_info(path).get("state labels")
-    if path != "mock" and state_labels_info is not None:
-        if state_labels_info == True:
-            command += ["-s", "1"]
-        else:
-            command += ["-s", str(state_labels_info)]
+    if path != "mock":
+        state_labels_info = get_agent_info(path).get("state labels")
+        if state_labels_info is not None:
+            if state_labels_info == True:
+                command += ["-s", "1"]
+            else:
+                command += ["-s", str(state_labels_info)]
+    else:
+        command += ["-s", "0"]
 
     if path != "mock" and uses_feature(path, "je feature"):
         command += ["-j"]
@@ -210,12 +213,16 @@ def test_agents_q(problem, n, k, file, random_states_file, freq=1):
     df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + "q.csv")
 
 
-def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
+def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra, fast_stop=True):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
         for k in range(up_to):
-            if n == 0 or solved[n - 1][k] or k == 0 or solved[n][k - 1]:
+            fast_stop_req = (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1])
+            full_test_req = (n == 0 or solved[n - 1][k]) or (k == 0 or solved[n][k - 1])
+            if k <= 1 and (n > 0 and not solved[n-1][k]) and (n > 1 and not solved[n-2][k]):
+                full_test_req = False
+            if (fast_stop and fast_stop_req) or (not fast_stop and full_test_req):
                 print("Testing ra with", problem, n, k)
                 df.append(func(problem, n + 1, k + 1, timeout=timeout)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
@@ -226,7 +233,7 @@ def test_all_ra(problem, up_to, timeout="10m", name="all_ra", func=test_ra):
     df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file)
 
 
-def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=None, max_frontier=1000000):
+def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=None, max_frontier=10000000, fast_stop=True):
     idx_agent = selection(problem, file)
     print("Testing all", problem, "with agent", idx_agent)
     path = agent_path(filename([problem, 2, 2])+"/"+file, idx_agent)
@@ -234,7 +241,11 @@ def test_all_agent(problem, file, up_to, timeout="10m", name="all", selection=No
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
         for k in range(up_to):
-            if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
+            fast_stop_req = (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1])
+            full_test_req = (n == 0 or solved[n - 1][k]) or (k == 0 or solved[n][k - 1])
+            if k <= 1 and (n > 0 and not solved[n-1][k]) and (n > 1 and not solved[n-2][k]):
+                full_test_req = False
+            if (fast_stop and fast_stop_req) or (not fast_stop and full_test_req): 
                 print("Testing agent with", problem, n+1, k+1)
                 df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
@@ -256,7 +267,7 @@ def test_all_random(problem, up_to, timeout="10m", name="all_random"):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + name + ".csv")
+    df.to_csv("experiments/results/" + filename([problem, 2, 2]) + "/random/" + name + ".csv")
 
 
 def random_heuristic(obs):
@@ -308,7 +319,7 @@ def test_random_exp(problem, n, k, eps, file):
     start = time.time()
     for i in range(eps):
         print("Testing random with", problem, n, k, i, "- Time: ", time.time()-start)
-        r = test_agent("mock", problem, n, k, "10m")[0]
+        r = test_agent("mock", problem, n, k, timeout="10m", max_frontier=10000000)[0]
         r["idx"] = i
         df.append(r)
     df = pd.DataFrame(df)

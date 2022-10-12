@@ -162,10 +162,10 @@ class Agent:
                 break
 
             if self.training_steps > 500000 and (self.training_steps - self.last_best) / self.training_steps > 0.33:
-                print("Converged!")
                 self.converged = True
 
             if early_stopping and self.converged:
+                print("Converged!")
                 break
 
             if self.epsilon > self.last_epsilon + 1e-10:
