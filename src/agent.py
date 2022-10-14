@@ -10,7 +10,7 @@ from model import MLPModel, OnnxModel, TorchModel
 
 
 class Agent:
-    def __init__(self, params, dir=None, verbose=False):
+    def __init__(self, params, save_file=None, verbose=False):
         self.params = params
         if params["model"] == "sklearn":
             self.model = MLPModel(params["nnsize"], params["optimizer"], params["eta"])
@@ -21,13 +21,12 @@ class Agent:
         self.target = None
         self.buffer = None
 
-        self.epsilon = params["first epsilon"]
-
-        self.dir = dir
+        self.save_file = save_file
         self.save_idx = 0
 
         self.training_start = None
         self.training_steps = 0
+        self.epsilon = params["first epsilon"]
 
         self.verbose = verbose
 
@@ -65,7 +64,6 @@ class Agent:
 
     def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000,
               last_obs=None, early_stopping=False, save_at_end=False):
-
         if self.training_start is None:
             self.training_start = time.time()
             self.last_best = 0
@@ -115,7 +113,7 @@ class Agent:
             else:
                 obs = obs2
 
-            if self.training_steps % copy_freq == 0 and self.dir is not None:
+            if self.training_steps % copy_freq == 0 and self.save_file is not None:
                 self.save(env.info)
 
             if self.params["target q"] and self.training_steps % self.params["reset target freq"] == 0:
@@ -147,7 +145,7 @@ class Agent:
             if self.epsilon > self.params["last epsilon"] + 1e-10:
                 self.epsilon -= epsilon_step
 
-        if self.dir is not None and save_at_end:
+        if self.save_file is not None and save_at_end:
             self.save(env.info)
         return obs.copy()
 
@@ -182,10 +180,10 @@ class Agent:
         self.model.batch_update(np.array(action_featuress), rewards + values)
 
     def save(self, env_info):
-        os.makedirs(self.dir, exist_ok=True)
-        OnnxModel(self.model).save(self.dir + "/" + str(self.save_idx))
+        os.makedirs(self.save_file, exist_ok=True)
+        OnnxModel(self.model).save(self.save_file + "/" + str(self.save_idx))
 
-        with open(self.dir + "/" + str(self.save_idx) + ".json", "w") as f:
+        with open(self.save_file + "/" + str(self.save_idx) + ".json", "w") as f:
             info = {
                 "training time": time.time() - self.training_start,
                 "training steps": self.training_steps,

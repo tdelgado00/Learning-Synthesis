@@ -33,7 +33,7 @@ def train_agent(instances,
     if file is not None:
         file = results_path(instances[0][0], file=file)
 
-    agent = Agent(agent_params, verbose=verbose)
+    agent = Agent(agent_params, save_file=file, verbose=verbose)
 
     if agent_params["experience replay"]:
         agent.initializeBuffer(env)
