@@ -6,47 +6,36 @@ import time
 import pickle
 
 
-def train_agent(instances, file, features, seconds=None, total_steps=5000000,
-                copy_freq=50000,
-                eta=1e-5,
-                first_epsilon=0.1,
-                last_epsilon=0.1,
-                epsilon_decay_steps=250000,
-                nnsize=(20,),
-                optimizer="sgd",
-                model="sklearn",
+def train_agent(instances,
+                file,
+                agent_params,
+                features,
                 quantum_steps=10000,
-                fixed_q_target=True, reset_target_freq=10000,
-                experience_replay=True, buffer_size=10000, batch_size=10,
-                nstep=1,
                 incremental=True,
-                early_stopping=False, base_value=False,
+                seconds=None,
+                total_steps=500000,
+                copy_freq=5000,
+                early_stopping=True,
                 verbose=False):
     env = {}
     for instance in instances:
         problem, n, k = instance
         env[instance] = DCSSolverEnv(problem, n, k, features)
 
-    print("Starting trianing for", instances)
+    print("Starting training for instances", instances)
     print("Number of features:", env[instances[0]].nfeatures)
     print("File:", file)
-    print("nn size:", nnsize)
-    print("optimizer:", optimizer)
+    print("Agent params:", agent_params)
     print("Features:", features)
+
+    agent_params["nfeatures"] = env[instances[0]].nfeatures
 
     if file is not None:
         file = results_path(instances[0][0], file=file)
 
-    agent = Agent(env[instances[0]].nfeatures, eta=eta, nnsize=nnsize, optimizer=optimizer, model=model,
-                  first_epsilon=first_epsilon, last_epsilon=last_epsilon, epsilon_decay_steps=epsilon_decay_steps,
-                  dir=file, fixed_q_target=fixed_q_target,
-                  reset_target_freq=reset_target_freq, experience_replay=experience_replay, buffer_size=buffer_size,
-                  batch_size=batch_size, nstep=nstep, verbose=verbose)
+    agent = Agent(agent_params, verbose=verbose)
 
-    print("Agent info:")
-    print(agent.params)
-
-    if experience_replay:
+    if agent_params["experience replay"]:
         agent.initializeBuffer(env)
 
     if len(instances) > 1:  # training round robin
@@ -97,11 +86,26 @@ if __name__ == "__main__":
         "visits feature": False,
         "only boolean": True,
     }
+    agent_params = {
+        "eta": 1e-5,
+        "first epsilon": 1.0,
+        "last epsilon": 0.01,
+        "epsilon decay steps": 250000,
+        "nnsize": (20,),
+        "optimizer": "sgd",
+        "model": "pytorch",
+        "target q": True,
+        "reset target freq": 10000,
+        "experience replay": True,
+        "buffer size": 10000,
+        "batch size": 10,
+        "nstep": 1,
+        "momentum": 0,  # default: 0.9
+        "nesterov": False,  # default: True
+    }
 
-    for file in ["testing"]:
-        for problem in ["DP", "TA", "BW", "CM", "AT", "TL"]:
-            train_agent([(problem, 2, 2)], file, features, optimizer="sgd", model="pytorch",
-                        first_epsilon=1, last_epsilon=0.01, epsilon_decay_steps=250000, early_stopping=True,
-                        copy_freq=5000)
-            test_training_agents_generalization(problem, file, 15, "5s", 100)
+    for file in ["nomomentum"]:
+        for problem in ["TA", "DP", "AT", "BW", "CM", "TL"]:
+            train_agent([(problem, 2, 2)], file, agent_params, features)
+            test_training_agents_generalization(problem, file, 2, "5s", 100)
             test_agent_all_instances(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
