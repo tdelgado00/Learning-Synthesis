@@ -50,6 +50,7 @@ class Agent:
         return info if time.time() - start_time < timeout else "timeout"
 
     def initializeBuffer(self, envs):
+        """ Initialize replay buffer uniformly with experiences from a set of environments """
         exp_per_instance = self.params["buffer size"] // len(envs)
 
         print("Initializing buffer with", exp_per_instance, "observations per instance, and", len(envs), "instances.")
@@ -149,14 +150,15 @@ class Agent:
             self.save(env.info)
         return obs.copy()
 
-    # Takes action according to self.model
     def get_action(self, s, epsilon):
+        """ Gets epsilon-greedy action using self.model """
         if np.random.rand() <= epsilon:
             return np.random.randint(len(s))
         else:
             return self.model.best(s)
 
     def update(self, obs, action, reward, obs2):
+        """ Gets epsilon-greedy action using self.model """
         if self.target is not None:
             value = self.target.eval(obs2)
         else:
