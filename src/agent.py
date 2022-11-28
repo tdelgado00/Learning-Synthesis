@@ -129,13 +129,14 @@ class Agent:
             if seconds is not None and time.time() - self.training_start > seconds:
                 break
 
-            if max_steps is not None and steps >= max_steps:
+            if max_steps is not None and not early_stopping and steps >= max_steps:
                 break
 
             if max_eps is not None and eps >= max_eps:
                 break
 
-            if self.training_steps > 500000 and (self.training_steps - self.last_best) / self.training_steps > 0.33:
+            if max_steps is not None and self.training_steps > max_steps and (self.training_steps - self.last_best) / self.training_steps > 0.33:
+                print("Converged since steps are", self.training_steps, "and max_steps is", max_steps, "and last best was", self.last_best)
                 self.converged = True
 
             if early_stopping and self.converged:
