@@ -238,7 +238,7 @@ def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", se
                 df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
                 if not np.isnan(df[-1]["synthesis time(ms)"]):
                     solved[n][k] = True
-
+    print("Solved", np.sum(solved), "instances")
     df = pd.DataFrame(df)
     df.to_csv(results_path(problem, 2, 2, file) + "/" + name + ".csv")
 
@@ -399,4 +399,4 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == '__main__':
-    pass
+   test_ra_all_instances("TL", 50, "10m", "all_ra_50_full", fast_stop=False)

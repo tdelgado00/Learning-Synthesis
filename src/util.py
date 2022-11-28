@@ -6,7 +6,7 @@ import pickle
 
 
 def feature_names(info, problem=None):
-    check = lambda p : p in info.keys() and info[p]
+    check = lambda p: p in info.keys() and info[p]
     if check("only boolean"):
         base_features = [
             "action controllable",
@@ -44,7 +44,8 @@ def feature_names(info, problem=None):
     ra_features = ["ra type", "1 / ra distance", "in open"]
     je_features = ["last state expanded from", "last state expanded to"]
     nk_features = ["n", "k"]
-    prop_features = ["in loop", "forced in FNG", "child in loop", "child forced in FNG", "in PG ancestors", "forced in PG", "in forced to clausure"]
+    prop_features = ["in loop", "forced in FNG", "child in loop", "child forced in FNG", "in PG ancestors",
+                     "forced in PG", "in forced to clausure"]
     visits_features = ["expl percentage", "state visits", "child visits"]
 
     ra = check("ra feature")
@@ -138,6 +139,7 @@ def uses_feature(path, feature):
 def read_results(lines):
     def indexOf(s):
         return list(map(lambda l: s in l, lines)).index(True)
+
     i = indexOf("ExpandedStates")
     results = {}
     results["expanded states"] = int(lines[i].split(" ")[1])
@@ -153,7 +155,33 @@ def read_results(lines):
     results["propagateErrors"] = int(propagateLine[3])
     results["memory(mb)"] = float(lines[i + 7].split(" ")[1])
     results["heuristic time(ms)"] = float(lines[i + 8].split(" ")[1]) if "heuristic" in lines[i + 8] else np.nan
+    results["expansion_budget_exceeded"] = (lines[i + 9].split(" ")[1])
     return results
+
+
+def best_generalization_agent_ebudget(problem, file):
+    df = pd.read_csv("experiments/results/" + filename(
+        [problem, 2, 2]) + "/" + file + "/upTo:15_timeout2h_ebudget5000_generalization_all.csv")
+    df = notExceeded(df)
+    max_idx = df["idx"].max()
+    solved = [0 for i in range(max_idx + 1)]
+    expanded = [0 for i in range(max_idx + 1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
+    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
+
+
+def solved_by_agent(path):
+    df = pd.read_csv(path)
+    df = notExceeded(df)
+    return df["heuristic"].value_counts(sort=False)
+
+
+def notExceeded(df):
+    return df[df["expansion_budget_exceeded"] == False]
 
 
 def train_instances(problem, max_size=10000):
@@ -180,7 +208,7 @@ def all_solved_instances(dfs):
     return instances
 
 
-def read_test(data, problems, files):
+def read_test(data, problems, files, name="/generalization_all.csv"):
     print("Reading test files")
 
     data["all"] = {}
@@ -193,7 +221,7 @@ def read_test(data, problems, files):
             if file in old_files:
                 path = results_path(p) + file + "/" + filename([p, 2, 2]) + ".csv"
             else:
-                path = results_path(p) + file + "/generalization_all.csv"
+                path = results_path(p) + file + name
             try:
                 df = pd.read_csv(path)
             except:
@@ -205,6 +233,7 @@ def read_test(data, problems, files):
                 lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]], axis=1)
             df["group"] = group
             df["file"] = file
+            # if not ("focused" in file or "epsdec" in file or "5kk" in file):
             idxs = list(df["idx"].unique())
             df["idx"] = df["idx"].apply(lambda i: idxs.index(i))
             df["expanded transitions / total"] = df["expanded transitions"] / df["total transitions"]
@@ -213,14 +242,20 @@ def read_test(data, problems, files):
 
 
 def read_ra_and_random(used_problems, data):
-    data.update({name: {} for name in ["ra 5s", "random 5s", "ra 10m", "random 10m", "ra 30m"]})
+    data.update({name: {} for name in
+                 ["ra 5s", "random 5s", "ra 10m", "random 10m", "ra 30m", "ra 15000t", "ra 5000t", "random 15000t"]})
     for p in used_problems:
         data["ra 5s"][p] = pd.read_csv(results_path(p) + "/RA_5s_15.csv")
         data["random 5s"][p] = pd.read_csv(results_path(p) + "/random_5s.csv")
-
+        data["ra 15000t"][p] = pd.read_csv(results_path(p) + "/all_ra_15000t.csv")
+        data["ra 5000t"][p] = pd.DataFrame(
+            data["ra 15000t"][p].loc[data["ra 15000t"][p]["expanded transitions"] < 5001])
         data["ra 10m"][p] = pd.read_csv(results_path(p) + "/all_ra_afterfix_15.csv")
         data["ra 30m"][p] = pd.read_csv(results_path(p) + "/all_ra_30m_15.csv")
-        data["random 10m"][p] = [pd.read_csv(results_path(p) + "random/all random "+str(i)+".csv") for i in range(5)]
+        data["random 10m"][p] = [pd.read_csv(results_path(p) + "random/all random " + str(i) + ".csv") for i in
+                                 range(5)]
+        data["random 15000t"][p] = [pd.read_csv(results_path(p) + "all_random" + str(i) + "_1500015000.csv") for i in
+                                    range(1, 6, 1)]
 
         for l in [data[name][p] for name in ["ra 5s", "random 5s", "ra 10m", "random 10m", "ra 30m"]]:
             for df in [l] if type(l) != list else l:
@@ -287,12 +322,12 @@ def read_monolithic():
     return monolithic_results
 
 
-def read_agents_10m(problems, files, name="all"):
+def read_agents_evaluation(problems, files, name="all"):
     agents_10m = {}
     for p in problems:
         agents_10m[p] = {}
         for file, g in files:
-            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/"+name+".csv")
+            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/" + name + ".csv")
     return agents_10m
 
 

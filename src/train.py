@@ -100,12 +100,12 @@ if __name__ == "__main__":
         "buffer size": 10000,
         "batch size": 10,
         "nstep": 1,
-        "momentum": 0,  # default: 0.9
-        "nesterov": False,  # default: True
+        "momentum": 0.9, # default: 0.9
+        "nesterov": True, # default: True
     }
 
-    for file in ["nomomentum"]:
-        for problem in ["TA", "DP", "AT", "BW", "CM", "TL"]:
-            train_agent([(problem, 2, 2)], file, agent_params, features)
-            test_training_agents_generalization(problem, file, 2, "5s", 100)
-            test_agent_all_instances(problem, file, 15, timeout="10m", name="all", selection=best_generalization_agent)
+    for file in ["boolean_4", "boolean_5"]:
+        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+            #train_agent([(problem, 3, 3)], file, agent_params, features)
+            #test_training_agents_generalization(problem, file, 15, "5s", 100)
+            test_agent_all_instances(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
