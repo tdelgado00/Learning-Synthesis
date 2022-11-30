@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.onnx
-from torch.nn.utils import clip_grad_norm_
 
 
 class Model:
@@ -17,7 +16,7 @@ class Model:
     def predict(self, s):
         raise NotImplementedError
 
-    def evalBatch(self, obss):
+    def eval_batch(self, obss):
         raise NotImplementedError
 
     def eval(self, s):
@@ -41,7 +40,7 @@ class MLPModel(Model):
 
         self.has_learned_something = False
 
-    def evalBatch(self, obss):
+    def eval_batch(self, obss):
         return np.array([np.max(self.predict(s)) for s in obss])
 
     def eval(self, s):
@@ -90,7 +89,7 @@ class OnnxModel(Model):
             return 0
         return self.session.run(None, {'X': s})[0]
 
-    def evalBatch(self, ss):
+    def eval_batch(self, ss):
         return np.array([self.eval(s) for s in ss])
 
     def eval(self, s):
@@ -122,7 +121,7 @@ class TorchModel(Model):
 
         self.losses = []
 
-    def evalBatch(self, ss):
+    def eval_batch(self, ss):
         return np.array([self.eval(s) for s in ss])
 
     def eval(self, s):
@@ -153,7 +152,6 @@ class TorchModel(Model):
 
         loss = self.loss_fn(pred, values)
         loss.backward()
-        # clip_grad_norm_(self.model.parameters(), 1.0)
         self.optimizer.step()
 
         self.losses.append(loss.item())
@@ -198,5 +196,5 @@ class NeuralNetwork(nn.Module):
             x = layer(x)
         return x
 
-    def reuseOnnxModel(self, onnx_path):
+    def reuse_onnx_model(self, onnx_path):
         raise NotImplementedError

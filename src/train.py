@@ -1,10 +1,11 @@
 import sys
 from agent import Agent
 from environment import DCSSolverEnv
-from testing import test_agent, test_agent_all_instances, test_training_agents_generalization
+from testing import test_agent_all_instances, test_training_agents_generalization
 from util import *
 import time
 import pickle
+import os
 
 
 def train_agent(instances,
@@ -102,12 +103,22 @@ if __name__ == "__main__":
         "buffer size": 10000,
         "batch size": 10,
         "nstep": 1,
-        "momentum": 0.9, # default: 0.9
-        "nesterov": True, # default: True
+        "momentum": 0.9,
+        "nesterov": True
     }
 
-    for file in ["boolean_4", "boolean_5"]:
-        for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-            #train_agent([(problem, 3, 3)], file, agent_params, features)
-            #test_training_agents_generalization(problem, file, 15, "5s", 100)
-            test_agent_all_instances(problem, file, 15, timeout="10m", name="all_best22", selection=best_agent_2_2)
+    if len(sys.argv) != 2:
+        print("A folder name to save results should be specified.")
+        exit()
+
+    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+    for p in problems:
+        if not os.path.isdir("results/" + p):
+            os.makedirs("results/" + p)
+
+    # TODO: -> transitions budget
+    file = sys.argv[1]
+    for p in problems:
+        train_agent([(p, 2, 2)], file, agent_params, features)
+        test_training_agents_generalization(p, file, 15, "5s", 100)
+        test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget)

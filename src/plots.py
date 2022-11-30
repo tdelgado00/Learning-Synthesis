@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from util import *
+from plots_util import *
 
 import jpype
 
@@ -178,7 +179,6 @@ def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2, metri
         plt.savefig(path + " ".join([str(n), str(k)]) + u + ".jpg")
 
 
-# Tabla: Cada approach es una fila, cada instancia es una columna. Una tabla por cada problema.
 def transitions_table(used_problems, used_files, data, path):
     print("Saving transitions table")
     print(path)
@@ -226,10 +226,6 @@ def transitions_table(used_problems, used_files, data, path):
     indexes = [(p, ap) for p in used_problems for ap in groups + ["RA", "Random", "Total"]]
     df.index = pd.MultiIndex.from_tuples(indexes)
 
-    # s = df.style.highlight_max(
-    #    props='cellcolor:[HTML]{FFFF00}; color:{red};'
-    #      'textit:--rwrap; textbf:--rwrap;'
-    # )
     def format(x):
         if np.any(np.isnan(x)):
             return "nan"
@@ -518,10 +514,6 @@ def plot_15_15(used_problems, path, files1, file2, figure_name, name, require_so
             for k in range(15):
                 r = df2[k + 1][n + 1]
                 a = [df[k + 1][n + 1] for df in dfs1]
-                # if (n, k) == (13, 13):
-                #     print(r, a)
-                # if (n, k) == (14, 14):
-                #     print(r, a)
                 m[n, k] = func(a, r)
         return m
 
@@ -633,10 +625,10 @@ def solved_table(used_problems, used_files, data, path, add_mono=False, name="al
                 for problem in ["AT", "BW", "DP", "TA"]:
                     results["all (AT, BW, DP, TA)"][group][j] += results[problem][group][j]
 
-    print(results[p].keys())
     for p in problem_columns:
         print(p, np.array(results[p]["RL"]) - np.array(results[p]["RL best22"]))
         print(np.mean(np.array(results[p]["RL"]) - np.array(results[p]["RL best22"])))
+
     # with open(path + "ttest_results.txt", "w+") as f:
     #     for problem in problems + ["all"]:
     #         f.write(problem + "\n")
@@ -651,10 +643,8 @@ def solved_table(used_problems, used_files, data, path, add_mono=False, name="al
     for problem in problem_columns:
         for j in range(len(groups)):
             r = results[problem][groups[j]]
-            # print(problem, groups[j], r)
             if len(r) == 0:
                 continue
-            # r = np.array(r) / results[problem]["random"][0]
             mean = np.round(np.mean(r), 2)
             std = np.round(np.std(r), 2)
             if std > 0.0001:
@@ -673,7 +663,6 @@ def solved_table(used_problems, used_files, data, path, add_mono=False, name="al
             hrules=True, label="tbl:generalization",
             multirow_align="t", multicol_align="r") + "\n")
 
-        # print(dft.transpose())
         f.write(dft.set_index("approach").transpose().style.to_latex(
             column_format="lllll", position="tb", position_float="centering",
             hrules=True, label="tbl:generalization",
@@ -691,30 +680,27 @@ def pipeline_plot_15_15(files1, file2, figure_name, name, require_solved_last):
 
 
 if __name__ == "__main__":
-    path = "experiments/figures/paperfinal/"
+    path = "experiments/figures/paper/"
     if not os.path.exists(path):
         print("Creating dir", path)
         os.makedirs(path)
 
     problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
 
-    focused_files = ["focused_1", "focused_2", "focused_3", "focused_4", "focused_5", "focused_6", "focused_7"]
     ffiles = ["boolean", "boolean_2", "boolean_3", "boolean_4", "boolean_5"]
 
     files = []
     files += [(f, "RL") for f in ffiles]
-    # files += [(f, "epsdec") for f in epsdec]
-    # files += [(f, "focused") for f in focused_files]
 
     data = {}
     data["mono"] = read_monolithic()
     read_ra_and_random(problems, data)
-    # read_test(data, problems, files)
-    # read_training(data, problems, files)
-    # process_training_data(data, problems, files, base=5000, window_size=10)
-    # data["random small"] = read_random_small()
-    #data["agent 15000t"] = {}
-    #data["agent 15000t"]["all"] = read_agents_evaluation(problems, files, name="all_15000")
+    read_test(data, problems, files)
+    read_training(data, problems, files)
+    process_training_data(data, problems, files, base=5000, window_size=10)
+    data["random small"] = read_random_small()
+    data["agent 15000t"] = {}
+    data["agent 15000t"]["all"] = read_agents_evaluation(problems, files, name="all_15000")
 
     data["agent 10m"] = {}
     data["agent 10m"]["all_trans"] = read_agents_evaluation(problems, files, name="all_trans")
@@ -725,24 +711,24 @@ if __name__ == "__main__":
 
     pipeline = [
         lambda p, f, d, pth: solved_table(p, f, d, pth, name="all_trans", add_mono=False),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="mean transitions"),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="mean transitions"),
-        # plot_2_2_3_3,
-        # lambda p, f, d, pth: plot_2_2_3_3(p, f, d, pth, metric="mean transitions"),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="expanded transitions"),
-        # lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="mean transitions"),
-        # train_transitions_min,
-        #plot_scatter_generalization,
-        # plot_training_transitions,
-        # transitions_table,
-        # lambda p, f, d, pth: solved_table(p, f, d, pth, long_timeout=False),
-        # plot_solved_training,
-        # plot_loss,
-        # pipeline_plot_15_15(ffiles, "ra", "RL vs RA 30m", "all30m", require_solved_last=False),
-        # pipeline_plot_15_15(ffiles, "random", "RL vs Random mean", "all", require_solved_last=False),
-        # pipeline_plot_15_15(ffiles, "mono", "RL vs mono"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="mean transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="mean transitions"),
+        plot_2_2_3_3,
+        lambda p, f, d, pth: plot_2_2_3_3(p, f, d, pth, metric="mean transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="expanded transitions"),
+        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="mean transitions"),
+        train_transitions_min,
+        plot_scatter_generalization,
+        plot_training_transitions,
+        transitions_table,
+        lambda p, f, d, pth: solved_table(p, f, d, pth, long_timeout=False),
+        plot_solved_training,
+        plot_loss,
+        pipeline_plot_15_15(ffiles, "ra", "RL vs RA 30m", "all30m", require_solved_last=False),
+        pipeline_plot_15_15(ffiles, "random", "RL vs Random mean", "all", require_solved_last=False),
+        pipeline_plot_15_15(ffiles, "mono", "RL vs mono"),
         # pipeline_plot_15_15(ffiles, under_test, "baseline vs under test", "all", require_solved_last=True),
         # pipeline_plot_15_15([under_test], "ra", "under test vs ra", "all", require_solved_last=True),
         # pipeline_plot_15_15([under_test], "random", "under test vs random")

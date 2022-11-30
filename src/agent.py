@@ -5,7 +5,7 @@ import numpy as np
 
 import os
 
-from replayBuffer import ReplayBuffer
+from replay_buffer import ReplayBuffer
 from model import MLPModel, OnnxModel, TorchModel
 
 
@@ -174,9 +174,9 @@ class Agent:
     def batch_update(self):
         action_featuress, rewards, obss2 = self.buffer.sample(self.params["batch size"])
         if self.target is not None:
-            values = self.target.evalBatch(obss2)
+            values = self.target.eval_batch(obss2)
         else:
-            values = self.model.evalBatch(obss2)
+            values = self.model.eval_batch(obss2)
 
         if self.verbose:
             print("Batch update. Values:", rewards+values)
