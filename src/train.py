@@ -120,5 +120,6 @@ if __name__ == "__main__":
     file = sys.argv[1]
     for p in problems:
         train_agent([(p, 2, 2)], file, agent_params, features)
-        test_training_agents_generalization(p, file, 15, "5s", 100)
-        test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget)
+        test_training_agents_generalization(p, file, 15, "10h", 100, ebudget=5000)
+        test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
+        test_agent_all_instances(p, file, 15, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000)

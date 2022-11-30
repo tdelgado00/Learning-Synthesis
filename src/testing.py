@@ -14,14 +14,22 @@ def test_ra(problem, n, k, timeout="30m", ebudget=-1):
         command.append("-e")
         command.append(str(ebudget))
 
+    print("Testing RA at ", str(n), " ", str(k), " of ", problem)
+    start = time.time()
     proc = subprocess.run(command,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    end = time.time()
+    print("tested in ", end - start, " seconds")
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan}
     else:
         results = read_results(proc.stdout.split("\n"))
 
+    expansionMsg = ""
+    if (ebudget > -1 and results["expanded transitions"] > ebudget):
+        expansionMsg = ", EXPANSION BUDGET EXCEEDED"
+    print("Total expanded transitions: ", results["expanded transitions"], expansionMsg)
     results["algorithm"] = "OpenSet RA"
     results["heuristic"] = "r"
     results["problem"] = problem
@@ -92,7 +100,7 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False}
-        print(results)
+        #print(results)
     else:
         lines = proc.stdout.split("\n")[2:]
         err_lines = proc.stderr.split("\n")
@@ -122,7 +130,10 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
                         print(line)
                     for line in err_lines:
                         print(line)
-    print(results["expanded transitions"])
+    expansionMsg = ""
+    if(ebudget>-1 and results["expanded transitions"]>ebudget):
+        expansionMsg = ", EXPANSION BUDGET EXCEEDED"
+    print("Total expanded transitions: ",results["expanded transitions"], expansionMsg)
     results["algorithm"] = "new"
     results["heuristic"] = path
     results["problem"] = problem
@@ -185,9 +196,6 @@ def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
         "experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + filename([problem2, n2, k2]) + ".csv")
 
 
-def budget_and_time(series):
-    return series["expansion_budget_exceeded"] == 'false' and not np.isnan(series["synthesis time(ms)"])
-
 
 def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=test_ra, fast_stop=True, ebudget=-1,
                           solved_crit=budget_and_time):
@@ -204,13 +212,13 @@ def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=tes
                 df.append(func(problem, n + 1, k + 1, timeout=timeout, ebudget=ebudget)[0])
                 if solved_crit(df[-1]):
                     solved[n][k] = True
-
+    print("Solved", np.sum(solved), "instances")
     df = pd.DataFrame(df)
     file = filename([name, up_to, ebudget, timeout]) + ".csv"
     df.to_csv(results_path(problem, 2, 2, file))
 
 
-def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=None, max_frontier=1000000,
+def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=best_generalization_agent_ebudget, max_frontier=1000000,
                              fast_stop=True, ebudget=-1, solved_crit=budget_and_time):
     """ Step (S3): Testing the selected agent with all instances of a problem """
     idx_agent = selection(problem, file)
@@ -249,13 +257,13 @@ def test_random_all_instances(problem, up_to, timeout="10m", name="all_random", 
                 df.append(test_agent("mock", problem, n + 1, k + 1, timeout=timeout, ebudget=ebudget, file=file)[0])
                 if solved_crit(df[-1]):
                     solved[n][k] = True
-
+    print("Solved", np.sum(solved), "instances")
     df = pd.DataFrame(df)
     df.to_csv(results_path(problem, 2, 2) + "/random" + "/" + name + str(ebudget) + ".csv")
 
 
 def test_training_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000,
-                                        solved_crit=budget_and_time):
+                                        solved_crit=budget_and_time, ebudget = -1):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
     df = []
     start = time.time()
@@ -270,7 +278,7 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
+                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file)[0])
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):
                         solved[n][k] = True
@@ -292,3 +300,16 @@ def get_problem_labels(problem, eps=5):
         return "".join([c for c in l if c.isalpha()])
 
     return {simplify(l) for l in actions}
+
+
+if __name__ == "__main__":
+    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+    for p in problems:
+        if not os.path.isdir("results/" + p):
+            os.makedirs("results/" + p)
+    file = sys.argv[1]
+    for problem in problems:
+        test_ra_all_instances(problem=problem,up_to=15,timeout="10m", ebudget=-1,solved_crit=budget_and_time)
+        test_ra_all_instances(problem=problem,up_to=15,timeout="3h", ebudget=15000,solved_crit=budget_and_time)
+        test_random_all_instances(problem=problem,up_to=15,timeout="10m",ebudget=-1,solved_crit=budget_and_time)
+        test_random_all_instances(problem=problem,up_to=15, timeout="3h", ebudget=15000, solved_crit=budget_and_time)
