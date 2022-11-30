@@ -1,3 +1,9 @@
+
+import json
+import sys
+import time
+import pdb
+
 import onnx
 import os
 from onnxruntime import InferenceSession
@@ -6,11 +12,15 @@ from util import *
 import numpy as np
 import subprocess
 import time
+import os
 
 
-def test_ra(problem, n, k, timeout="30m"):
+def test_ra(problem, n, k, timeout="30m", ebudget = -1):
     command = ["timeout", timeout, "java", "-Xmx8g", "-classpath", "mtsa.jar",
                "ltsa.ui.LTSABatch", "-i", fsp_path(problem, n, k), "-c", "DirectedController", "-r"]
+    if(ebudget>-1):
+        command.append("-e")
+        command.append(str(ebudget))
 
     proc = subprocess.run(command,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -28,12 +38,11 @@ def test_ra(problem, n, k, timeout="30m"):
     return results, None
 
 
-def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=False):
+def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=False, ebudget = -1, file = "not specified in test_agent"):
     command = ["timeout", timeout, "java", "-Xmx8g", "-XX:MaxDirectMemorySize=512m", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
-               "-m", path
-               ]
+               "-m",path]
 
     if debug:
         command += ["-d"]
@@ -74,12 +83,25 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
     if path != "mock" and uses_feature(path, "only boolean"):
         command += ["-b"]
 
+    if path != "mock" and uses_feature(path, "labelsThatReach_feature"):
+        command += ["-t"]
+    if ebudget>-1:
+        command += ["-e", str(ebudget)]
+
     command += ["-f", str(max_frontier)]
 
+    print("Testing agent at ", str(n)," " ,str(k), " of ", problem,"from",file, "\n")
+    start = time.time()
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    end = time.time()
+    print("tested in ", end-start, " seconds")
+
+
+
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False}
+        print(results)
     else:
         lines = proc.stdout.split("\n")[2:]
         err_lines = proc.stderr.split("\n")
@@ -108,12 +130,17 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
                         print(line)
                     for line in err_lines:
                         print(line)
-            
+    print(results["expanded transitions"])
     results["algorithm"] = "new"
     results["heuristic"] = path
     results["problem"] = problem
     results["n"] = n
     results["k"] = k
+    results["transitions/ms"] = results["expanded transitions"] / results["synthesis time(ms)"]
+    if ebudget>-1 and results["expanded transitions"]>ebudget:
+        results["expansion_budget_exceeded"] = "true"
+    else:
+        results["expansion_budget_exceeded"] = "false"
     return results, debug
 
 
@@ -184,24 +211,10 @@ def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
     df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + filename([problem2, n2, k2]) + ".csv")
 
 
-def test_agents_q(problem, n, k, file, random_states_file, freq=1):
-    df = []
+def budgetAndTime(series):
+    return series["expansion_budget_exceeded"]=='false' and not np.isnan(series["synthesis time(ms)"])
 
-    dir = results_path(problem, n, k, file)
-    files = [f for f in os.listdir(dir) if f.endswith(".onnx")]
-    for i in range(0, len(files), freq):
-        print("Testing q", i)
-        path = agent_path(filename([problem, n, k]) + "/" + file, i)
-        info = get_agent_info(path)
-        info["avg q"] = eval_agent_q(path, read_random_states(problem, n, k, random_states_file, info))
-        info["idx"] = i
-        df.append(info)
-
-    df = pd.DataFrame(df)
-    df.to_csv("experiments/results/" + filename([problem, n, k]) + "/" + file + "/" + "q.csv")
-
-
-def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=test_ra, fast_stop=True):
+def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=test_ra, fast_stop=True, ebudget = -1, solved_crit = budgetAndTime):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
@@ -212,18 +225,18 @@ def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=tes
                 full_test_req = False
             if (fast_stop and fast_stop_req) or (not fast_stop and full_test_req):
                 print("Testing ra with", problem, n, k)
-                df.append(func(problem, n + 1, k + 1, timeout=timeout)[0])
-                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                df.append(func(problem, n + 1, k + 1, timeout=timeout, ebudget=ebudget)[0])
+                if solved_crit(df[-1]):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    file = filename([name, up_to]) + ".csv"
+    file = filename([name, up_to, ebudget, timeout]) + ".csv"
     df.to_csv(results_path(problem, 2, 2, file))
 
 
-def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=None, max_frontier=1000000, fast_stop=True):
+def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=None, max_frontier=1000000,fast_stop=True, ebudget = -1, solved_crit = budgetAndTime):
     idx_agent = selection(problem, file)
-    print("Testing all", problem, "with agent", idx_agent)
+    print("Testing all", problem, "with agent: ", idx_agent)
     path = agent_path(problem, file, idx_agent)
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
@@ -233,32 +246,33 @@ def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", se
             full_test_req = (n == 0 or solved[n - 1][k]) or (k == 0 or solved[n][k - 1])
             if k <= 1 and (n > 0 and not solved[n-1][k]) and (n > 1 and not solved[n-2][k]):
                 full_test_req = False
-            if (fast_stop and fast_stop_req) or (not fast_stop and full_test_req): 
+
+            if (fast_stop and fast_stop_req) or (not fast_stop and full_test_req):
                 print("Testing agent with", problem, n+1, k+1)
-                df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
-                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget,file=file)[0])
+                if solved_crit(df[-1]):
                     solved[n][k] = True
     print("Solved", np.sum(solved), "instances")
     df = pd.DataFrame(df)
-    df.to_csv(results_path(problem, 2, 2, file) + "/" + name + ".csv")
+    df.to_csv(results_path(problem, 2, 2, file) + "/" + name + "_" + problem+ "_"+ str(up_to)+ "_" + str(ebudget)+ "_TO:"+ str(timeout) + ".csv")
 
 
-def test_random_all_instances(problem, up_to, timeout="10m", name="all_random"):
+def test_random_all_instances(problem, up_to, timeout="10m", name="all_random", ebudget = -1, solved_crit = budgetAndTime, file = 'random'):
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
         for k in range(up_to):
             if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
                 print("Testing random with", problem, n+1, k+1)
-                df.append(test_agent("mock", problem, n + 1, k + 1, timeout=timeout)[0])
-                if not np.isnan(df[-1]["synthesis time(ms)"]):
+                df.append(test_agent("mock", problem, n + 1, k + 1, timeout=timeout, ebudget=ebudget, file=file)[0])
+                if solved_crit(df[-1]):
                     solved[n][k] = True
 
     df = pd.DataFrame(df)
-    df.to_csv(results_path(problem, 2, 2) + "/random/" + name + ".csv")
+    df.to_csv(results_path(problem, 2, 2) + "/random" + "/" + name + str(ebudget) + ".csv")
 
 
-def test_training_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000):
+def test_training_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000, solved_crit=budgetAndTime):
     df = []
     start = time.time()
     agents_saved = sorted([int(f[:-5]) for f in os.listdir(results_path(problem, file=file)) if "onnx" in f])
@@ -274,7 +288,7 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
                     df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout)[0])
                     df[-1]["idx"] = i
-                    if not np.isnan(df[-1]["synthesis time(ms)"]):
+                    if solved_crit(df[-1]):
                         solved[n][k] = True
         print("Solved:", np.sum(solved))
 
@@ -361,7 +375,6 @@ def ra_feature_heuristic(obs, verbose=True):
 
 def heuristic_test_exp(problem, n, k, times, heuristic, features, file, verbose=False):
     """ Function used for testing a custom heuristic """
-
     def test_heuristic_python():
         env = DCSSolverEnv(problem, n, k, features)
 
@@ -399,4 +412,6 @@ def get_problem_labels(problem, eps=5):
 
 
 if __name__ == '__main__':
-   test_ra_all_instances("TL", 50, "10m", "all_ra_50_full", fast_stop=False)
+    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+        for k in range(2,6,1):
+            test_random_all_instances(problem,15,"3h",name=("all_random"+str(k)+"_15000"),ebudget=15000,solved_crit=budgetAndTime)

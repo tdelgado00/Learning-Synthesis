@@ -10,14 +10,14 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k, features, normalize_reward=False):
+    def __init__(self, problem, n, k, features, normalize_reward=False, ebudget = -1):
         self.problem = problem
         self.n = n
         self.k = k
         self.problemFilename = filename([problem, n, k])
         self.normalize_reward = normalize_reward
         self.problem_size = read_monolithic()[("expanded transitions", problem)][k][n]
-
+        self.ebudget = ebudget
         self.javaEnv = DCSForPython("labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
                                     features["ra feature"],
                                     features["context features"],
@@ -26,6 +26,7 @@ class DCSSolverEnv:
                                     features["nk feature"],
                                     features["prop feature"],
                                     features["visits feature"],
+                                    features["labelsThatReach_feature"],
                                     features["only boolean"])
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
 
@@ -34,7 +35,8 @@ class DCSSolverEnv:
             "nfeatures": self.nfeatures,
             "n": self.n,
             "k": self.k,
-            "problem": self.problem
+            "problem": self.problem,
+            "expansion_budget_exceeded": "false"
         })
 
     def get_actions(self):
@@ -44,6 +46,10 @@ class DCSSolverEnv:
         return r
 
     def step(self, action):
+
+        if (self.ebudget > 0): self.ebudget -= 1
+        elif (self.ebudget == 0): return None, self.reward(), True, self.get_results()
+
         self.javaEnv.expandAction(action)
         if not self.javaEnv.isFinished():
             return self.get_actions(), self.reward(), False, {}

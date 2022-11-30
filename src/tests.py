@@ -1,6 +1,6 @@
-from testing import test_agent, test_onnx
+from testing import test_agent, test_onnx, test_training_agents_generalization, test_agents_q
 from util import *
-from train import train_agent, test_all_agents_generalization, test_agents_q
+from train import train_agent
 import time
 
 def test_java_and_python_coherent():
@@ -40,7 +40,7 @@ def test_training_pipeline():
     file = "testing"
     train_agent([(problem, n, k)], file, total_steps=100, copy_freq=100, buffer_size=5, batch_size=3,
                 reset_target_freq=10)
-    test_all_agents_generalization(problem, file, 15, "1s", 1)
+    test_training_agents_generalization(problem, file, 15, "1s", 1)
     test_agents_q(problem, n, k, file, "states_prop.pkl")
 
 

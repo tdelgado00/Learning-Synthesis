@@ -147,10 +147,10 @@ class TorchModel(Model):
 
         ss = torch.tensor(ss).to(self.device)
         values = torch.tensor(values, dtype=torch.float, device=self.device).reshape(len(ss), 1)
-        
+
         self.optimizer.zero_grad()
         pred = self.model(ss)
-        
+
         loss = self.loss_fn(pred, values)
         loss.backward()
         # clip_grad_norm_(self.model.parameters(), 1.0)
@@ -197,3 +197,6 @@ class NeuralNetwork(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
+
+    def reuseOnnxModel(self, onnx_path):
+        raise NotImplementedError

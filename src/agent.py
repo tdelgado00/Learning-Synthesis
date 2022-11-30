@@ -63,8 +63,8 @@ class Agent:
 
         print("Done.")
 
-    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000,
-              last_obs=None, early_stopping=False, save_at_end=False):
+
+    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, early_stopping=False, save_at_end=False, ebudget = -1):
         if self.training_start is None:
             self.training_start = time.time()
             self.last_best = 0
@@ -108,6 +108,7 @@ class Agent:
                     "training steps": self.training_steps,
                     "instance": instance,
                     "loss": self.model.current_loss(),
+                    "expansion_budget_exceeded": str(env.ebudget == 0).lower()
                     })
                 self.training_data.append(info)
                 obs = env.reset()

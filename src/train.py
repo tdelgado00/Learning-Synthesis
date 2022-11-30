@@ -1,3 +1,4 @@
+import sys
 from agent import Agent
 from environment import DCSSolverEnv
 from testing import test_agent, test_agent_all_instances, test_training_agents_generalization
@@ -84,6 +85,7 @@ if __name__ == "__main__":
         "nk feature": False,
         "prop feature": False,
         "visits feature": False,
+        "labelsThatReach_feature": False,
         "only boolean": True,
     }
     agent_params = {
