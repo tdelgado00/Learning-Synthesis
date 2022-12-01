@@ -1,6 +1,6 @@
 import numpy as np
 import json
-
+import sys
 import pandas as pd
 import pickle
 
@@ -171,3 +171,7 @@ def read_monolithic():
         monolithic_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
         monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
     return monolithic_results
+
+def budget_and_time(series):
+    return series["expansion_budget_exceeded"] == 'false' and not np.isnan(series["synthesis time(ms)"])
+
