@@ -91,8 +91,10 @@ def read_results(lines):
 
 def best_generalization_agent_ebudget(problem, file):
     df = pd.read_csv("experiments/results/" + filename(
-        [problem, 2, 2]) + "/" + file + "/upTo:15_timeout2h_ebudget5000_generalization_all.csv")
+        [problem, 2, 2]) + "/" + file + "/generalization_all.csv")
     df = notExceeded(df)
+    if df.shape[0]==0:
+        return None
     max_idx = df["idx"].max()
     solved = [0 for i in range(max_idx + 1)]
     expanded = [0 for i in range(max_idx + 1)]
