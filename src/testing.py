@@ -222,6 +222,9 @@ def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", se
                              fast_stop=True, ebudget=-1, solved_crit=budget_and_time):
     """ Step (S3): Testing the selected agent with all instances of a problem """
     idx_agent = selection(problem, file)
+    if(idx_agent==None):
+        print("No agent solved any context")
+        return
     print("Testing all", problem, "with agent: ", idx_agent)
     path = agent_path(problem, file, idx_agent)
     df = []
