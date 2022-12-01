@@ -38,7 +38,7 @@ Make sure you execute them in order:
 You can do so by calling the ```test_random_all_instances``` and ```test_ra_all_instances``` functions respectively.
 
 ### 2.4. Reproducing the exact paper's experiments 
-The whole experimental pipeline can be run with the 2 terminal commands described below, maintaining the scripts as they are by default. This way, you'll be able to reproduce all of the exact paper's experiments by executing the following commands **from the repo's root directory**.
+The whole experimental pipeline can be run with the 2 terminal commands described below, maintaining the scripts as they are by default. Make sure you execute them **from the repo's root directory**.
 ##### Train and test the agent (2.3.1): 
 ```console
 python3 src/train.py <agent_directory_name> 
@@ -75,7 +75,8 @@ python3 src/testing.py
 + *problem:* a string indicating the name of the problem to test the agent at.
 + *file:* indicates the name of the directory where the agents are to be stored at the ```experiments/results/<used_training_context>``` directory.
 + *up_to* indicates the maximum value used for the $n,k$ possible combinations  of the specified problem to test the specified agent at.
-+ *timeout* a string indicating the time budget allowed for the agent to solve one single context
++ *timeout:* a string indicating the time budget allowed for the agent to solve one single context
++ *total:* the size of the used subset.
 + *max_frontier* the budget of possible actions allowed in a single expansion step.
 + *solved_crit* a function that decides whether or not continue testing when the previous adjacent context were not solved (by default, when the adjacent contexts exceeded the expansion and/or time budget).
 + *ebudget*: an integer that specifies the expansions budget. -1 indicates no limit.
