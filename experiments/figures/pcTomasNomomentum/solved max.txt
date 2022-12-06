@@ -1,0 +1,48 @@
+AT
+RA 60
+boolean 75 at idx: 64
+boolean_2 82 at idx: 99
+boolean_3 86 at idx: 5
+boolean_4 91 at idx: 59
+boolean_5 75 at idx: 67
+nomomentumPCTomas 77 at idx: 76
+BW
+RA 39
+boolean 114 at idx: 40
+boolean_2 115 at idx: 45
+boolean_3 114 at idx: 47
+boolean_4 103 at idx: 83
+boolean_5 112 at idx: 45
+nomomentumPCTomas 69 at idx: 80
+CM
+RA 20
+boolean 19 at idx: 48
+boolean_2 19 at idx: 24
+boolean_3 18 at idx: 7
+boolean_4 19 at idx: 24
+boolean_5 19 at idx: 45
+nomomentumPCTomas 18 at idx: 66
+DP
+RA 102
+boolean 73 at idx: 69
+boolean_2 62 at idx: 3
+boolean_3 66 at idx: 46
+boolean_4 77 at idx: 48
+boolean_5 68 at idx: 49
+nomomentumPCTomas 61 at idx: 88
+TA
+RA 43
+boolean 67 at idx: 67
+boolean_2 60 at idx: 13
+boolean_3 60 at idx: 62
+boolean_4 81 at idx: 62
+boolean_5 80 at idx: 58
+nomomentumPCTomas 60 at idx: 29
+TL
+RA 223
+boolean 225 at idx: 5
+boolean_2 225 at idx: 3
+boolean_3 225 at idx: 9
+boolean_4 225 at idx: 9
+boolean_5 225 at idx: 3
+nomomentumPCTomas 225 at idx: 44

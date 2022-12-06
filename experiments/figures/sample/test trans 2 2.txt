@@ -1,0 +1,8 @@
+DP
+RA 32.0
+boolean 39.0 68
+boolean_2 43.0 64
+boolean_3 42.0 67
+boolean_4 36.0 74
+boolean_5 35.0 63
+sample 61.0 95

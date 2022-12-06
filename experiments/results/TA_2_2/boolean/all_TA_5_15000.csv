@@ -1,0 +1,26 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),expansion_budget_exceeded,OutOfMem,algorithm,heuristic,problem,n,k,transitions/ms
+0,15,15,18,18,221,4,0,1,0,18.24,23.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,1,1,0.08144796380090498
+1,17,17,21,21,217,4,0,1,0,19.2,22.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,1,2,0.0967741935483871
+2,19,19,24,24,218,4,0,1,0,19.7,21.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,1,3,0.11009174311926606
+3,21,21,27,27,219,4,0,1,0,19.7,26.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,1,4,0.1232876712328767
+4,23,23,30,30,217,4,0,1,0,20.18,28.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,1,5,0.1382488479262673
+5,47,45,62,59,292,16,0,1,0,22.18,81.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,2,1,0.21232876712328766
+6,53,51,71,68,256,18,0,1,0,22.18,59.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,2,2,0.27734375
+7,60,55,81,73,289,20,0,1,0,22.66,70.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,2,3,0.28027681660899656
+8,66,61,90,82,293,21,0,1,0,23.14,63.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,2,4,0.30716723549488056
+9,72,67,99,91,309,22,0,1,0,23.62,59.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,2,5,0.32038834951456313
+10,136,101,194,133,433,53,0,1,4,20.25,164.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,3,1,0.44803695150115475
+11,150,115,215,153,386,57,0,1,3,23.34,130.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,3,2,0.5569948186528497
+12,164,129,236,175,431,61,0,1,3,26.4,155.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,3,3,0.5475638051044084
+13,178,140,257,189,577,65,0,1,3,29.41,190.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,3,4,0.44540727902946275
+14,192,153,278,210,508,68,0,1,3,32.48,173.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,3,5,0.547244094488189
+15,347,205,536,277,767,156,0,1,12,111.59,331.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,4,1,0.6988265971316818
+16,377,238,581,329,843,164,0,1,12,133.71,369.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,4,2,0.6892052194543298
+17,407,260,627,366,908,176,0,1,12,148.77,375.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,4,3,0.6905286343612335
+18,437,298,671,422,1047,182,0,1,12,44.01,429.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,4,4,0.6408787010506208
+19,467,317,716,445,1056,187,0,1,12,65.13,471.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,4,5,0.678030303030303
+20,896,420,1523,578,2657,455,0,1,16,139.99,1203.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,5,1,0.573202860368837
+21,1000,482,1705,669,3423,510,0,1,16,33.29,1645.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,5,2,0.4981010809231668
+22,968,508,1608,704,3003,450,0,1,16,183.83,1504.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,5,3,0.5354645354645354
+23,1139,589,1933,820,3779,568,0,1,16,143.7,1805.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,5,4,0.5115109817412014
+24,1205,619,2022,876,4225,577,0,1,16,167.61,1981.0,false,False,new,experiments/results/TA_2_2/boolean/206.onnx,TA,5,5,0.4785798816568047
