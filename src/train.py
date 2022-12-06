@@ -24,11 +24,7 @@ def train_agent(instances,
         problem, n, k = instance
         env[instance] = DCSSolverEnv(problem, n, k, features)
 
-    print("Starting training for instances", instances)
-    print("Number of features:", env[instances[0]].nfeatures)
-    print("File:", file)
-    print("Agent params:", agent_params)
-    print("Features:", features)
+    printTrainingCharacteristics(agent_params, env, features, file, instances)
 
     agent_params["nfeatures"] = env[instances[0]].nfeatures
 
@@ -41,31 +37,7 @@ def train_agent(instances,
         agent.initializeBuffer(env)
 
     if len(instances) > 1:  # training round robin
-        last_obs = {}
-        i = 0
-        start_time = time.time()
-
-        if not incremental:
-            total = total_steps / quantum_steps
-            while i < total and (not early_stopping or not agent.converged):
-                for instance in instances:
-                    print("Training with", instance, "for", quantum_steps, "steps", "i =", i, "time =",
-                          time.time() - start_time)
-                    last_obs[instance] = agent.train(env[instance], max_steps=quantum_steps, copy_freq=copy_freq, last_obs=last_obs.get(instance), early_stopping=early_stopping)
-                    i += 1
-                    if i == total:
-                        break
-        else:
-            trans = read_monolithic()[("expanded transitions", instances[0][0])]
-            diffs = np.array([trans[k][n] for problem, n, k in instances])
-            print("Instance difficulties are", diffs)
-            while agent.training_steps < total_steps and (not early_stopping or not agent.converged):
-                t = agent.training_steps / total_steps
-                probs = diffs**(t*2-1)
-                probs /= np.sum(probs)
-                instance = instances[np.random.choice(list(range(len(instances))), p=probs)]
-                last_obs[instance] = agent.train(env[instance], max_eps=1, copy_freq=copy_freq,
-                                                 last_obs=last_obs.get(instance), early_stopping=early_stopping)
+        train_round_robin(agent, copy_freq, early_stopping, env, incremental, instances, quantum_steps, total_steps)
     else:
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
                     save_at_end=True, early_stopping=early_stopping)
@@ -73,6 +45,42 @@ def train_agent(instances,
     if file is not None:
         with open(file + "/" + "training_data.pkl", "wb") as f:
             pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
+
+
+def printTrainingCharacteristics(agent_params, env, features, file, instances):
+    print("Starting training for instances", instances)
+    print("Number of features:", env[instances[0]].nfeatures)
+    print("File:", file)
+    print("Agent params:", agent_params)
+    print("Features:", features)
+
+
+def train_round_robin(agent, copy_freq, early_stopping, env, incremental, instances, quantum_steps, total_steps):
+    last_obs = {}
+    i = 0
+    start_time = time.time()
+    if not incremental:
+        total = total_steps / quantum_steps
+        while i < total and (not early_stopping or not agent.converged):
+            for instance in instances:
+                print("Training with", instance, "for", quantum_steps, "steps", "i =", i, "time =",
+                      time.time() - start_time)
+                last_obs[instance] = agent.train(env[instance], max_steps=quantum_steps, copy_freq=copy_freq,
+                                                 last_obs=last_obs.get(instance), early_stopping=early_stopping)
+                i += 1
+                if i == total:
+                    break
+    else:
+        trans = read_monolithic()[("expanded transitions", instances[0][0])]
+        diffs = np.array([trans[k][n] for problem, n, k in instances])
+        print("Instance difficulties are", diffs)
+        while agent.training_steps < total_steps and (not early_stopping or not agent.converged):
+            t = agent.training_steps / total_steps
+            probs = diffs ** (t * 2 - 1)
+            probs /= np.sum(probs)
+            instance = instances[np.random.choice(list(range(len(instances))), p=probs)]
+            last_obs[instance] = agent.train(env[instance], max_eps=1, copy_freq=copy_freq,
+                                             last_obs=last_obs.get(instance), early_stopping=early_stopping)
 
 
 if __name__ == "__main__":
@@ -86,7 +94,7 @@ if __name__ == "__main__":
         "nk feature": False,
         "prop feature": False,
         "visits feature": False,
-        "labelsThatReach_feature": False,
+        "labelsThatReach_feature": True,
         "only boolean": True,
     }
     agent_params = {
@@ -111,15 +119,15 @@ if __name__ == "__main__":
         print("A folder name to save results should be specified.")
         exit()
 
-    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+    problems = ["DP","AT", "BW", "CM", "TA", "TL"]
     for p in problems:
         if not os.path.isdir("results/" + p):
             os.makedirs("results/" + p)
 
-    # TODO: -> transitions budget
     file = sys.argv[1]
     for p in problems:
-        train_agent([(p, 2, 2)], file, agent_params, features)
-        test_training_agents_generalization(p, file, 15, "10h", 100, ebudget=5000)
-        test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
-        test_agent_all_instances(p, file, 15, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000)
+        #train_agent([(p, 2, 2)], file, agent_params, features)
+        test_training_agents_generalization(p, file, 15, "5s", 100, ebudget=-1)
+        #test_training_agents_generalization(p, file, 15, "10h", 100, ebudget=5000)
+        #test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
+        #test_agent_all_instances(p, file, 15, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000)
