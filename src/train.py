@@ -1,6 +1,7 @@
 import sys
 from agent import Agent
-from environment import DCSSolverEnv
+from environment import DCSSolverEnv, generateEnvironments
+from src.environment import DCSSolverEnv
 from src.model import TorchModel
 from testing import test_agent_all_instances, test_training_agents_generalization
 from util import *
@@ -19,9 +20,8 @@ def train_agent(instances,
                 total_steps=500000,
                 copy_freq=5000,
                 early_stopping=True,
-                verbose=False, agent=None):
-    env = {}
-    initializeEnvironments(env, features, instances)
+                verbose=False, agent=None, env = None):
+
 
     printTrainingCharacteristics(agent_params, env, features, file, instances)
 
@@ -131,12 +131,14 @@ if __name__ == "__main__":
 
     file = sys.argv[1]
     for p in problems:
-        nn_model = TorchModel(agent_params["nfeatures"], agent_params["nnsize"], agent_params["eta"],
+        instances = [(p, 2, 2)]
+        env = generateEnvironments(instances, features)
+        nn_model = TorchModel(env[instances[0]].javaEnv.getNumberOfFeatures(), agent_params["nnsize"], agent_params["eta"],
                    agent_params["momentum"], agent_params["nesterov"])
         agent = Agent(agent_params, save_file=file, verbose=False, nn_model=nn_model)
 
 
-        train_agent([(p, 2, 2)], file, agent_params, features, agent=agent)
+        #train_agent([(p, 2, 2)], file, agent_params, features, agent=agent, env=env)
         test_training_agents_generalization(p, file, 15, "5s", 100, ebudget=-1)
         #test_training_agents_generalization(p, file, 15, "10h", 100, ebudget=5000)
         #test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
