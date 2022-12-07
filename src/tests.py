@@ -43,9 +43,32 @@ def test_training_pipeline():
     test_training_agents_generalization(problem, file, 15, "1s", 1)
     test_agents_q(problem, n, k, file, "states_prop.pkl")
 
+class ExperimentalTester:
+    """This class performs a basic testing on the core functionalities to train the agent adn test it on the full benchmark"""
+    #TODO: lo mas importante es que corran train_agent, test_training_agents_generalization y test_agent_all_instances y que guarden los archivos correctamente
+    def __init__(self, training_contexts, problems, modelName, agent_params, features):
+        pass
+    def testCompleteTrainingParams(self):
+        pass
+
+    def testCompleteTrainingFeatures(self):
+        pass
+    def testTrainingDeviceIsCorrect(self):
+        pass
+
+    def testInferenceDeviceIsCorrect(self):
+        pass
+
+    def testNetworkIsCorrectlyInitialized(self):
+        pass
+    def runningSampleTrainingDoesNotRaiseError(self):
+        pass
+    def testSampleAgentsAreStoredCorrectly(self):
+        pass
+
 
 def tests():
-    test_training_pipeline()
+    #test_training_pipeline()
     test_java_and_python_coherent()
 
 

@@ -10,13 +10,12 @@ from model import MLPModel, OnnxModel, TorchModel
 
 
 class Agent:
-    def __init__(self, params, save_file=None, verbose=False):
+    def __init__(self, params, nn_model, save_file=None, verbose=False):
         self.params = params
-        if params["model"] == "sklearn":
-            self.model = MLPModel(params["nnsize"], params["optimizer"], params["eta"])
-        else:
-            self.model = TorchModel(params["nfeatures"], params["nnsize"], params["eta"],
-                                    params["momentum"], params["nesterov"])
+        #if params["model"] == "sklearn":
+         #   self.model = MLPModel(params["nnsize"], params["optimizer"], params["eta"])
+        assert(nn_model!=None)
+        self.model = nn_model
 
         self.target = None
         self.buffer = None

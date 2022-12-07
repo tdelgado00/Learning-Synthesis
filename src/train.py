@@ -1,6 +1,7 @@
 import sys
 from agent import Agent
 from environment import DCSSolverEnv
+from src.model import TorchModel
 from testing import test_agent_all_instances, test_training_agents_generalization
 from util import *
 import time
@@ -18,11 +19,9 @@ def train_agent(instances,
                 total_steps=500000,
                 copy_freq=5000,
                 early_stopping=True,
-                verbose=False):
+                verbose=False, agent=None):
     env = {}
-    for instance in instances:
-        problem, n, k = instance
-        env[instance] = DCSSolverEnv(problem, n, k, features)
+    initializeEnvironments(env, features, instances)
 
     printTrainingCharacteristics(agent_params, env, features, file, instances)
 
@@ -31,7 +30,7 @@ def train_agent(instances,
     if file is not None:
         file = results_path(instances[0][0], file=file)
 
-    agent = Agent(agent_params, save_file=file, verbose=verbose)
+
 
     if agent_params["experience replay"]:
         agent.initializeBuffer(env)
@@ -45,6 +44,12 @@ def train_agent(instances,
     if file is not None:
         with open(file + "/" + "training_data.pkl", "wb") as f:
             pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
+
+
+def initializeEnvironments(env, features, instances):
+    for instance in instances:
+        problem, n, k = instance
+        env[instance] = DCSSolverEnv(problem, n, k, features)
 
 
 def printTrainingCharacteristics(agent_params, env, features, file, instances):
@@ -126,7 +131,12 @@ if __name__ == "__main__":
 
     file = sys.argv[1]
     for p in problems:
-        #train_agent([(p, 2, 2)], file, agent_params, features)
+        nn_model = TorchModel(agent_params["nfeatures"], agent_params["nnsize"], agent_params["eta"],
+                   agent_params["momentum"], agent_params["nesterov"])
+        agent = Agent(agent_params, save_file=file, verbose=False, nn_model=nn_model)
+
+
+        train_agent([(p, 2, 2)], file, agent_params, features, agent=agent)
         test_training_agents_generalization(p, file, 15, "5s", 100, ebudget=-1)
         #test_training_agents_generalization(p, file, 15, "10h", 100, ebudget=5000)
         #test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
