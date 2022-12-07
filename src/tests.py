@@ -1,8 +1,16 @@
-from testing import test_agent, test_onnx, test_training_agents_generalization, test_agents_q
+import os
+from environment import generateEnvironments
+from testing import test_agent, test_training_agents_generalization
+#from testing import test_onnx, test_agents_q
 from util import *
 from train import train_agent
 import time
+from model import *
+from agent import Agent
+from shutil import rmtree
 
+
+"""
 def test_java_and_python_coherent():
     print("Testing java and python coherent")
     for problem, n, k, agent_dir, agent_idx in [("AT", 2, 2, "testing", 1)]:
@@ -25,6 +33,8 @@ def test_java_and_python_coherent():
                         print("Java", debug_java[i]["values"][j])
 
 
+
+
 def test_train_agent():
     print("Training agent")
     start = time.time()
@@ -42,19 +52,54 @@ def test_training_pipeline():
                 reset_target_freq=10)
     test_training_agents_generalization(problem, file, 15, "1s", 1)
     test_agents_q(problem, n, k, file, "states_prop.pkl")
+"""
 
+sample_params = {
+        "eta": 1e-5,
+        "first epsilon": 1.0,
+        "last epsilon": 0.01,
+        "epsilon decay steps": 250000,
+        "nnsize": (20,),
+        "optimizer": "sgd",
+        "model": "pytorch",
+        "target q": True,
+        "reset target freq": 10000,
+        "experience replay": True,
+        "buffer size": 10000,
+        "batch size": 10,
+        "nstep": 1,
+        "momentum": 0.9,
+        "nesterov": True
+    }
+sample_features = {
+        "ra feature": False,
+        "context features": True,
+        "labels": True,
+        "state labels": 1,
+        "je feature": True,
+        "nk feature": False,
+        "prop feature": False,
+        "visits feature": False,
+        "labelsThatReach_feature": True,
+        "only boolean": True,
+    }
 class ExperimentalTester:
-    """This class performs a basic testing on the core functionalities to train the agent adn test it on the full benchmark"""
+    """This class performs a basic white and black box tests on the core functionalities to train the agent and test it on the full benchmark"""
     #TODO: lo mas importante es que corran train_agent, test_training_agents_generalization y test_agent_all_instances y que guarden los archivos correctamente
-    def __init__(self, training_contexts, problems, modelName, agent_params, features):
+    def __init__(self, training_contexts, modelName, agent, env):
+        self.training_contexts = training_contexts
+        self.modelName = modelName
+        self.agent = agent
+        self.env = env
         pass
     def testCompleteTrainingParams(self):
-        pass
+        assert(sample_params.keys() == self.agent.params.keys())
 
     def testCompleteTrainingFeatures(self):
-        pass
+        assert(sample_features.keys() == self.env.features.keys())
     def testTrainingDeviceIsCorrect(self):
         pass
+        #assert(self.agent.model.device == )
 
     def testInferenceDeviceIsCorrect(self):
         pass
@@ -64,13 +109,34 @@ class ExperimentalTester:
     def runningSampleTrainingDoesNotRaiseError(self):
         pass
     def testSampleAgentsAreStoredCorrectly(self):
-        pass
+        pathToModel = results_path(self.training_contexts[0][0], file = self.modelName)
+        rmtree(pathToModel, ignore_errors=True)
+        train_agent(instances = self.training_contexts, file = self.modelName, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features)
+        modelFolderFiles = os.listdir(pathToModel)
+        modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(pathToModel + '/' + f)]
+        assert(len(modelFolderFiles)>0)
 
 
 def tests():
+    pass
     #test_training_pipeline()
-    test_java_and_python_coherent()
+    #test_java_and_python_coherent()
 
 
 if __name__ == "__main__":
-    tests()
+
+    problem = sys.argv[1]
+    exp_folder = "testSampleName"
+    training_contexts = [(problem, 2, 2)]
+
+    env = generateEnvironments(training_contexts, sample_features)
+    nn_model = TorchModel(env[training_contexts[0]].javaEnv.getNumberOfFeatures(), sample_params["nnsize"], sample_params["eta"],
+                          sample_params["momentum"], sample_params["nesterov"])
+    agent = Agent(sample_params, save_file=exp_folder, verbose=False, nn_model=nn_model)
+
+
+    tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
+    #tester.testCompleteTrainingParams()
+    #tester.testCompleteTrainingFeatures()
+    tester.testSampleAgentsAreStoredCorrectly()
+    #tests()
