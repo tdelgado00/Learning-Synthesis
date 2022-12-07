@@ -110,8 +110,8 @@ class ExperimentalTester:
         pass
     def testSampleAgentsAreStoredCorrectly(self):
         pathToModel = results_path(self.training_contexts[0][0], file = self.modelName)
-        rmtree(pathToModel, ignore_errors=True)
-        train_agent(instances = self.training_contexts, file = self.modelName, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features)
+        #rmtree(pathToModel, ignore_errors=True)
+        train_agent(instances = self.training_contexts, file = self.modelName, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features, total_steps=100, copy_freq=10)
         modelFolderFiles = os.listdir(pathToModel)
         modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(pathToModel + '/' + f)]
         assert(len(modelFolderFiles)>0)
@@ -119,10 +119,10 @@ class ExperimentalTester:
         pathToModel = results_path(self.training_contexts[0][0], file=self.modelName)
         pathToCsv = pathToModel + "/generalization_all.csv"
         try:
-            os.remove(pathToCsv, ignore_errors=True)
+            os.remove(pathToCsv)
         except FileNotFoundError:
             print("Not previously evaluated")
-        test_training_agents_generalization(self.training_contexts[0][0], pathToCsv, 2, "5s", 100, ebudget=100)
+        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", 100, ebudget=100)
 
         assert("generalization_all.csv" in os.listdir(pathToModel))
 def tests():
@@ -140,12 +140,12 @@ if __name__ == "__main__":
     env = generateEnvironments(training_contexts, sample_features)
     nn_model = TorchModel(env[training_contexts[0]].javaEnv.getNumberOfFeatures(), sample_params["nnsize"], sample_params["eta"],
                           sample_params["momentum"], sample_params["nesterov"])
-    agent = Agent(sample_params, save_file=exp_folder, verbose=False, nn_model=nn_model)
+    agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
 
 
     tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
     #tester.testCompleteTrainingParams()
     #tester.testCompleteTrainingFeatures()
-    tester.testSampleAgentsAreStoredCorrectly()
+    #tester.testSampleAgentsAreStoredCorrectly()
     tester.testSampleAgentsEvaluationsAreStoredCorrectly()
     #tests()

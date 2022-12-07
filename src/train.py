@@ -38,6 +38,7 @@ def train_agent(instances,
     if len(instances) > 1:  # training round robin
         train_round_robin(agent, copy_freq, early_stopping, env, incremental, instances, quantum_steps, total_steps)
     else:
+
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
                     save_at_end=True, early_stopping=early_stopping)
 
@@ -135,10 +136,10 @@ if __name__ == "__main__":
         env = generateEnvironments(instances, features)
         nn_model = TorchModel(env[instances[0]].javaEnv.getNumberOfFeatures(), agent_params["nnsize"], agent_params["eta"],
                    agent_params["momentum"], agent_params["nesterov"])
-        agent = Agent(agent_params, save_file=file, verbose=False, nn_model=nn_model)
+        agent = Agent(agent_params, save_file=results_path(p,file = file), verbose=False, nn_model=nn_model)
 
 
-        #train_agent([(p, 2, 2)], file, agent_params, features, agent=agent, env=env)
+        train_agent([(p, 2, 2)], file, agent_params, features, agent=agent, env=env)
         test_training_agents_generalization(p, file, 15, "5s", 100, ebudget=-1)
         #test_training_agents_generalization(p, file, 15, "10h", 100, ebudget=5000)
         #test_agent_all_instances(p, file, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
