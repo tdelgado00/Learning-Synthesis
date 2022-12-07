@@ -14,6 +14,7 @@ class DCSSolverEnv:
         self.problem = problem
         self.n = n
         self.k = k
+        self.features = features
         self.problemFilename = filename([problem, n, k])
         self.normalize_reward = normalize_reward
         self.problem_size = read_monolithic()[("expanded transitions", problem)][k][n]

@@ -115,8 +115,16 @@ class ExperimentalTester:
         modelFolderFiles = os.listdir(pathToModel)
         modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(pathToModel + '/' + f)]
         assert(len(modelFolderFiles)>0)
+    def testSampleAgentsEvaluationsAreStoredCorrectly(self):
+        pathToModel = results_path(self.training_contexts[0][0], file=self.modelName)
+        pathToCsv = pathToModel + "/generalization_all.csv"
+        try:
+            os.remove(pathToCsv, ignore_errors=True)
+        except FileNotFoundError:
+            print("Not previously evaluated")
+        test_training_agents_generalization(self.training_contexts[0][0], pathToCsv, 2, "5s", 100, ebudget=100)
 
-
+        assert("generalization_all.csv" in os.listdir(pathToModel))
 def tests():
     pass
     #test_training_pipeline()
@@ -139,4 +147,5 @@ if __name__ == "__main__":
     #tester.testCompleteTrainingParams()
     #tester.testCompleteTrainingFeatures()
     tester.testSampleAgentsAreStoredCorrectly()
+    tester.testSampleAgentsEvaluationsAreStoredCorrectly()
     #tests()

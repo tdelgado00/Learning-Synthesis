@@ -1,8 +1,8 @@
 import sys
 from agent import Agent
 from environment import DCSSolverEnv, generateEnvironments
-from src.environment import DCSSolverEnv
-from src.model import TorchModel
+from environment import DCSSolverEnv
+from model import TorchModel
 from testing import test_agent_all_instances, test_training_agents_generalization
 from util import *
 import time
