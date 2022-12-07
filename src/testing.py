@@ -39,7 +39,7 @@ def test_ra(problem, n, k, timeout="30m", ebudget=-1):
 
 
 def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=False, ebudget=-1,
-               file="not specified in test_agent"):
+               file="not specified in test_agent", verbose=False):
     """Testing a specific agent in a given instance of a problem"""
     command = ["timeout", timeout, "java", "-Xmx8g", "-XX:MaxDirectMemorySize=512m", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
@@ -92,11 +92,11 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
 
     command += ["-f", str(max_frontier)]
 
-    print("Testing agent at ", str(n), " ", str(k), " of ", problem, "from", file, "\n")
+    if verbose: print("Testing agent at ", str(n), " ", str(k), " of ", problem, "from", file, "\n")
     start = time.time()
     proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     end = time.time()
-    print("tested in ", end - start, " seconds")
+    if verbose: print("tested in ", end - start, " seconds")
 
     if proc.returncode == 124:
         results = {"expanded transitions": np.nan, "synthesis time(ms)": np.nan, "OutOfMem": False}
@@ -133,7 +133,7 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
     expansionMsg = ""
     if(ebudget>-1 and results["expanded transitions"]>ebudget):
         expansionMsg = ", EXPANSION BUDGET EXCEEDED"
-    print("Total expanded transitions: ",results["expanded transitions"], expansionMsg)
+    if verbose: print("Total expanded transitions: ",results["expanded transitions"], expansionMsg)
     results["algorithm"] = "new"
     results["heuristic"] = path
     results["problem"] = problem
@@ -266,7 +266,7 @@ def test_random_all_instances(problem, up_to, timeout="10m", name="all_random", 
 
 
 def test_training_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000,
-                                        solved_crit=budget_and_time, ebudget = -1):
+                                        solved_crit=budget_and_time, ebudget = -1, verbose=True):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
     df = []
     start = time.time()
@@ -277,18 +277,18 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
         path = agent_path(problem, file, i)
 
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
-        print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
+        if verbose: print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file)[0])
+                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False)[0])
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):
                         solved[n][k] = True
-        print("Solved:", np.sum(solved))
+        if verbose: print("Solved:", np.sum(solved))
 
     df = pd.DataFrame(df)
-    df.to_csv(results_path(problem, 2, 2, file) + "/generalization_all.csv")
+    df.to_csv(results_path(problem, 2, 2, file) + "/generalization_all" + joinAsStrings([up_to, timeout,total,ebudget])+ ".csv")
 
 
 def get_problem_labels(problem, eps=5):

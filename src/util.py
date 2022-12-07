@@ -23,7 +23,10 @@ def filename(parameters):
 
 def last_agent(df):
     return df["idx"].max()
-
+def joinAsStrings(listOfArgs):
+    res = ""
+    for arg in listOfArgs: res+=("_"+str(arg))
+    return res
 
 def best_agent_2_2(problem, file):
     return best_agent_n_k(problem, file, 2, 2)

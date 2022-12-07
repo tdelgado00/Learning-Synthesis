@@ -94,9 +94,11 @@ class ExperimentalTester:
         pass
     def testCompleteTrainingParams(self):
         assert(sample_params.keys() == self.agent.params.keys())
+        print("PASSED")
 
     def testCompleteTrainingFeatures(self):
-        assert(sample_features.keys() == self.env.features.keys())
+        assert(sample_features.keys() == self.env[self.training_contexts[0]].features.keys())
+        print("PASSED")
     def testTrainingDeviceIsCorrect(self):
         pass
         #assert(self.agent.model.device == )
@@ -115,6 +117,7 @@ class ExperimentalTester:
         modelFolderFiles = os.listdir(pathToModel)
         modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(pathToModel + '/' + f)]
         assert(len(modelFolderFiles)>0)
+        print("PASSED")
     def testSampleAgentsEvaluationsAreStoredCorrectly(self):
         pathToModel = results_path(self.training_contexts[0][0], file=self.modelName)
         pathToCsv = pathToModel + "/generalization_all.csv"
@@ -122,9 +125,10 @@ class ExperimentalTester:
             os.remove(pathToCsv)
         except FileNotFoundError:
             print("Not previously evaluated")
-        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", 100, ebudget=100)
+        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", 100, ebudget=100, verbose=True)
 
-        assert("generalization_all.csv" in os.listdir(pathToModel))
+        assert("generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv" in os.listdir(pathToModel))
+        print("PASSED")
 def tests():
     pass
     #test_training_pipeline()
@@ -132,20 +136,19 @@ def tests():
 
 
 if __name__ == "__main__":
+    for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+        exp_folder = "testSampleName"
+        training_contexts = [(problem, 2, 2)]
 
-    problem = sys.argv[1]
-    exp_folder = "testSampleName"
-    training_contexts = [(problem, 2, 2)]
-
-    env = generateEnvironments(training_contexts, sample_features)
-    nn_model = TorchModel(env[training_contexts[0]].javaEnv.getNumberOfFeatures(), sample_params["nnsize"], sample_params["eta"],
-                          sample_params["momentum"], sample_params["nesterov"])
-    agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
+        env = generateEnvironments(training_contexts, sample_features)
+        nn_model = TorchModel(env[training_contexts[0]].javaEnv.getNumberOfFeatures(), sample_params["nnsize"], sample_params["eta"],
+                              sample_params["momentum"], sample_params["nesterov"])
+        agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
 
 
-    tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
-    #tester.testCompleteTrainingParams()
-    #tester.testCompleteTrainingFeatures()
-    #tester.testSampleAgentsAreStoredCorrectly()
-    tester.testSampleAgentsEvaluationsAreStoredCorrectly()
+        tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
+        tester.testCompleteTrainingParams()
+        tester.testCompleteTrainingFeatures()
+        tester.testSampleAgentsAreStoredCorrectly()
+        tester.testSampleAgentsEvaluationsAreStoredCorrectly()
     #tests()
