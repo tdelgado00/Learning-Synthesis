@@ -140,6 +140,7 @@ class ExperimentalTester:
         print("PASSED")
 
     def testMaintainsConsistentPerformanceWithPreviousVersions(self):
+        #TODO: problema es que hay cosas del algoritmo que estan aleatorizados (ej: parametros de la red)
         pass
 
     def testTrainingDeviceIsCorrect(self):

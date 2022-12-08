@@ -107,7 +107,7 @@ class Agent:
                     "training steps": self.training_steps,
                     "instance": instance,
                     "loss": self.model.current_loss(),
-                    "expansion_budget_exceeded": str(env.ebudget == 0).lower()
+
                     })
                 self.training_data.append(info)
                 obs = env.reset()

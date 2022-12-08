@@ -56,7 +56,7 @@ def train_agent(instances,
 def initializeEnvironments(env, features, instances):
     for instance in instances:
         problem, n, k = instance
-        env[instance] = DCSSolverEnv(problem, n, k, features)
+        env[instance] = DCSSolverEnv(problem, n, k, features )
 
 
 def printTrainingCharacteristics(agent_params, env, features, file, instances):

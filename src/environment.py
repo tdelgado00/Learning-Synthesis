@@ -69,7 +69,7 @@ class DCSSolverEnv:
             "expanded transitions": int(self.javaEnv.getExpandedTransitions()),
             "expanded states": int(self.javaEnv.getExpandedStates()),
         }
-def generateEnvironments(instances, features):
+def generateEnvironments(instances, features, ebudget=-1):
     env = {}
     for instance in instances:
         problem, n, k = instance
