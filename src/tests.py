@@ -91,7 +91,12 @@ class ExperimentalTester:
         self.modelName = modelName
         self.agent = agent
         self.env = env
-        pass
+
+    def runFullTestSuit(self):
+        self.testCompleteTrainingParams()
+        self.testCompleteTrainingFeatures()
+        self.testSampleAgentsAreStoredCorrectly()
+        self.testSampleAgentsEvaluationsAreStoredCorrectly()
     def testCompleteTrainingParams(self):
         assert(sample_params.keys() == self.agent.params.keys())
         print("PASSED")
@@ -141,14 +146,13 @@ if __name__ == "__main__":
         training_contexts = [(problem, 2, 2)]
 
         env = generateEnvironments(training_contexts, sample_features)
+
         nn_model = TorchModel(env[training_contexts[0]].javaEnv.getNumberOfFeatures(), sample_params["nnsize"], sample_params["eta"],
                               sample_params["momentum"], sample_params["nesterov"])
+
         agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
 
 
         tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
-        tester.testCompleteTrainingParams()
-        tester.testCompleteTrainingFeatures()
-        tester.testSampleAgentsAreStoredCorrectly()
-        tester.testSampleAgentsEvaluationsAreStoredCorrectly()
+        tester.runFullTestSuit()
     #tests()
