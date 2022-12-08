@@ -106,6 +106,7 @@ def best_generalization_agent_ebudget(problem, file,up_to, timeout,total,ebudget
     for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
         expanded[x] = cant
     perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
+
     return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
 
 

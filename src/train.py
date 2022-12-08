@@ -1,7 +1,6 @@
 import sys
 from agent import Agent
 from environment import DCSSolverEnv, generateEnvironments
-from environment import DCSSolverEnv
 from model import TorchModel, NeuralNetwork
 from testing import test_agent_all_instances, test_training_agents_generalization
 from util import *
@@ -21,7 +20,14 @@ def train_agent(instances,
                 copy_freq=5000,
                 early_stopping=True,
                 verbose=False, agent=None, env = None):
+    """
+        + *agent_params:* a dictionary with the agent's hyperparameter values. See the original example for better understanding.
+        + *features:* a dictionary with the truth value per feature name, for indicating which ones to use. See the original example for better understanding.
+        + *total_steps:* an integer indicating the max number of training expansions per agent
+        +  *copy_freq:* the total number of training steps between each saved version of the agent.
+        + *early_stopping (boolean):* if True, it establishes a criterion for stopping training when no improvements are shown after significant amounts of steps.
 
+    """
 
     printTrainingCharacteristics(agent_params, env, features, file, instances)
 
@@ -145,9 +151,9 @@ if __name__ == "__main__":
 
         agent = Agent(agent_params, save_file=results_path(p, file = experiment_folder), verbose=False, nn_model=nn_model)
 
-        #train_agent(instances= [(p, 2, 2)], file=experiment_folder, agent_params=agent_params, features=features, agent=agent, env=env)
+        train_agent(instances= [(p, 2, 2)], file=experiment_folder, agent_params=agent_params, features=features, agent=agent, env=env)
 
         test_training_agents_generalization(problem=p, file = experiment_folder, up_to=15, timeout="5s", total=100, ebudget=-1, verbose=True)
-        test_training_agents_generalization(p, experiment_folder, 15, "10h", 100, ebudget=5000)
-        test_agent_all_instances(p, experiment_folder, 15, total=100,timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
-        test_agent_all_instances(p, experiment_folder, 15, total=100, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000)
+        #test_training_agents_generalization(p, experiment_folder, 15, "10h", 100, ebudget=5000)
+        #test_agent_all_instances(p, experiment_folder, 15, total=100,timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1, used_testing_timeout="10h")
+        #test_agent_all_instances(p, experiment_folder, 15, total=100, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000, used_testing_timeout="10h")

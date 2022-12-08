@@ -116,7 +116,7 @@ class ExperimentalTester:
         print("PASSED")
     def testSampleAgentsEvaluationsAreStoredCorrectly(self):
         pathToModel = results_path(self.training_contexts[0][0], file=self.modelName)
-        pathToCsv = pathToModel + "/generalization_all.csv"
+        pathToCsv = pathToModel + "/generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv"
         try:
             os.remove(pathToCsv)
         except FileNotFoundError:
@@ -134,11 +134,13 @@ class ExperimentalTester:
         except FileNotFoundError:
             print("Not previously evaluated")
         test_agent_all_instances(problem=self.training_contexts[0][0], file=self.modelName, up_to=2, timeout="5s", selection=best_generalization_agent_ebudget,ebudget=100,
-                                            name="all", total=100)
+                                            name="all", total=100, used_testing_timeout = "5s")
         file_name = ("all" + "_" + problem + "_" + str(2) + "_" + str(100) + "_TO:" + "5s" + ".csv")
         assert (file_name in os.listdir(pathToModel))
         print("PASSED")
 
+    def testMaintainsConsistentPerformanceWithPreviousVersions(self):
+        pass
 
     def testTrainingDeviceIsCorrect(self):
             pass

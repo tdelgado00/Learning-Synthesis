@@ -199,6 +199,7 @@ def test_agents(problem, n, k, problem2, n2, k2, file, freq=1):
 
 def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=test_ra, fast_stop=True, ebudget=-1,
                           solved_crit=budget_and_time):
+    """ same parameters as test_agent_all_instances but without the agent path specification (file) """
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
@@ -219,9 +220,14 @@ def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=tes
 
 
 def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=best_generalization_agent_ebudget, max_frontier=1000000,
-                             fast_stop=True, ebudget=-1, solved_crit=budget_and_time, total=None):
+                             fast_stop=True, ebudget=-1, solved_crit=budget_and_time, total=None, used_testing_timeout = None):
     """ Step (S3): Testing the selected agent with all instances of a problem """
-    idx_agent = selection(problem, file,up_to, timeout,total,ebudget)
+    """ + *name*: a prefix for the resulting csv name.
+        + *selection*: specifies the criterion for selecting the best agent.
+        + *fast_stop*: if True, stops evaluation when one previous adjacent context was not solved. if False, it stops evaluation when two of the previous adjacent context were not solved.
+        + *solved_crit*: the criterion used to evaluate if a context was solved or not. 
+    """
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,ebudget)
     if(idx_agent==None):
         print("No agent solved any context")
         return
@@ -251,6 +257,7 @@ def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", se
 
 def test_random_all_instances(problem, up_to, timeout="10m", name="all_random", ebudget=-1, solved_crit=budget_and_time,
                               file='random'):
+    """ same parameters as test_agent_all_instances but without the agent path specification (file) """
     df = []
     solved = [[False for _ in range(up_to)] for _ in range(up_to)]
     for n in range(up_to):
@@ -268,6 +275,16 @@ def test_random_all_instances(problem, up_to, timeout="10m", name="all_random", 
 def test_training_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000,
                                         solved_crit=budget_and_time, ebudget = -1, verbose=True):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
+    """
+        + *problem:* a string indicating the name of the problem to test the agent at.
+        + *file:* indicates the name of the directory where the agents are to be stored at the ```experiments/results/<used_training_context>``` directory.
+        + *up_to* indicates the maximum value used for the $n,k$ possible combinations  of the specified problem to test the specified agent at.
+        + *timeout:* a string indicating the time budget allowed for the agent to solve one single context
+        + *total:* the size of the used subset.
+        + *max_frontier* the budget of possible actions allowed in a single expansion step.
+        + *solved_crit* a function that decides whether or not continue testing when the previous adjacent context were not solved (by default, when the adjacent contexts exceeded the expansion and/or time budget).
+        + *ebudget*: an integer that specifies the expansions budget. -1 indicates no limit.
+    """
     df = []
     start = time.time()
     agents_saved = sorted([int(f[:-5]) for f in os.listdir(results_path(problem, file=file)) if "onnx" in f])
