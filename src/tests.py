@@ -148,12 +148,16 @@ def tests():
 
 
 if __name__ == "__main__":
+
+    print("Insert your experimental variation here to fast-test the full training and evaluation pipeline. Starts in 5 seconds...")
+    time.sleep(5)
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         exp_folder = "testSampleName"
         training_contexts = [(problem, 2, 2)]
         env = generateEnvironments(training_contexts, sample_features)
         nfeatures = env[training_contexts[0]].javaEnv.getNumberOfFeatures()
-        nn = NeuralNetwork(nfeatures, sample_params["nnsize"]).to("cpu")
+        nn_size = sample_params["nnsize"]
+        nn = NeuralNetwork(nfeatures, nn_size).to("cpu")
         nn_model = TorchModel(nfeatures, sample_params["eta"],
                               sample_params["momentum"], sample_params["nesterov"], network=nn)
 
