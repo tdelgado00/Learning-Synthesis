@@ -1,6 +1,6 @@
 import os
 from environment import generateEnvironments
-from testing import test_agent, test_training_agents_generalization
+from testing import test_agent, test_training_agents_generalization, test_agent_all_instances
 #from testing import test_onnx, test_agents_q
 from util import *
 from train import train_agent
@@ -97,7 +97,7 @@ class ExperimentalTester:
         self.testCompleteTrainingFeatures()
         self.testSampleAgentsAreStoredCorrectly()
         self.testSampleAgentsEvaluationsAreStoredCorrectly()
-        assert(self.testSampleAgentsGeneralizationIsStoredCorrectly()!=None)
+        self.testSampleAgentsGeneralizationIsStoredCorrectly()
     def testCompleteTrainingParams(self):
         assert(sample_params.keys() == self.agent.params.keys())
         print("PASSED")
@@ -121,14 +121,25 @@ class ExperimentalTester:
             os.remove(pathToCsv)
         except FileNotFoundError:
             print("Not previously evaluated")
-        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", 100, ebudget=100, verbose=True)
+        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", total=100, ebudget=100, verbose=True)
 
         assert("generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv" in os.listdir(pathToModel))
         print("PASSED")
 
     def testSampleAgentsGeneralizationIsStoredCorrectly(self):
-        print("Implementar test de seleccion-generalizacion")
-        return None
+        pathToModel = results_path(self.training_contexts[0][0], file=self.modelName)
+        pathToCsv = pathToModel + "/generalization_all.csv"
+        try:
+            os.remove(pathToCsv)
+        except FileNotFoundError:
+            print("Not previously evaluated")
+        test_agent_all_instances(problem=self.training_contexts[0][0], file=self.modelName, up_to=2, timeout="5s", selection=best_generalization_agent_ebudget,ebudget=100,
+                                            name="all", total=100)
+        file_name = ("all" + "_" + problem + "_" + str(2) + "_" + str(100) + "_TO:" + "5s" + ".csv")
+        assert (file_name in os.listdir(pathToModel))
+        print("PASSED")
+
+
     def testTrainingDeviceIsCorrect(self):
             pass
             # assert(self.agent.model.device == )
@@ -139,8 +150,7 @@ class ExperimentalTester:
     def testNetworkIsCorrectlyInitialized(self):
             pass
 
-    def runningSampleTrainingDoesNotRaiseError(self):
-            pass
+
 def tests():
     pass
     #test_training_pipeline()
@@ -153,9 +163,10 @@ if __name__ == "__main__":
     time.sleep(5)
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         exp_folder = "testSampleName"
-        training_contexts = [(problem, 2, 2)]
+        context = (problem, 2, 2)
+        training_contexts = [context]
         env = generateEnvironments(training_contexts, sample_features)
-        nfeatures = env[training_contexts[0]].javaEnv.getNumberOfFeatures()
+        nfeatures = env[context].javaEnv.getNumberOfFeatures()
         nn_size = sample_params["nnsize"]
         nn = NeuralNetwork(nfeatures, nn_size).to("cpu")
         nn_model = TorchModel(nfeatures, sample_params["eta"],

@@ -219,9 +219,9 @@ def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=tes
 
 
 def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=best_generalization_agent_ebudget, max_frontier=1000000,
-                             fast_stop=True, ebudget=-1, solved_crit=budget_and_time):
+                             fast_stop=True, ebudget=-1, solved_crit=budget_and_time, total=None):
     """ Step (S3): Testing the selected agent with all instances of a problem """
-    idx_agent = selection(problem, file)
+    idx_agent = selection(problem, file,up_to, timeout,total,ebudget)
     if(idx_agent==None):
         print("No agent solved any context")
         return
