@@ -2,7 +2,7 @@ import sys
 from agent import Agent
 from environment import DCSSolverEnv, generateEnvironments
 from environment import DCSSolverEnv
-from model import TorchModel
+from model import TorchModel, NeuralNetwork
 from testing import test_agent_all_instances, test_training_agents_generalization
 from util import *
 import time
@@ -134,12 +134,15 @@ if __name__ == "__main__":
     for p in problems:
         instances = [(p, 2, 2)]
         env = generateEnvironments(instances, features)
-        nn_model = TorchModel(env[instances[0]].javaEnv.getNumberOfFeatures(), agent_params["nnsize"], agent_params["eta"],
-                   agent_params["momentum"], agent_params["nesterov"])
-        agent = Agent(agent_params, save_file=results_path(p, file = experiment_folder), verbose=False, nn_model=nn_model)
-        train_agent(instances= [(p, 2, 2)], file=experiment_folder, agent_params=agent_params, features=features, agent=agent, env=env)
 
-        #"test_training_agents_generalization(p, modelDir, 15, "5s", 100, ebudget=-1, verbose=True)
-        #test_training_agents_generalization(p, modelDir, 15, "10h", 100, ebudget=5000)
-        #test_agent_all_instances(p, modelDir, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
-        #test_agent_all_instances(p, modelDir, 15, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000)
+        nfeatures = env[instances[0]].javaEnv.getNumberOfFeatures()
+        nn = NeuralNetwork(nfeatures, agent_params["nnsize"]).to("cpu")
+        nn_model = TorchModel(nfeatures, agent_params["nnsize"], agent_params["eta"],
+                   agent_params["momentum"], agent_params["nesterov"], network=nn)
+        agent = Agent(agent_params, save_file=results_path(p, file = experiment_folder), verbose=False, nn_model=nn_model)
+        #train_agent(instances= [(p, 2, 2)], file=experiment_folder, agent_params=agent_params, features=features, agent=agent, env=env)
+
+        #test_training_agents_generalization(p, experiment_folder, 15, "5s", 100, ebudget=-1, verbose=True)
+        test_training_agents_generalization(p, experiment_folder, 15, "10h", 100, ebudget=5000)
+        #test_agent_all_instances(p, experiment_folder, 15, timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1)
+        #test_agent_all_instances(p, experiment_folder, 15, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000)

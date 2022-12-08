@@ -97,6 +97,7 @@ class ExperimentalTester:
         self.testCompleteTrainingFeatures()
         self.testSampleAgentsAreStoredCorrectly()
         self.testSampleAgentsEvaluationsAreStoredCorrectly()
+        assert(self.testSampleAgentsGeneralizationIsStoredCorrectly()!=None)
     def testCompleteTrainingParams(self):
         assert(sample_params.keys() == self.agent.params.keys())
         print("PASSED")
@@ -104,17 +105,7 @@ class ExperimentalTester:
     def testCompleteTrainingFeatures(self):
         assert(sample_features.keys() == self.env[self.training_contexts[0]].features.keys())
         print("PASSED")
-    def testTrainingDeviceIsCorrect(self):
-        pass
-        #assert(self.agent.model.device == )
 
-    def testInferenceDeviceIsCorrect(self):
-        pass
-
-    def testNetworkIsCorrectlyInitialized(self):
-        pass
-    def runningSampleTrainingDoesNotRaiseError(self):
-        pass
     def testSampleAgentsAreStoredCorrectly(self):
         pathToModel = results_path(self.training_contexts[0][0], file = self.modelName)
         #rmtree(pathToModel, ignore_errors=True)
@@ -134,6 +125,22 @@ class ExperimentalTester:
 
         assert("generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv" in os.listdir(pathToModel))
         print("PASSED")
+
+    def testSampleAgentsGeneralizationIsStoredCorrectly(self):
+        print("Implementar test de seleccion-generalizacion")
+        return None
+    def testTrainingDeviceIsCorrect(self):
+            pass
+            # assert(self.agent.model.device == )
+
+    def testInferenceDeviceIsCorrect(self):
+            pass
+
+    def testNetworkIsCorrectlyInitialized(self):
+            pass
+
+    def runningSampleTrainingDoesNotRaiseError(self):
+            pass
 def tests():
     pass
     #test_training_pipeline()
@@ -144,11 +151,11 @@ if __name__ == "__main__":
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         exp_folder = "testSampleName"
         training_contexts = [(problem, 2, 2)]
-
         env = generateEnvironments(training_contexts, sample_features)
-
-        nn_model = TorchModel(env[training_contexts[0]].javaEnv.getNumberOfFeatures(), sample_params["nnsize"], sample_params["eta"],
-                              sample_params["momentum"], sample_params["nesterov"])
+        nfeatures = env[training_contexts[0]].javaEnv.getNumberOfFeatures()
+        nn = NeuralNetwork(nfeatures, sample_params["nnsize"]).to("cpu")
+        nn_model = TorchModel(nfeatures, sample_params["eta"],
+                              sample_params["momentum"], sample_params["nesterov"], network=nn)
 
         agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
 

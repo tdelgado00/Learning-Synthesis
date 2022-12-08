@@ -685,9 +685,9 @@ if __name__ == "__main__":
         print("Creating dir", path)
         os.makedirs(path)
 
-    problems = ["DP"]
+    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
 
-    ffiles = ["labelsThatReach"]
+    ffiles = ["boolean", "boolean_2", "boolean_3", "boolean_4", "boolean_5"]
 
     files = []
     files += [(f, "RL") for f in ffiles]

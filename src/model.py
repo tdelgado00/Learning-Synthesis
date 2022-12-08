@@ -101,14 +101,14 @@ class OnnxModel(Model):
 
 class TorchModel(Model):
 
-    def __init__(self, nfeatures, nnsize, eta=1e-5, momentum=0.9, nesterov=True):
+    def __init__(self, nfeatures, eta=1e-5, momentum=0.9, nesterov=True, network = None):
         super().__init__()
         self.nfeatures = nfeatures
         self.n, self.k = None, None
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Using", self.device, "device")
-        self.model = NeuralNetwork(nfeatures, nnsize).to(self.device)
+        self.model = network
         print(self.model)
         print("Learning rate:", eta)
 
