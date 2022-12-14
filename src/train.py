@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
         agent = Agent(agent_params, save_file=results_path(problem, file=exp_folder), verbose=False, nn_model=nn_model)
         train_agent(instances=training_contexts, file=experiment_folder, agent_params=agent_params, agent=agent,
-                    env=env, features=features, total_steps=100, copy_freq=10)
+                    env=env, features=features)
         test_training_agents_generalization(training_contexts[0][0], experiment_folder, up_to=15, timeout="10h", ebudget=5000, verbose=True)
         test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10h",
                                  selection=best_generalization_agent_ebudget, ebudget=15000,
