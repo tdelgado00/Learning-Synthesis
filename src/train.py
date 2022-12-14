@@ -137,8 +137,25 @@ if __name__ == "__main__":
             os.makedirs("results/" + p)
 
     experiment_folder = sys.argv[1]
-    for p in problems:
-        instances = [(p, 2, 2)]
+    for problem in problems:
+        exp_folder = experiment_folder
+        context = (problem, 2, 2)
+        training_contexts = [context]
+        env = generateEnvironments(training_contexts, features)
+        nfeatures = env[context].javaEnv.getNumberOfFeatures()
+        nn_size = agent_params["nnsize"]
+        nn = NeuralNetwork(nfeatures, nn_size).to("cpu")
+        nn_model = TorchModel(nfeatures, agent_params["eta"],
+                              agent_params["momentum"], agent_params["nesterov"], network=nn)
+
+        agent = Agent(agent_params, save_file=results_path(problem, file=exp_folder), verbose=False, nn_model=nn_model)
+        train_agent(instances=training_contexts, file=experiment_folder, agent_params=agent_params, agent=agent,
+                    env=env, features=features, total_steps=100, copy_freq=10)
+        test_training_agents_generalization(training_contexts[0][0], experiment_folder, up_to=15, timeout="10h", ebudget=5000, verbose=True)
+        test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10h",
+                                 selection=best_generalization_agent_ebudget, ebudget=15000,
+                                 name="all", total=100, used_testing_timeout="10h", used_testing_ebudget=5000)
+    """instances = [(p, 2, 2)]
 
         env = generateEnvironments(instances, features)
 
@@ -157,3 +174,4 @@ if __name__ == "__main__":
         test_training_agents_generalization(p, experiment_folder, 15, "10h", 100, ebudget=5000)
         test_agent_all_instances(p, experiment_folder, 15, total=100,timeout="10m", name="all", selection=best_generalization_agent_ebudget ,ebudget=-1, used_testing_timeout="10h")
         test_agent_all_instances(p, experiment_folder, 15, total=100, timeout="3h", name="all", selection=best_generalization_agent_ebudget, ebudget=15000, used_testing_timeout="10h")
+"""

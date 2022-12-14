@@ -220,14 +220,14 @@ def test_ra_all_instances(problem, up_to, timeout="10m", name="all_ra", func=tes
 
 
 def test_agent_all_instances(problem, file, up_to, timeout="10m", name="all", selection=best_generalization_agent_ebudget, max_frontier=1000000,
-                             fast_stop=True, ebudget=-1, solved_crit=budget_and_time, total=None, used_testing_timeout = None):
+                             fast_stop=True, ebudget=-1, solved_crit=budget_and_time, total=None, used_testing_timeout = None, used_testing_ebudget = None) :
     """ Step (S3): Testing the selected agent with all instances of a problem """
     """ + *name*: a prefix for the resulting csv name.
         + *selection*: specifies the criterion for selecting the best agent.
         + *fast_stop*: if True, stops evaluation when one previous adjacent context was not solved. if False, it stops evaluation when two of the previous adjacent context were not solved.
         + *solved_crit*: the criterion used to evaluate if a context was solved or not. 
     """
-    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,ebudget)
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,used_testing_ebudget)
     if(idx_agent==None):
         print("No agent solved any context")
         return
