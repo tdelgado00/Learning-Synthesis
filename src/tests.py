@@ -165,6 +165,12 @@ if __name__ == "__main__":
     print("Insert your experimental variation here to fast-test the full training and evaluation pipeline. Starts in 5 seconds...")
     time.sleep(5)
     deviceName = str(sys.argv[1])
+    if deviceName=='tpu':
+
+        try: assert(len(xm.get_xla_supported_devices(devkind="tpu"))>0)
+        except AssertionError: print("Something is wrong with TPU configuration, debug this assertion to discover it")
+
+
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         exp_folder = "testSampleName"
         context = (problem, 2, 2)
@@ -173,7 +179,7 @@ if __name__ == "__main__":
         nfeatures = env[context].javaEnv.getNumberOfFeatures()
         nn_size = sample_params["nnsize"]
         nn = None
-        if(deviceName != 'TPU'):
+        if(deviceName != 'tpu'):
             nn = NeuralNetwork(nfeatures, nn_size).to(deviceName)
         else:
             nn = NeuralNetwork(nfeatures, nn_size).to(xm.xla_device())

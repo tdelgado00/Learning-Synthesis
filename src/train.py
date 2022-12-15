@@ -125,7 +125,7 @@ if __name__ == "__main__":
         "nesterov": True
     }
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print("A folder name to save results should be specified.")
         exit()
 

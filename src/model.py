@@ -107,7 +107,7 @@ class TorchModel(Model):
         super().__init__()
         self.nfeatures = nfeatures
         self.n, self.k = None, None
-        if(deviceName == 'TPU'):
+        if(deviceName == 'tpu'):
             self.device = xm.xla_device()
         else:
             self.device = torch.device(deviceName)
