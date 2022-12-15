@@ -711,15 +711,9 @@ if __name__ == "__main__":
         for file, g in files:
             agents_10m[p1][file] = pd.read_csv(results_path(p1, file=file) + "/" + "all_"+p1+"_15_15000_TO:10h" + ".csv")
     data["agent 15000t"]["all"] = agents_10m
-    """ reintroducir y refactorizarcuando ya lo tengas corrido
-        data["agent 10m"] = {}
-        data["agent 10m"]["all_trans"] = read_agents_evaluation(problems, files, name="all_trans")
-        data["agent 10m"]["best22"] = read_agents_evaluation(problems, files, name="all_best22")
-
-
-    # data["agent 30m"]["all"] = read_agents_evaluation(problems, files, "all30m")
-        # under_test = "boolean33"
-    """
+    data["agent 10m"] = {}
+    data["agent 10m"]["all_trans"] = read_agents_evaluation(problems, files, name="all_trans")
+    data["agent 10m"]["best22"] = read_agents_evaluation(problems, files, name="all_best22")
     pipeline = [
         lambda p, f, d, pth: solved_table(p, f, d, pth, name="all", add_mono=False),
         lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
