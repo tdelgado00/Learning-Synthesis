@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
+import pandas
 import seaborn as sns
 import os
+
+from util import results_path
 from util import *
 from plots_util import *
 
@@ -563,7 +566,7 @@ def plot_15_15(used_problems, path, files1, file2, figure_name, name, require_so
         plt.savefig(path + "15 15 " + figure_name + (" trans" if trans else " solved") + ".jpg", dpi=200)
 
 
-def solved_table(used_problems, used_files, data, path, add_mono=False, name="all_trans", budget="10m"):
+def solved_table(used_problems, used_files, data, path, add_mono=False, name="all_trans", budget="15000t"):
     print("Writing solved table")
 
     def solved_metric(df, factor=1):
@@ -594,6 +597,7 @@ def solved_table(used_problems, used_files, data, path, add_mono=False, name="al
         for file, group in used_files:
             if group == "multiple" and (p not in ["AT", "TA", "BW", "DP"]):
                 continue
+
             df = data[agent_data][name][p][file]
             results[p][group].append(metric(df))
 
@@ -626,6 +630,7 @@ def solved_table(used_problems, used_files, data, path, add_mono=False, name="al
                     results["all (AT, BW, DP, TA)"][group][j] += results[problem][group][j]
 
     for p in problem_columns:
+        breakpoint()
         print(p, np.array(results[p]["RL"]) - np.array(results[p]["RL best22"]))
         print(np.mean(np.array(results[p]["RL"]) - np.array(results[p]["RL best22"])))
 
@@ -687,7 +692,7 @@ if __name__ == "__main__":
 
     problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
 
-    ffiles = ["boolean", "boolean_2", "boolean_3", "boolean_4", "boolean_5"]
+    ffiles = ["labelsThatReach"]
 
     files = []
     files += [(f, "RL") for f in ffiles]
@@ -700,17 +705,23 @@ if __name__ == "__main__":
     process_training_data(data, problems, files, base=5000, window_size=10)
     data["random small"] = read_random_small()
     data["agent 15000t"] = {}
-    data["agent 15000t"]["all"] = read_agents_evaluation(problems, files, name="all_15000")
+    agents_10m = {}
+    for p1 in problems:
+        agents_10m[p1] = {}
+        for file, g in files:
+            agents_10m[p1][file] = pd.read_csv(results_path(p1, file=file) + "/" + "all_"+p1+"_15_15000_TO:10h" + ".csv")
+    data["agent 15000t"]["all"] = agents_10m
+    """ reintroducir y refactorizarcuando ya lo tengas corrido
+        data["agent 10m"] = {}
+        data["agent 10m"]["all_trans"] = read_agents_evaluation(problems, files, name="all_trans")
+        data["agent 10m"]["best22"] = read_agents_evaluation(problems, files, name="all_best22")
 
-    data["agent 10m"] = {}
-    data["agent 10m"]["all_trans"] = read_agents_evaluation(problems, files, name="all_trans")
-    data["agent 10m"]["best22"] = read_agents_evaluation(problems, files, name="all_best22")
+
     # data["agent 30m"]["all"] = read_agents_evaluation(problems, files, "all30m")
-
-    # under_test = "boolean33"
-
+        # under_test = "boolean33"
+    """
     pipeline = [
-        lambda p, f, d, pth: solved_table(p, f, d, pth, name="all_trans", add_mono=False),
+        lambda p, f, d, pth: solved_table(p, f, d, pth, name="all", add_mono=False),
         lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
         lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="mean transitions"),
         lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
@@ -726,9 +737,9 @@ if __name__ == "__main__":
         lambda p, f, d, pth: solved_table(p, f, d, pth, long_timeout=False),
         plot_solved_training,
         plot_loss,
-        pipeline_plot_15_15(ffiles, "ra", "RL vs RA 30m", "all30m", require_solved_last=False),
-        pipeline_plot_15_15(ffiles, "random", "RL vs Random mean", "all", require_solved_last=False),
-        pipeline_plot_15_15(ffiles, "mono", "RL vs mono"),
+        #pipeline_plot_15_15(ffiles, "ra", "RL vs RA 30m", "all30m", require_solved_last=False),
+        #pipeline_plot_15_15(ffiles, "random", "RL vs Random mean", "all", require_solved_last=False),
+        #pipeline_plot_15_15(ffiles, "mono", "RL vs mono"),
         # pipeline_plot_15_15(ffiles, under_test, "baseline vs under test", "all", require_solved_last=True),
         # pipeline_plot_15_15([under_test], "ra", "under test vs ra", "all", require_solved_last=True),
         # pipeline_plot_15_15([under_test], "random", "under test vs random")
