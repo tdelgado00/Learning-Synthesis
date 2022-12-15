@@ -7,6 +7,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.onnx
+import torch_xla
+import torch_xla.core.xla_model as xm
 
 
 class Model:

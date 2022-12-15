@@ -171,7 +171,11 @@ if __name__ == "__main__":
         env = generateEnvironments(training_contexts, sample_features)
         nfeatures = env[context].javaEnv.getNumberOfFeatures()
         nn_size = sample_params["nnsize"]
-        nn = NeuralNetwork(nfeatures, nn_size).to("cpu")
+        if torch.cuda.is_available():
+            time.sleep(2)
+            print("Using GPU")
+            time.sleep(4)
+        nn = NeuralNetwork(nfeatures, nn_size).to("cuda" if torch.cuda.is_available() else "cpu")
         nn_model = TorchModel(nfeatures, sample_params["eta"],
                               sample_params["momentum"], sample_params["nesterov"], network=nn)
 
