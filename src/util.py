@@ -28,7 +28,7 @@ def joinAsStrings(listOfArgs):
     for arg in listOfArgs: res+=("_"+str(arg))
     return res
 
-def best_agent_2_2(problem, file):
+def best_agent_2_2(problem, file,up_to=None, used_testing_timeout=None,total=None,used_testing_ebudget=None):
     return best_agent_n_k(problem, file, 2, 2)
 
 
@@ -45,7 +45,7 @@ def best_agent_n_k(problem, file, n=2, k=2):
     return max(idxs)
 
 
-def best_generalization_agent(problem, file):
+def best_generalization_agent(problem, file,up_to=None, used_testing_timeout=None,total=None,used_testing_ebudget=None):
     df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
     max_idx = df["idx"].max()
     solved = [0 for _ in range(max_idx + 1)]
