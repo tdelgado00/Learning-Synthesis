@@ -164,6 +164,7 @@ if __name__ == "__main__":
 
     print("Insert your experimental variation here to fast-test the full training and evaluation pipeline. Starts in 5 seconds...")
     time.sleep(5)
+    deviceName = str(sys.argv[1])
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         exp_folder = "testSampleName"
         context = (problem, 2, 2)
@@ -171,13 +172,13 @@ if __name__ == "__main__":
         env = generateEnvironments(training_contexts, sample_features)
         nfeatures = env[context].javaEnv.getNumberOfFeatures()
         nn_size = sample_params["nnsize"]
-        if torch.cuda.is_available():
-            time.sleep(2)
-            print("Using GPU")
-            time.sleep(4)
-        nn = NeuralNetwork(nfeatures, nn_size).to("cuda" if torch.cuda.is_available() else "cpu")
+        nn = None
+        if(deviceName != 'TPU'):
+            nn = NeuralNetwork(nfeatures, nn_size).to(deviceName)
+        else:
+            nn = NeuralNetwork(nfeatures, nn_size).to(xm.xla_device())
         nn_model = TorchModel(nfeatures, sample_params["eta"],
-                              sample_params["momentum"], sample_params["nesterov"], network=nn)
+                              sample_params["momentum"], sample_params["nesterov"], network=nn, deviceName=deviceName)
 
         agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
 

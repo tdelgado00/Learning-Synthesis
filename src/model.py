@@ -7,8 +7,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.onnx
-#import torch_xla
-#import torch_xla.core.xla_model as xm
+import torch_xla
+import torch_xla.core.xla_model as xm
 
 
 class Model:
@@ -103,12 +103,14 @@ class OnnxModel(Model):
 
 class TorchModel(Model):
 
-    def __init__(self, nfeatures, eta=1e-5, momentum=0.9, nesterov=True, network = None):
+    def __init__(self, nfeatures, eta=1e-5, momentum=0.9, nesterov=True, network = None, deviceName='cpu'):
         super().__init__()
         self.nfeatures = nfeatures
         self.n, self.k = None, None
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if(deviceName == 'TPU'):
+            self.device = xm.xla_device()
+        else:
+            self.device = torch.device(deviceName)
         print("Using", self.device, "device")
         self.model = network
         print(self.model)

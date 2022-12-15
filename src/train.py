@@ -7,7 +7,6 @@ from util import *
 import time
 import pickle
 import os
-from torch import cuda
 def train_agent(instances,
                 file,
                 agent_params,
@@ -136,6 +135,7 @@ if __name__ == "__main__":
             os.makedirs("results/" + p)
 
     experiment_folder = sys.argv[1]
+    deviceName = sys.argv[2]
     for problem in problems:
         exp_folder = experiment_folder
         context = (problem, 2, 2)
@@ -143,9 +143,10 @@ if __name__ == "__main__":
         env = generateEnvironments(training_contexts, features)
         nfeatures = env[context].javaEnv.getNumberOfFeatures()
         nn_size = agent_params["nnsize"]
-        nn = NeuralNetwork(nfeatures, nn_size).to("cuda" if cuda.is_available() else "cpu")
+
+        nn = NeuralNetwork(nfeatures, nn_size).to(deviceName)
         nn_model = TorchModel(nfeatures, agent_params["eta"],
-                              agent_params["momentum"], agent_params["nesterov"], network=nn)
+                              agent_params["momentum"], agent_params["nesterov"], network=nn, deviceName=deviceName)
 
         agent = Agent(agent_params, save_file=results_path(problem, file=exp_folder), verbose=False, nn_model=nn_model)
         train_agent(instances=training_contexts, file=experiment_folder, agent_params=agent_params, agent=agent,
