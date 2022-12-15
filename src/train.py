@@ -113,7 +113,7 @@ if __name__ == "__main__":
         "first epsilon": 1.0,
         "last epsilon": 0.01,
         "epsilon decay steps": 250000,
-        "nnsize": (20,),
+        "nnsize": (20,10,5),
         "optimizer": "sgd",
         "model": "pytorch",
         "target q": True,
