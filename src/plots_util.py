@@ -180,5 +180,5 @@ def read_agents_evaluation(problems, files, name="all"):
     for p in problems:
         agents_10m[p] = {}
         for file, g in files:
-            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/" + name + ".csv")
+            agents_10m[p][file] = pd.read_csv(results_path(p, file=file) + "/" + "all_"+ p +"_15_15000_TO:10h.csv")
     return agents_10m

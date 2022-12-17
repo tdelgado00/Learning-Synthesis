@@ -631,8 +631,8 @@ def solved_table(used_problems, used_files, data, path, add_mono=False, name="al
 
     for p in problem_columns:
         breakpoint()
-        print(p, np.array(results[p]["RL"]) - np.array(results[p]["RL best22"]))
-        print(np.mean(np.array(results[p]["RL"]) - np.array(results[p]["RL best22"])))
+        print(p, np.array(results[p]["RL"]) - np.array(results[p]["best22"]))
+        print(np.mean(np.array(results[p]["RL"]) - np.array(results[p]["best22"])))
 
     # with open(path + "ttest_results.txt", "w+") as f:
     #     for problem in problems + ["all"]:
