@@ -7,8 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.onnx
-import torch_xla
-import torch_xla.core.xla_model as xm
+
 
 
 class Model:
@@ -108,7 +107,10 @@ class TorchModel(Model):
         self.nfeatures = nfeatures
         self.n, self.k = None, None
         if(deviceName == 'tpu'):
+            import torch_xla
+            import torch_xla.core.xla_model as xm
             self.device = xm.xla_device()
+
         else:
             self.device = torch.device(deviceName)
         print("Using", self.device, "device")

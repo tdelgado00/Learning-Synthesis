@@ -134,7 +134,7 @@ class ExperimentalTester:
         except FileNotFoundError:
             print("Not previously evaluated")
         test_agent_all_instances(problem=self.training_contexts[0][0], file=self.modelName, up_to=2, timeout="5s", selection=best_generalization_agent_ebudget,ebudget=100,
-                                            name="all", total=100, used_testing_timeout = "5s")
+                                            name="all", total=100, used_testing_timeout = "5s", used_testing_ebudget=100)
         file_name = ("all" + "_" + problem + "_" + str(2) + "_" + str(100) + "_TO:" + "5s" + ".csv")
         assert (file_name in os.listdir(pathToModel))
         print("PASSED")
