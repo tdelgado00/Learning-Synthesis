@@ -17,6 +17,11 @@ def insert_solved_instances_for_each_problem(filename, problems, solved_by_probl
 def table_solved_instances(filenames, problems, agent_names):
     return pd.DataFrame([get_solved_series(filename, problems) for filename in filenames], index = agent_names)
 
+def expanded_transitions_through_whole_problem_for_agent(filename):
+    raise NotImplementedError
+
+def scatterplot(filename):
+    raise NotImplementedError
 
 
 if __name__ == '__main__':
@@ -24,6 +29,8 @@ if __name__ == '__main__':
     print(get_solved_series("labelsThatReach/all_15_15000_TO:10h.csv", problems))
     #print(get_solved_series("labelsThatReach/all_15_-1_TO:10m.csv", problems))
     print(get_solved_series("all_random1_1500015000.csv", problems))
-    #TODO: why does it fail with 10 min random? where is 10 min ra?
+    #TODO(1): why does it fail with 10 min random? where is 10 min ra?
+    #TODO(2): make this more verbose
+    #TODO(3): scatterplot
     print(table_solved_instances(["labelsThatReach/all_15_15000_TO:10h.csv","all_random1_1500015000.csv", "all_ra_15000t.csv" ], problems, ["best/5000 with 15000","random 15000", "ra 15000"]))
 
