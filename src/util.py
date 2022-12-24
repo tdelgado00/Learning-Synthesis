@@ -117,6 +117,7 @@ def solved_by_agent(path):
 
 
 def notExceeded(df):
+    if "expansion_budget_exceeded" not in df.columns: return df.dropna()
     return df[df["expansion_budget_exceeded"] == False]
 
 
