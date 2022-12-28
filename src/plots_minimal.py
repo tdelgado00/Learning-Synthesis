@@ -1,6 +1,16 @@
 import pandas as pd
 from util import *
 
+class selectionPreprocessingData():
+    def __init__(self, abs_path):
+        print("Yet to be implemented")
+        self.df = pd.read_csv(abs_path)
+
+class selectedAgentData():
+    def __init__(self, abs_path):
+        print("Yet to be implemented")
+        self.df = pd.read_csv(abs_path)
+
 def get_solved_series(filename, problems):
 
     solved_by_problem = pd.Series(index = problems ,dtype = float)
@@ -23,6 +33,12 @@ def expanded_transitions_through_whole_problem_for_agent(filename):
 def scatterplot(filename):
     raise NotImplementedError
 
+def metric_evolution_over_agent_training(path, n, k, metric_column_name):
+    df = pd.read_csv(path)
+    df = notExceeded(df)
+    df = df[df['n']==n and df['k']==k]
+    breakpoint()
+    return df[metric_column_name]
 
 if __name__ == '__main__':
     problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
