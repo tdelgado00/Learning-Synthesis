@@ -1,5 +1,7 @@
 import pandas as pd
 from util import *
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class selectionPreprocessingData():
     def __init__(self, abs_path):
@@ -36,12 +38,13 @@ def scatterplot(filename):
 def metric_evolution_over_agent_training(path, n, k, metric_column_name):
     df = pd.read_csv(path)
     df = notExceeded(df)
-    df = df[df['n']==n and df['k']==k]
-    breakpoint()
-    return df[metric_column_name]
+    df = df[(df['n']==n) & (df['k']==k)]
+    return -df[[metric_column_name, "idx"]]
+
+def
 
 if __name__ == '__main__':
-    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+    """problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
     print(get_solved_series("labelsThatReach/all_15_15000_TO:10h.csv", problems))
     print(get_solved_series("labelsThatReach/all_15_-1_TO:10m.csv", problems))
     print(get_solved_series("all_random1_1500015000.csv", problems))
@@ -49,4 +52,10 @@ if __name__ == '__main__':
     #TODO(2): make this more verbose. Classes?
     #TODO(3): scatterplot
     print(table_solved_instances(["labelsThatReach/all_15_15000_TO:10h.csv","all_random1_1500015000.csv", "all_ra_15000t.csv" ], problems, ["best/5000 with 15000","random 15000", "ra 15000"]))
+    """
+    series = metric_evolution_over_agent_training("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv", 2, 2, "expanded transitions")
+    #series = metric_evolution_over_agent_training("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean/upTo:15_timeout2h_ebudget5000_generalization_all.csv", 2, 2, "expanded transitions")
 
+    sns.lineplot(data = series, y="expanded transitions", x="idx")
+    #breakpoint()
+    plt.show()
