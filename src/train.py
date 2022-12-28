@@ -158,10 +158,10 @@ if __name__ == "__main__":
             test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10h",
                                      selection=best_generalization_agent_ebudget, ebudget=15000,
                                      name="all", total=100, used_testing_timeout=test_timeout, used_testing_ebudget=test_ebudget)
-        test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
-                                 selection=best_generalization_agent, ebudget=-1,
-                                 name="all", total=100, used_testing_timeout=test_timeout,
-                                 used_testing_ebudget=test_ebudget)
+            test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
+                                     selection=best_generalization_agent, ebudget=-1,
+                                     name="all", total=100, used_testing_timeout=test_timeout,
+                                     used_testing_ebudget=test_ebudget)
         test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
                                  selection=best_agent_2_2, ebudget=-1,
                                  name="all", total=100, used_testing_timeout=test_timeout,
