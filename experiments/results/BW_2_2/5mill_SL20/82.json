@@ -1,1 +1,0 @@
-{"training time": 8997.113322019577, "training steps": 4100000, "eta": 1e-05, "nnsize": 20, "epsilon": 0.1, "nfeatures": 29, "target q": true, "reset target freq": 10000, "experience replay": true, "buffer size": 10000, "ra feature": true, "labels": true, "context features": true, "state labels": true}

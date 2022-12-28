@@ -1,8 +1,0 @@
-DP
-RA 87.0
-boolean 126.0 65
-boolean_2 126.0 3
-boolean_3 202.0 18
-boolean_4 119.0 65
-boolean_5 201.0 48
-sample2 230.0 20

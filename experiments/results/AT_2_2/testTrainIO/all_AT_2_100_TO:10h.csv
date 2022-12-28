@@ -1,5 +1,0 @@
-,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),expansion_budget_exceeded,OutOfMem,algorithm,heuristic,problem,n,k,transitions/ms
-0,6,6,8,8,178,2,0,1,0,17.7,14.0,false,False,new,experiments/results/AT_2_2/testTrainIO/11.onnx,AT,1,1,0.0449438202247191
-1,7,7,9,9,291,2,0,1,0,18.24,65.0,false,False,new,experiments/results/AT_2_2/testTrainIO/11.onnx,AT,1,2,0.030927835051546393
-2,11,0,15,0,189,2,0,0,1,0.0,19.0,false,False,new,experiments/results/AT_2_2/testTrainIO/11.onnx,AT,2,1,0.07936507936507936
-3,26,22,46,36,236,15,0,1,0,20.66,48.0,false,False,new,experiments/results/AT_2_2/testTrainIO/11.onnx,AT,2,2,0.19491525423728814

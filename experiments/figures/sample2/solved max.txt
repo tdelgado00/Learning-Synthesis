@@ -1,8 +1,0 @@
-DP
-RA 102
-boolean 73 at idx: 69
-boolean_2 62 at idx: 3
-boolean_3 66 at idx: 46
-boolean_4 77 at idx: 48
-boolean_5 68 at idx: 49
-sample2 55 at idx: 53
