@@ -19,7 +19,7 @@ def train_agent(instances,
                 total_steps=500000,
                 copy_freq=5000,
                 early_stopping=True,
-                verbose=False, agent=None, env = None):
+                verbose=False, agent=None, env = None, pathToAgents=None):
     """
         + *agent_params:* a dictionary with the agent's hyperparameter values. See the original example for better understanding.
         + *features:* a dictionary with the truth value per feature name, for indicating which ones to use. See the original example for better understanding.
@@ -46,7 +46,7 @@ def train_agent(instances,
     else:
 
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
-                    save_at_end=True, early_stopping=early_stopping)
+                    save_at_end=True, early_stopping=early_stopping, pathToAgents=pathToAgents)
 
     if file is not None:
         with open(file + "/" + "training_data.pkl", "wb") as f:

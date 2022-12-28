@@ -1,0 +1,513 @@
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=31, out_features=255, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=255, out_features=255, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=255, out_features=5, bias=True)
+    (5): ReLU()
+    (6): Linear(in_features=5, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Testing agent 0 with 5s timeout. Time: 0.00027298927307128906
+Solved: 32
+Testing agent 1 with 5s timeout. Time: 68.54569911956787
+Solved: 37
+Testing agent 2 with 5s timeout. Time: 151.4382655620575
+Solved: 41
+Testing agent 3 with 5s timeout. Time: 274.8794493675232
+Solved: 43
+Testing agent 4 with 5s timeout. Time: 454.1989920139313
+Solved: 46
+Testing agent 5 with 5s timeout. Time: 645.3674983978271
+Solved: 47
+Testing agent 6 with 5s timeout. Time: 792.9456555843353
+Solved: 48
+Testing agent 7 with 5s timeout. Time: 944.2266325950623
+Solved: 51
+Testing agent 8 with 5s timeout. Time: 1087.2023692131042
+Solved: 56
+Testing agent 10 with 5s timeout. Time: 1300.0993402004242
+Solved: 39
+Testing agent 11 with 5s timeout. Time: 1375.994422674179
+Solved: 37
+Testing agent 13 with 5s timeout. Time: 1453.6987216472626
+Solved: 35
+Testing agent 14 with 5s timeout. Time: 1564.051326751709
+Solved: 37
+Testing agent 15 with 5s timeout. Time: 1698.0368871688843
+Solved: 33
+Testing agent 16 with 5s timeout. Time: 1760.1164791584015
+Solved: 34
+Testing agent 17 with 5s timeout. Time: 1832.2193129062653
+Solved: 33
+Testing agent 18 with 5s timeout. Time: 1888.0542929172516
+Solved: 32
+Testing agent 19 with 5s timeout. Time: 1947.6812317371368
+Solved: 32
+Testing agent 20 with 5s timeout. Time: 2004.7704102993011
+Solved: 32
+Testing agent 22 with 5s timeout. Time: 2057.0446031093597
+Solved: 33
+Testing agent 23 with 5s timeout. Time: 2111.1979558467865
+Solved: 36
+Testing agent 24 with 5s timeout. Time: 2210.4468982219696
+Solved: 32
+Testing agent 25 with 5s timeout. Time: 2257.7792184352875
+Solved: 35
+Testing agent 26 with 5s timeout. Time: 2335.470399618149
+Solved: 37
+Testing agent 27 with 5s timeout. Time: 2425.0892984867096
+Solved: 37
+Testing agent 28 with 5s timeout. Time: 2502.417347431183
+Solved: 36
+Testing agent 29 with 5s timeout. Time: 2577.284240961075
+Solved: 33
+Testing agent 30 with 5s timeout. Time: 2616.991716861725
+Solved: 35
+Testing agent 31 with 5s timeout. Time: 2653.4394991397858
+Solved: 36
+Testing agent 32 with 5s timeout. Time: 2729.0841426849365
+Solved: 33
+Testing agent 33 with 5s timeout. Time: 2767.2438769340515
+Solved: 33
+Testing agent 34 with 5s timeout. Time: 2805.580342769623
+Solved: 37
+Testing agent 35 with 5s timeout. Time: 2851.6819791793823
+Solved: 33
+Testing agent 37 with 5s timeout. Time: 2893.338885307312
+Solved: 32
+Testing agent 38 with 5s timeout. Time: 2945.1045875549316
+Solved: 33
+Testing agent 39 with 5s timeout. Time: 2985.556559085846
+Solved: 37
+Testing agent 40 with 5s timeout. Time: 3069.18447804451
+Solved: 35
+Testing agent 41 with 5s timeout. Time: 3115.1995491981506
+Solved: 34
+Testing agent 42 with 5s timeout. Time: 3171.5960574150085
+Solved: 37
+Testing agent 43 with 5s timeout. Time: 3263.1035113334656
+Solved: 32
+Testing agent 45 with 5s timeout. Time: 3328.490946531296
+Solved: 39
+Testing agent 46 with 5s timeout. Time: 3424.404177904129
+Solved: 47
+Testing agent 48 with 5s timeout. Time: 3573.588616847992
+Solved: 37
+Testing agent 49 with 5s timeout. Time: 3619.6694808006287
+Solved: 34
+Testing agent 50 with 5s timeout. Time: 3662.2659873962402
+Solved: 38
+Testing agent 51 with 5s timeout. Time: 3738.81285738945
+Solved: 34
+Testing agent 52 with 5s timeout. Time: 3791.880494594574
+Solved: 42
+Testing agent 53 with 5s timeout. Time: 3905.1545140743256
+Solved: 34
+Testing agent 54 with 5s timeout. Time: 3956.3311982154846
+Solved: 35
+Testing agent 55 with 5s timeout. Time: 4008.571751832962
+Solved: 40
+Testing agent 56 with 5s timeout. Time: 4125.731378555298
+Solved: 36
+Testing agent 57 with 5s timeout. Time: 4216.171008110046
+Solved: 32
+Testing agent 59 with 5s timeout. Time: 4295.574736356735
+Solved: 33
+Testing agent 60 with 5s timeout. Time: 4381.773152589798
+Solved: 34
+Testing agent 61 with 5s timeout. Time: 4467.108524560928
+Solved: 43
+Testing agent 62 with 5s timeout. Time: 4606.8456292152405
+Solved: 36
+Testing agent 63 with 5s timeout. Time: 4668.473808765411
+Solved: 39
+Testing agent 65 with 5s timeout. Time: 4763.67572426796
+Solved: 37
+Testing agent 66 with 5s timeout. Time: 4815.539483308792
+Solved: 37
+Testing agent 68 with 5s timeout. Time: 4905.224175453186
+Solved: 38
+Testing agent 69 with 5s timeout. Time: 4983.588552474976
+Solved: 36
+Testing agent 71 with 5s timeout. Time: 5063.868076086044
+Solved: 33
+Testing agent 72 with 5s timeout. Time: 5107.399778842926
+Solved: 35
+Testing agent 73 with 5s timeout. Time: 5159.28928732872
+Solved: 40
+Testing agent 74 with 5s timeout. Time: 5233.884211778641
+Solved: 37
+Testing agent 75 with 5s timeout. Time: 5294.492327213287
+Solved: 35
+Testing agent 76 with 5s timeout. Time: 5361.579658985138
+Solved: 41
+Testing agent 77 with 5s timeout. Time: 5523.727185964584
+Solved: 41
+Testing agent 78 with 5s timeout. Time: 5630.92836523056
+Solved: 34
+Testing agent 79 with 5s timeout. Time: 5694.027641534805
+Solved: 34
+Testing agent 80 with 5s timeout. Time: 5751.047772169113
+Solved: 34
+Testing agent 81 with 5s timeout. Time: 5812.637877464294
+Solved: 34
+Testing agent 82 with 5s timeout. Time: 5888.29552936554
+Solved: 32
+Testing agent 84 with 5s timeout. Time: 5951.602307796478
+Solved: 34
+Testing agent 85 with 5s timeout. Time: 6025.891438245773
+Solved: 33
+Testing agent 86 with 5s timeout. Time: 6106.401811599731
+Solved: 33
+Testing agent 89 with 5s timeout. Time: 6186.958945274353
+Solved: 37
+Testing agent 90 with 5s timeout. Time: 6252.01939368248
+Solved: 38
+Testing agent 91 with 5s timeout. Time: 6362.087450265884
+Solved: 40
+Testing agent 92 with 5s timeout. Time: 6490.507290363312
+Solved: 34
+Testing agent 93 with 5s timeout. Time: 6563.370654821396
+Solved: 36
+Testing agent 94 with 5s timeout. Time: 6636.970815658569
+Solved: 37
+Testing agent 95 with 5s timeout. Time: 6702.720883131027
+Solved: 39
+Testing agent 96 with 5s timeout. Time: 6817.531215667725
+Solved: 37
+Testing agent 97 with 5s timeout. Time: 6889.9503173828125
+Solved: 34
+Testing agent 98 with 5s timeout. Time: 6953.593349695206
+Solved: 37
+Testing agent 99 with 5s timeout. Time: 7015.816295385361
+Solved: 36
+Testing agent 100 with 5s timeout. Time: 7071.71057510376
+Solved: 39
+Testing agent 101 with 5s timeout. Time: 7134.150091409683
+Solved: 48
+Testing agent 102 with 5s timeout. Time: 7270.127631664276
+Solved: 42
+Testing agent 104 with 5s timeout. Time: 7366.613751888275
+Solved: 55
+Testing agent 105 with 5s timeout. Time: 7515.606370687485
+Solved: 45
+Testing agent 106 with 5s timeout. Time: 7585.579525709152
+Solved: 39
+Testing agent 107 with 5s timeout. Time: 7661.27574467659
+Solved: 41
+Testing agent 108 with 5s timeout. Time: 7760.58402967453
+Solved: 41
+Testing agent 109 with 5s timeout. Time: 7871.348915815353
+Solved: 36
+Testing agent 111 with 5s timeout. Time: 7939.592047452927
+Solved: 35
+Testing agent 113 with 5s timeout. Time: 8036.936427116394
+Solved: 35
+Testing agent 114 with 5s timeout. Time: 8110.855686664581
+Solved: 33
+Testing agent 115 with 5s timeout. Time: 8172.054635286331
+Solved: 35
+Testing all DP with agent:  8
+Testing agent with DP 1 1
+Testing agent with DP 1 2
+Testing agent with DP 1 3
+Testing agent with DP 1 4
+Testing agent with DP 1 5
+Testing agent with DP 1 6
+Testing agent with DP 1 7
+Testing agent with DP 1 8
+Testing agent with DP 1 9
+Testing agent with DP 1 10
+Testing agent with DP 1 11
+Testing agent with DP 1 12
+Testing agent with DP 1 13
+Testing agent with DP 1 14
+Testing agent with DP 1 15
+Testing agent with DP 2 1
+Testing agent with DP 2 2
+Testing agent with DP 2 3
+Testing agent with DP 2 4
+Testing agent with DP 2 5
+Testing agent with DP 2 6
+Testing agent with DP 2 7
+Testing agent with DP 2 8
+Testing agent with DP 2 9
+Testing agent with DP 2 10
+Testing agent with DP 2 11
+Testing agent with DP 2 12
+Testing agent with DP 2 13
+Testing agent with DP 2 14
+Testing agent with DP 2 15
+Testing agent with DP 3 1
+Testing agent with DP 3 2
+Testing agent with DP 3 3
+Testing agent with DP 3 4
+Testing agent with DP 3 5
+Testing agent with DP 3 6
+Testing agent with DP 3 7
+Testing agent with DP 3 8
+Testing agent with DP 3 9
+Testing agent with DP 3 10
+Testing agent with DP 3 11
+Testing agent with DP 3 12
+Testing agent with DP 3 13
+Testing agent with DP 3 14
+Testing agent with DP 3 15
+Testing agent with DP 4 1
+Testing agent with DP 4 2
+Testing agent with DP 4 3
+Testing agent with DP 4 4
+Testing agent with DP 4 5
+Testing agent with DP 4 6
+Testing agent with DP 4 7
+Testing agent with DP 4 8
+Testing agent with DP 4 9
+Testing agent with DP 4 10
+Testing agent with DP 4 11
+Testing agent with DP 4 12
+Testing agent with DP 4 13
+Testing agent with DP 4 14
+Testing agent with DP 4 15
+Testing agent with DP 5 1
+Testing agent with DP 5 2
+Testing agent with DP 5 3
+Testing agent with DP 5 4
+Testing agent with DP 5 5
+Testing agent with DP 6 1
+Solved 64 instances
+Traceback (most recent call last):
+  File "src/train.py", line 160, in <module>
+    test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
+  File "/home/marco/Desktop/Learning-Synthesis/src/testing.py", line 230, in test_agent_all_instances
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,used_testing_ebudget)
+TypeError: best_generalization_agent() takes 2 positional arguments but 6 were given
+Traceback (most recent call last):
+  File "/home/marco/Desktop/Learning-Synthesis/src/train.py", line 2, in <module>
+    from agent import Agent
+  File "/home/marco/Desktop/Learning-Synthesis/src/agent.py", line 9, in <module>
+    from model import MLPModel, OnnxModel, TorchModel
+  File "/home/marco/Desktop/Learning-Synthesis/src/model.py", line 3, in <module>
+    from skl2onnx import to_onnx
+ModuleNotFoundError: No module named 'skl2onnx'
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=31, out_features=255, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=255, out_features=255, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=255, out_features=5, bias=True)
+    (5): ReLU()
+    (6): Linear(in_features=5, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Traceback (most recent call last):
+  File "src/train.py", line 161, in <module>
+    test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
+  File "/home/marco/Desktop/Learning-Synthesis/src/testing.py", line 230, in test_agent_all_instances
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,used_testing_ebudget)
+  File "/home/marco/Desktop/Learning-Synthesis/src/util.py", line 49, in best_generalization_agent
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/util/_decorators.py", line 311, in wrapper
+    return func(*args, **kwargs)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 586, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 482, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 811, in __init__
+    self._engine = self._make_engine(self.engine)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 1040, in _make_engine
+    return mapping[engine](self.f, **self.options)  # type: ignore[call-arg]
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 51, in __init__
+    self._open_handles(src, kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/base_parser.py", line 222, in _open_handles
+    self.handles = get_handle(
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/common.py", line 702, in get_handle
+    handle = open(
+FileNotFoundError: [Errno 2] No such file or directory: 'experiments/results/DP_2_2/GPUboolean255_255_5/generalization_all.csv'
+Traceback (most recent call last):
+  File "/home/marco/Desktop/Learning-Synthesis/src/train.py", line 2, in <module>
+    from agent import Agent
+  File "/home/marco/Desktop/Learning-Synthesis/src/agent.py", line 9, in <module>
+    from model import MLPModel, OnnxModel, TorchModel
+  File "/home/marco/Desktop/Learning-Synthesis/src/model.py", line 3, in <module>
+    from skl2onnx import to_onnx
+ModuleNotFoundError: No module named 'skl2onnx'
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=31, out_features=255, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=255, out_features=255, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=255, out_features=5, bias=True)
+    (5): ReLU()
+    (6): Linear(in_features=5, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Traceback (most recent call last):
+  File "src/train.py", line 161, in <module>
+    test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
+  File "/home/marco/Desktop/Learning-Synthesis/src/testing.py", line 230, in test_agent_all_instances
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,used_testing_ebudget)
+  File "/home/marco/Desktop/Learning-Synthesis/src/util.py", line 49, in best_generalization_agent
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/all_"+problem+ "_" + str(up_to) + "_" + str(ebudget) + "_TO:"+ timeout +".csv")
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/util/_decorators.py", line 311, in wrapper
+    return func(*args, **kwargs)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 586, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 482, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 811, in __init__
+    self._engine = self._make_engine(self.engine)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 1040, in _make_engine
+    return mapping[engine](self.f, **self.options)  # type: ignore[call-arg]
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 51, in __init__
+    self._open_handles(src, kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/base_parser.py", line 222, in _open_handles
+    self.handles = get_handle(
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/common.py", line 702, in get_handle
+    handle = open(
+FileNotFoundError: [Errno 2] No such file or directory: 'experiments/results/DP_2_2/GPUboolean255_255_5/all_DP_15_5000_TO:10h.csv'
+Traceback (most recent call last):
+  File "src/train.py", line 3, in <module>
+    from environment import DCSSolverEnv, generateEnvironments
+  File "/home/marco/Desktop/Learning-Synthesis/src/environment.py", line 3, in <module>
+    from util import *
+  File "/home/marco/Desktop/Learning-Synthesis/src/util.py", line 48
+    def best_generalization_agent(problem, file,up_to, timeout,total,ebudget):generalization_all_15_10h_100_5000.
+                                                                                                                ^
+SyntaxError: invalid syntax
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=31, out_features=255, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=255, out_features=255, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=255, out_features=5, bias=True)
+    (5): ReLU()
+    (6): Linear(in_features=5, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Traceback (most recent call last):
+  File "src/train.py", line 161, in <module>
+    test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
+  File "/home/marco/Desktop/Learning-Synthesis/src/testing.py", line 230, in test_agent_all_instances
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,used_testing_ebudget)
+  File "/home/marco/Desktop/Learning-Synthesis/src/util.py", line 49, in best_generalization_agent
+    df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all_"+ joinAsStrings([up_to, timeout,total,ebudget])+ ".csv")
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/util/_decorators.py", line 311, in wrapper
+    return func(*args, **kwargs)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 586, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 482, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 811, in __init__
+    self._engine = self._make_engine(self.engine)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/readers.py", line 1040, in _make_engine
+    return mapping[engine](self.f, **self.options)  # type: ignore[call-arg]
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/c_parser_wrapper.py", line 51, in __init__
+    self._open_handles(src, kwds)
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/parsers/base_parser.py", line 222, in _open_handles
+    self.handles = get_handle(
+  File "/home/marco/.local/lib/python3.8/site-packages/pandas/io/common.py", line 702, in get_handle
+    handle = open(
+FileNotFoundError: [Errno 2] No such file or directory: 'experiments/results/DP_2_2/GPUboolean255_255_5/generalization_all__15_10h_100_5000.csv'
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=31, out_features=255, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=255, out_features=255, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=255, out_features=5, bias=True)
+    (5): ReLU()
+    (6): Linear(in_features=5, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Testing all DP with agent:  8
+Testing agent with DP 1 1
+Testing agent with DP 1 2
+Testing agent with DP 1 3
+Testing agent with DP 1 4
+Testing agent with DP 1 5
+Testing agent with DP 1 6
+Testing agent with DP 1 7
+Testing agent with DP 1 8
+Testing agent with DP 1 9
+Testing agent with DP 1 10
+Testing agent with DP 1 11
+Testing agent with DP 1 12
+Testing agent with DP 1 13
+Testing agent with DP 1 14
+Testing agent with DP 1 15
+Testing agent with DP 2 1
+Testing agent with DP 2 2
+Testing agent with DP 2 3
+Testing agent with DP 2 4
+Testing agent with DP 2 5
+Testing agent with DP 2 6
+Testing agent with DP 2 7
+Testing agent with DP 2 8
+Testing agent with DP 2 9
+Testing agent with DP 2 10
+Testing agent with DP 2 11
+Testing agent with DP 2 12
+Testing agent with DP 2 13
+Testing agent with DP 2 14
+Testing agent with DP 2 15
+Testing agent with DP 3 1
+Testing agent with DP 3 2
+Testing agent with DP 3 3
+Testing agent with DP 3 4
+Testing agent with DP 3 5
+Testing agent with DP 3 6
+Testing agent with DP 3 7
+Testing agent with DP 3 8
+Testing agent with DP 3 9
+Testing agent with DP 3 10
+Testing agent with DP 3 11
+Testing agent with DP 3 12
+Testing agent with DP 3 13
+Testing agent with DP 3 14
+Testing agent with DP 3 15
+Testing agent with DP 4 1
+Testing agent with DP 4 2
+Testing agent with DP 4 3
+Testing agent with DP 4 4
+Testing agent with DP 4 5
+Testing agent with DP 4 6
+Testing agent with DP 4 7
+Testing agent with DP 4 8
+Testing agent with DP 4 9
+Testing agent with DP 4 10
+Testing agent with DP 4 11
+Testing agent with DP 4 12
+Testing agent with DP 4 13
+Testing agent with DP 4 14
+Testing agent with DP 4 15
+Testing agent with DP 5 1
+Testing agent with DP 5 2
+Testing agent with DP 5 3
+Testing agent with DP 5 4
+Testing agent with DP 5 5
+Testing agent with DP 5 6
+Testing agent with DP 5 7
+Testing agent with DP 5 8
+Testing agent with DP 6 1
+Solved 67 instances
+Traceback (most recent call last):
+  File "src/train.py", line 165, in <module>
+    test_agent_all_instances(training_contexts[0][0], file=experiment_folder, up_to=15, timeout="10m",
+  File "/home/marco/Desktop/Learning-Synthesis/src/testing.py", line 230, in test_agent_all_instances
+    idx_agent = selection(problem, file,up_to, used_testing_timeout,total,used_testing_ebudget)
+TypeError: best_agent_2_2() takes 2 positional arguments but 6 were given

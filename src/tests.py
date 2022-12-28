@@ -109,7 +109,7 @@ class ExperimentalTester:
     def testSampleAgentsAreStoredCorrectly(self):
         pathToModel = results_path(self.training_contexts[0][0], file = self.modelName)
         #rmtree(pathToModel, ignore_errors=True)
-        train_agent(instances = self.training_contexts, file = self.modelName, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features, total_steps=100, copy_freq=10)
+        train_agent(instances = self.training_contexts, file = self.modelName, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features, total_steps=100, copy_freq=10, pathToAgents=)
         modelFolderFiles = os.listdir(pathToModel)
         modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(pathToModel + '/' + f)]
         assert(len(modelFolderFiles)>0)

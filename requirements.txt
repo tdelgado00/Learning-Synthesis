@@ -9,4 +9,5 @@ prettytable~=2.5.0
 torch~=1.12.1
 matplotlib~=3.5.1
 seaborn~=0.11.2
+torch_xla
 jpype1
