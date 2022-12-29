@@ -10,7 +10,6 @@ import os
 
 
 def train_agent(instances,
-                file,
                 agent_params,
                 features,
                 quantum_steps=10000,
@@ -29,12 +28,13 @@ def train_agent(instances,
 
     """
 
-    printTrainingCharacteristics(agent_params, env, features, file, instances)
+    printTrainingCharacteristics(agent_params, env, features, pathToAgents, instances)
 
     agent_params["nfeatures"] = env[instances[0]].nfeatures
 
-    if file is not None:
-        file = results_path(instances[0][0], file=file)
+    #if file is not None:
+      #  file = results_path(instances[0][0], file=file)
+
 
 
 
@@ -48,8 +48,8 @@ def train_agent(instances,
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
                     save_at_end=True, early_stopping=early_stopping, pathToAgents=pathToAgents)
 
-    if file is not None:
-        with open(file + "/" + "training_data.pkl", "wb") as f:
+    if pathToAgents is not None:
+        with open(pathToAgents + "/" + "training_data.pkl", "wb") as f:
             pickle.dump((agent.training_data, agent.params, env[instances[0]].info), f)
 
 
@@ -59,10 +59,10 @@ def initializeEnvironments(env, features, instances):
         env[instance] = DCSSolverEnv(problem, n, k, features )
 
 
-def printTrainingCharacteristics(agent_params, env, features, file, instances):
+def printTrainingCharacteristics(agent_params, env, features, path, instances):
     print("Starting training for instances", instances)
     print("Number of features:", env[instances[0]].nfeatures)
-    print("File:", file)
+    print("Path:", path)
     print("Agent params:", agent_params)
     print("Features:", features)
 

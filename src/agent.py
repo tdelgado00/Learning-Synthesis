@@ -114,7 +114,7 @@ class Agent:
             else:
                 obs = obs2
 
-            if self.training_steps % copy_freq == 0 and self.save_file is not None:
+            if self.training_steps % copy_freq == 0 and pathToAgents is not None:
                 self.save(env.info, path=pathToAgents)
 
             if self.params["target q"] and self.training_steps % self.params["reset target freq"] == 0:
@@ -147,7 +147,7 @@ class Agent:
             if self.epsilon > self.params["last epsilon"] + 1e-10:
                 self.epsilon -= epsilon_step
 
-        if self.save_file is not None and save_at_end:
+        if pathToAgents is not None and save_at_end:
             self.save(env.info, pathToAgents)
         return obs.copy()
 
@@ -183,10 +183,10 @@ class Agent:
         self.model.batch_update(np.array(action_featuress), rewards + values)
 
     def save(self, env_info, path):
-        os.makedirs(self.save_file, exist_ok=True)
+        os.makedirs(path, exist_ok=True)
         OnnxModel(self.model).save(path + "/" + str(self.save_idx))
 
-        with open(self.save_file + "/" + str(self.save_idx) + ".json", "w") as f:
+        with open(path + "/" + str(self.save_idx) + ".json", "w") as f:
             info = {
                 "training time": time.time() - self.training_start,
                 "training steps": self.training_steps,
