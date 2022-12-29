@@ -273,7 +273,7 @@ def test_random_all_instances(problem, up_to, timeout="10m", name="all_random", 
 
 
 def test_training_agents_generalization(problem, file, up_to, timeout, total=100, max_frontier=1000000,
-                                        solved_crit=budget_and_time, ebudget = -1, verbose=True):
+                                        solved_crit=budget_and_time, ebudget = -1, verbose=True, agentPath = None):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
     """
         + *problem:* a string indicating the name of the problem to test the agent at.
@@ -287,25 +287,25 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
     """
     df = []
     start = time.time()
-    agents_saved = sorted([int(f[:-5]) for f in os.listdir(results_path(problem, file=file)) if "onnx" in f])
+    #breakpoint()
+    agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentPath) if "onnx" in f])
     np.random.seed(0)
     tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
     for i in tested_agents:
-        path = agent_path(problem, file, i)
 
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
         if verbose: print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(path, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False)[0])
+                    df.append(test_agent(agentPath, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False)[0])
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):
                         solved[n][k] = True
         if verbose: print("Solved:", np.sum(solved))
 
     df = pd.DataFrame(df)
-    df.to_csv(results_path(problem, 2, 2, file) + "/generalization_all" + joinAsStrings([up_to, timeout,total,ebudget])+ ".csv")
+    df.to_csv(agentPath + "/generalization_all" + joinAsStrings([up_to, timeout,total,ebudget])+ ".csv")
 
 
 def get_problem_labels(problem, eps=5):

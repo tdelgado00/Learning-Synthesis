@@ -108,22 +108,25 @@ class ExperimentalTester:
 
     def testSampleAgentsAreStoredCorrectly(self, problem):
         #rmtree(pathToModel, ignore_errors=True)
+
         correct_path_format = "experiments/results/test/test_1/" + problem
         train_agent(instances = self.training_contexts, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features, total_steps=100, copy_freq=10, pathToAgents=correct_path_format)
         modelFolderFiles = os.listdir(correct_path_format)
         modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(correct_path_format + '/' + f)]
         assert(len(modelFolderFiles)>0)
         print("PASSED")
-    def testSampleAgentsEvaluationsAreStoredCorrectly(self):
-        pathToModel = results_path(self.training_contexts[0][0], file=self.modelName)
-        pathToCsv = pathToModel + "/generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv"
+    def testSampleAgentsEvaluationsAreStoredCorrectly(self, problem):
+
+        correct_path_format = "experiments/results/test/test_1/" + problem
+        #breakpoint()
+        pathToCsv = correct_path_format + "/generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv"
         try:
             os.remove(pathToCsv)
         except FileNotFoundError:
             print("Not previously evaluated")
-        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", total=100, ebudget=100, verbose=True)
+        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", total=100, ebudget=100, verbose=True, agentPath=correct_path_format)
 
-        assert("generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv" in os.listdir(pathToModel))
+        assert("generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv" in os.listdir(correct_path_format))
         print("PASSED")
 
     def testSampleAgentsGeneralizationIsStoredCorrectly(self):
@@ -179,5 +182,6 @@ if __name__ == "__main__":
 
 
         tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
-        tester.testSampleAgentsAreStoredCorrectly(problem)
+        #tester.testSampleAgentsAreStoredCorrectly(problem)
+        tester.testSampleAgentsEvaluationsAreStoredCorrectly(problem)
     #tests()

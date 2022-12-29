@@ -59,7 +59,8 @@ def best_generalization_agent(problem, file,up_to=None, used_testing_timeout=Non
 
 
 def get_agent_info(path):
-    with open(path[:-5] + ".json", "r") as f:
+    #breakpoint()
+    with open(path + "/0.json", "r") as f:
         info = json.load(f)
     return info
 
