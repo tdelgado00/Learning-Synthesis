@@ -35,13 +35,44 @@ def expanded_transitions_through_whole_problem_for_agent(filename):
 def scatterplot(filename):
     raise NotImplementedError
 
-def metric_evolution_over_agent_training(path, n, k, metric_column_name):
+def metric_evolution_over_agents(path, n, k, metric_column_name):
     df = pd.read_csv(path)
     df = notExceeded(df)
     df = df[(df['n']==n) & (df['k']==k)]
     return -df[[metric_column_name, "idx"]]
 
-def
+
+def align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
+    aligned = pd.DataFrame(columns=selected_agent_df.columns)
+    for index, row in mono_df.iterrows():
+        n, k = row["n"], row["k"]
+        selected_row = selected_agent_df.loc[(selected_agent_df['n']==n) & (selected_agent_df['k']==k)]
+        if len(selected_row) != 0:
+            aligned = pd.concat([aligned,selected_row])
+
+    return aligned
+
+def aligned_transitions_by_total_plant_size(selected_agent_path, mono_path ="experiments/results/ResultsPaper/AT.csv"):
+    selected_agent_df = pd.read_csv(selected_agent_path)
+    monolithic_df = pd.read_csv(mono_path)
+
+    #order_by_plant_size = monolithic_df
+    mono = monolithic_expansions(mono_path)[["expanded transitions", "n", "k"]]
+
+    mono.sort_values("expanded transitions", inplace=True)
+
+    selected_agent_df = align_agent_rows_with_mono_by_parameters(mono, selected_agent_df)
+
+    return selected_agent_df[["expanded_transitions","n","k"]]
+def monolithic_expansions(path):
+    monolithic_df = pd.read_csv(path)
+    monolithic_df = monolithic_df.loc[monolithic_df["controllerType"] == "mono"]
+    monolithic_df["n"] = monolithic_df["testcase"].apply(lambda t: int(t.split("-")[1]))
+    monolithic_df["k"] = monolithic_df["testcase"].apply(lambda t: int(t.split("-")[2]))
+    monolithic_df["expanded transitions"] = monolithic_df["expandedTransitions"]
+    monolithic_df = monolithic_df.dropna(subset=["expanded transitions"])
+    monolithic_df = fill_df(monolithic_df, 15)
+    return monolithic_df
 
 if __name__ == '__main__':
     """problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
@@ -53,9 +84,13 @@ if __name__ == '__main__':
     #TODO(3): scatterplot
     print(table_solved_instances(["labelsThatReach/all_15_15000_TO:10h.csv","all_random1_1500015000.csv", "all_ra_15000t.csv" ], problems, ["best/5000 with 15000","random 15000", "ra 15000"]))
     """
-    series = metric_evolution_over_agent_training("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv", 2, 2, "expanded transitions")
-    #series = metric_evolution_over_agent_training("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean/upTo:15_timeout2h_ebudget5000_generalization_all.csv", 2, 2, "expanded transitions")
+    path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv"
+    path2 = "/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean_2/all_AT_15_-1_TO:10m.csv"
+    series = metric_evolution_over_agents(path, 2, 2, "expanded transitions")
+    #series = metric_evolution_over_agents("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean/upTo:15_timeout2h_ebudget5000_generalization_all.csv", 2, 2, "expanded transitions")
 
     sns.lineplot(data = series, y="expanded transitions", x="idx")
-    #breakpoint()
-    plt.show()
+
+    #plt.show()
+    ##the correct ordering for the scatterPlot...
+    aligned_transitions_by_total_plant_size(path2)
