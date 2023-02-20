@@ -1,0 +1,27 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),OutOfMem,algorithm,heuristic,problem,n,k
+0,31.0,17.0,40.0,21.0,186.0,4.0,1.0,1.0,4.0,15.5,27.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,1
+1,85.0,33.0,127.0,42.0,232.0,15.0,5.0,1.0,14.0,18.48,57.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,2
+2,175.0,54.0,271.0,70.0,310.0,23.0,13.0,1.0,34.0,23.92,104.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,3
+3,297.0,89.0,456.0,118.0,356.0,18.0,23.0,1.0,62.0,14.13,156.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,4
+4,451.0,115.0,733.0,153.0,479.0,37.0,56.0,1.0,98.0,37.31,224.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,5
+5,637.0,151.0,1060.0,203.0,647.0,61.0,78.0,1.0,140.0,82.4,271.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,6
+6,855.0,174.0,1466.0,234.0,858.0,94.0,100.0,6.0,194.0,147.4,381.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,7
+7,1105.0,237.0,1833.0,321.0,1020.0,56.0,138.0,1.0,254.0,29.81,497.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,8
+8,1387.0,277.0,2473.0,383.0,1616.0,207.0,180.0,1.0,321.0,51.22,622.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,9
+9,1701.0,313.0,3091.0,436.0,2448.0,279.0,230.0,1.0,396.0,41.21,783.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,10
+10,2047.0,389.0,3604.0,538.0,2405.0,185.0,284.0,27.0,482.0,97.37,1074.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,11
+11,2425.0,465.0,4272.0,642.0,2732.0,168.0,332.0,72.0,574.0,51.93,1212.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,12
+12,2835.0,473.0,5285.0,669.0,4519.0,491.0,437.0,1.0,674.0,154.4,1342.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,13
+13,3277.0,578.0,5762.0,803.0,3489.0,160.0,472.0,97.0,782.0,181.77,1701.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,14
+14,3751.0,621.0,7060.0,881.0,11584.0,712.0,565.0,1.0,898.0,122.27,2152.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,1,15
+15,188.0,90.0,305.0,151.0,321.0,42.0,4.0,1.0,52.0,27.92,110.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,2,1
+16,1161.0,221.0,2227.0,413.0,1173.0,172.0,249.0,1.0,430.0,55.87,417.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,2,2
+17,5031.0,482.0,10525.0,915.0,11067.0,1121.0,1089.0,1.0,1909.0,195.01,2418.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,2,3
+18,15467.0,872.0,34865.0,1675.0,106746.0,3301.0,4094.0,1.0,6340.0,401.89,13058.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,2,4
+19,,,,,,,,,,,,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,2,5
+20,1159.0,355.0,2494.0,922.0,1372.0,363.0,16.0,1.0,334.0,134.0,578.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,3,1
+21,14915.0,1681.0,38014.0,4741.0,90132.0,3754.0,2369.0,1.0,8157.0,305.49,21429.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,3,2
+22,,,,,,,,,,,,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,3,3
+23,7149.0,1787.0,19994.0,6620.0,23400.0,2778.0,30.0,1.0,1630.0,271.53,8414.0,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,4,1
+24,,,,,,,,,,,,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,4,2
+25,,,,,,,,,,,,False,new,experiments/results/CM_2_2/eta5e-6/99.onnx,CM,5,1

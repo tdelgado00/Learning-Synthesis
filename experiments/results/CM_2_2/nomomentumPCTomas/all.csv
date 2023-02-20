@@ -1,0 +1,27 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),OutOfMem,algorithm,heuristic,problem,n,k
+0,25.0,17.0,33.0,21.0,186.0,6.0,1.0,1.0,3.0,14.99,23.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,1
+1,58.0,36.0,84.0,45.0,209.0,12.0,12.0,1.0,5.0,17.44,37.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,2
+2,116.0,56.0,174.0,72.0,268.0,25.0,26.0,1.0,9.0,21.92,72.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,3
+3,163.0,84.0,246.0,109.0,329.0,39.0,34.0,1.0,13.0,17.76,102.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,4
+4,296.0,114.0,485.0,150.0,465.0,117.0,53.0,1.0,21.0,68.82,127.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,5
+5,281.0,151.0,435.0,199.0,462.0,63.0,83.0,1.0,11.0,66.03,150.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,6
+6,482.0,179.0,824.0,239.0,909.0,181.0,133.0,8.0,26.0,130.92,211.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,7
+7,480.0,203.0,814.0,274.0,981.0,199.0,122.0,1.0,17.0,136.2,214.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,8
+8,635.0,239.0,1066.0,321.0,1280.0,139.0,281.0,1.0,13.0,128.06,237.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,9
+9,1269.0,290.0,2244.0,397.0,1940.0,553.0,303.0,50.0,68.0,17.36,362.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,10
+10,960.0,373.0,1695.0,517.0,1962.0,214.0,493.0,1.0,28.0,149.18,306.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,11
+11,1041.0,380.0,1820.0,519.0,2188.0,222.0,484.0,18.0,45.0,46.56,340.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,12
+12,1104.0,431.0,1894.0,585.0,1907.0,73.0,694.0,1.0,19.0,124.24,351.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,13
+13,1347.0,441.0,2391.0,587.0,2565.0,207.0,768.0,22.0,49.0,89.08,417.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,14
+14,1953.0,608.0,3604.0,852.0,15655.0,620.0,974.0,1.0,53.0,224.82,643.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,1,15
+15,179.0,90.0,324.0,154.0,374.0,63.0,0.0,1.0,79.0,17.69,142.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,2,1
+16,1091.0,280.0,2176.0,513.0,1422.0,330.0,65.0,4.0,527.0,32.62,472.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,2,2
+17,4879.0,502.0,10784.0,959.0,17629.0,1418.0,729.0,10.0,2563.0,150.01,3115.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,2,3
+18,15071.0,821.0,36063.0,1611.0,361327.0,6655.0,1622.0,2.0,7188.0,168.84,30514.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,2,4
+19,,,,,,,,,,,,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,2,5
+20,1128.0,355.0,2769.0,922.0,1659.0,452.0,8.0,1.0,910.0,148.93,506.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,3,1
+21,14583.0,1748.0,40645.0,4878.0,206316.0,5408.0,292.0,6.0,16503.0,63.51,20172.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,3,2
+22,,,,,,,,,,,,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,3,3
+23,6910.0,1787.0,21632.0,6620.0,52108.0,3721.0,23.0,1.0,7909.0,186.24,4355.0,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,4,1
+24,,,,,,,,,,,,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,4,2
+25,,,,,,,,,,,,False,new,experiments/results/CM_2_2/nomomentum/3.onnx,CM,5,1

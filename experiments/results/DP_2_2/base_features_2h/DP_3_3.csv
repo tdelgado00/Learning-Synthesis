@@ -1,0 +1,26 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,ra feature,idx
+0,1052,158,1574,232,1347,70,0,100,0,145.86,1144.0,new,experiments/results/DP_2_2/base_features_2h/0.onnx,DP,3,3,56.825478315353394,50000,1e-05,20,0.1,12,False,0
+1,1367,813,2506,1615,1441,4,4,584,20,22.34,1268.0,new,experiments/results/DP_2_2/base_features_2h/5.onnx,DP,3,3,325.22900199890137,300000,1e-05,20,0.1,12,False,5
+2,162,49,203,57,226,4,3,1,3,12.49,83.0,new,experiments/results/DP_2_2/base_features_2h/10.onnx,DP,3,3,594.0974056720734,550000,1e-05,20,0.1,12,False,10
+3,2498,1501,5610,3377,8843,615,9,1074,7,267.07,7813.0,new,experiments/results/DP_2_2/base_features_2h/15.onnx,DP,3,3,889.3332555294037,800000,1e-05,20,0.1,12,False,15
+4,1780,563,3142,968,1964,19,5,677,26,175.56,1792.0,new,experiments/results/DP_2_2/base_features_2h/20.onnx,DP,3,3,1203.8495981693268,1050000,1e-05,20,0.1,12,False,20
+5,958,201,1695,372,1227,13,17,51,18,41.05,1046.0,new,experiments/results/DP_2_2/base_features_2h/25.onnx,DP,3,3,1505.3253014087677,1300000,1e-05,20,0.1,12,False,25
+6,2631,110,5877,190,11879,2244,8,1,237,213.89,5889.0,new,experiments/results/DP_2_2/base_features_2h/30.onnx,DP,3,3,1820.8619515895844,1550000,1e-05,20,0.1,12,False,30
+7,914,466,1694,790,1014,64,17,116,3,66.86,814.0,new,experiments/results/DP_2_2/base_features_2h/35.onnx,DP,3,3,2114.400144815445,1800000,1e-05,20,0.1,12,False,35
+8,1497,213,2687,369,3025,270,2,71,3,26.52,2556.0,new,experiments/results/DP_2_2/base_features_2h/40.onnx,DP,3,3,2407.773590326309,2050000,1e-05,20,0.1,12,False,40
+9,2832,165,6611,305,16022,2231,0,1,160,355.07,8936.0,new,experiments/results/DP_2_2/base_features_2h/45.onnx,DP,3,3,2707.070904493332,2300000,1e-05,20,0.1,12,False,45
+10,1885,310,3184,521,4875,528,2,27,8,95.37,3982.0,new,experiments/results/DP_2_2/base_features_2h/50.onnx,DP,3,3,2993.493992805481,2550000,1e-05,20,0.1,12,False,50
+11,1392,233,2669,404,3394,821,5,2,24,112.86,2319.0,new,experiments/results/DP_2_2/base_features_2h/55.onnx,DP,3,3,3270.845641374588,2800000,1e-05,20,0.1,12,False,55
+12,2570,271,4394,428,10158,862,2,100,8,267.89,8794.0,new,experiments/results/DP_2_2/base_features_2h/60.onnx,DP,3,3,3562.73074054718,3050000,1e-05,20,0.1,12,False,60
+13,1731,49,3048,57,4118,584,11,1,8,223.85,3146.0,new,experiments/results/DP_2_2/base_features_2h/65.onnx,DP,3,3,3842.767293214798,3300000,1e-05,20,0.1,12,False,65
+14,1982,801,4106,1462,6185,941,21,218,82,210.35,4400.0,new,experiments/results/DP_2_2/base_features_2h/70.onnx,DP,3,3,4132.3011865615845,3550000,1e-05,20,0.1,12,False,70
+15,2277,849,4882,1556,5903,900,6,223,160,245.46,4063.0,new,experiments/results/DP_2_2/base_features_2h/75.onnx,DP,3,3,4441.790944337845,3800000,1e-05,20,0.1,12,False,75
+16,1906,198,3654,318,5857,985,5,3,103,276.05,3826.0,new,experiments/results/DP_2_2/base_features_2h/80.onnx,DP,3,3,4764.145795106888,4050000,1e-05,20,0.1,12,False,80
+17,1915,316,3787,563,6512,871,5,9,66,265.53,4696.0,new,experiments/results/DP_2_2/base_features_2h/85.onnx,DP,3,3,5036.693822860718,4300000,1e-05,20,0.1,12,False,85
+18,1717,872,3338,1606,5566,900,4,144,12,223.93,4219.0,new,experiments/results/DP_2_2/base_features_2h/90.onnx,DP,3,3,5321.4058747291565,4550000,1e-05,20,0.1,12,False,90
+19,2676,1332,6512,2828,14390,2312,7,117,228,213.79,8129.0,new,experiments/results/DP_2_2/base_features_2h/95.onnx,DP,3,3,5591.15548825264,4800000,1e-05,20,0.1,12,False,95
+20,2594,57,6135,74,14027,2106,5,1,2,156.74,9190.0,new,experiments/results/DP_2_2/base_features_2h/100.onnx,DP,3,3,5861.369204044342,5050000,1e-05,20,0.1,12,False,100
+21,2835,1733,7032,4057,20567,2196,7,390,213,330.49,14340.0,new,experiments/results/DP_2_2/base_features_2h/105.onnx,DP,3,3,6133.969181776047,5300000,1e-05,20,0.1,12,False,105
+22,2615,1402,6082,3144,8768,2167,7,164,220,183.74,4434.0,new,experiments/results/DP_2_2/base_features_2h/110.onnx,DP,3,3,6407.847659111023,5550000,1e-05,20,0.1,12,False,110
+23,2831,1560,6586,3577,19480,1434,5,565,209,396.07,13507.0,new,experiments/results/DP_2_2/base_features_2h/115.onnx,DP,3,3,6680.88761639595,5800000,1e-05,20,0.1,12,False,115
+24,2243,158,5005,269,10055,1559,6,1,56,167.97,6444.0,new,experiments/results/DP_2_2/base_features_2h/120.onnx,DP,3,3,6953.6636254787445,6050000,1e-05,20,0.1,12,False,120

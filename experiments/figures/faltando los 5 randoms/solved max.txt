@@ -1,0 +1,18 @@
+AT
+RA 60
+boolean 79 at idx: 63
+BW
+RA 39
+boolean 123 at idx: 40
+CM
+RA 20
+boolean 22 at idx: 88
+DP
+RA 102
+boolean 71 at idx: 69
+TA
+RA 43
+boolean 76 at idx: 67
+TL
+RA 223
+boolean 225 at idx: 4

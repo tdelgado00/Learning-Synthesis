@@ -1,0 +1,25 @@
+AT
+RA 6991.0
+boolean 855 65
+boolean_2 586 99
+boolean_3 635 96
+BW
+RA 37556.0
+boolean 143 40
+boolean_2 134 46
+boolean_3 147 60
+DP
+RA 202.0
+boolean 1168 54
+boolean_2 360 47
+boolean_3 873 45
+TA
+RA 6292.0
+boolean 671 67
+boolean_2 1784 77
+boolean_3 2119 62
+TL
+RA 14
+boolean 18 53
+boolean_2 18 51
+boolean_3 18 49

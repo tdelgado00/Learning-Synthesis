@@ -1,0 +1,24 @@
+AT
+boolean 30
+boolean_2 30
+boolean_3 30
+BW
+boolean 20
+boolean_2 20
+boolean_3 20
+CM
+boolean 795
+boolean_2 778
+boolean_3 1397
+DP
+boolean 30
+boolean_2 38
+boolean_3 41
+TA
+boolean 56
+boolean_2 70
+boolean_3 91
+TL
+boolean 10
+boolean_2 11
+boolean_3 11

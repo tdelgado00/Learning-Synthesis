@@ -404,6 +404,7 @@ def plot_scatter_generalization(used_problems, used_files, data, path, budget="1
         axs[i].get_legend().remove()
         handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
         axs[0].legend(handles, labels, prop={'size': 16}, loc="upper left")
+        breakpoint()
         axs[i].set_yscale("log")
         axs[i].set_xscale("log")
         if i > 0:

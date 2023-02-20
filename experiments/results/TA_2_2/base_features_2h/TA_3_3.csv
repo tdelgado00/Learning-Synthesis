@@ -1,0 +1,26 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),algorithm,heuristic,problem,n,k,training time,training steps,eta,nnsize,epsilon,nfeatures,ra feature,idx
+0,1091,526,3534,1218,3252,1996,0,1,328,54.91,911.0,new,experiments/results/TA_2_2/base_features_2h/0.onnx,TA,3,3,59.65249800682068,50000,1e-05,20,0.1,12,False,0
+1,1091,439,3315,924,4559,1,0,1,22,34.24,4364.0,new,experiments/results/TA_2_2/base_features_2h/5.onnx,TA,3,3,342.1169421672821,300000,1e-05,20,0.1,12,False,5
+2,1088,268,2926,482,3007,1396,0,1,222,191.07,1481.0,new,experiments/results/TA_2_2/base_features_2h/10.onnx,TA,3,3,636.4788825511932,550000,1e-05,20,0.1,12,False,10
+3,832,258,2337,465,2815,1059,0,1,161,100.88,1342.0,new,experiments/results/TA_2_2/base_features_2h/15.onnx,TA,3,3,927.1730530261993,800000,1e-05,20,0.1,12,False,15
+4,903,283,2513,532,2229,607,0,1,219,157.09,1066.0,new,experiments/results/TA_2_2/base_features_2h/20.onnx,TA,3,3,1213.676121711731,1050000,1e-05,20,0.1,12,False,20
+5,890,441,2223,909,2351,560,0,1,8,48.19,1222.0,new,experiments/results/TA_2_2/base_features_2h/25.onnx,TA,3,3,1502.873791217804,1300000,1e-05,20,0.1,12,False,25
+6,1088,248,2517,434,2766,1,0,1,58,124.99,2599.0,new,experiments/results/TA_2_2/base_features_2h/30.onnx,TA,3,3,1791.9422512054443,1550000,1e-05,20,0.1,12,False,30
+7,462,168,923,249,1050,431,0,1,10,108.36,668.0,new,experiments/results/TA_2_2/base_features_2h/35.onnx,TA,3,3,2083.771512746811,1800000,1e-05,20,0.1,12,False,35
+8,1051,284,2604,505,2551,1059,0,1,348,160.02,1135.0,new,experiments/results/TA_2_2/base_features_2h/40.onnx,TA,3,3,2373.0292360782623,2050000,1e-05,20,0.1,12,False,40
+9,1072,269,1866,429,3106,87,0,1,9,78.65,2838.0,new,experiments/results/TA_2_2/base_features_2h/45.onnx,TA,3,3,2661.333312034607,2300000,1e-05,20,0.1,12,False,45
+10,1072,239,2314,408,2807,815,0,1,195,79.9,1748.0,new,experiments/results/TA_2_2/base_features_2h/50.onnx,TA,3,3,2956.558050632477,2550000,1e-05,20,0.1,12,False,50
+11,1072,245,1993,403,2556,450,0,1,8,149.64,1982.0,new,experiments/results/TA_2_2/base_features_2h/55.onnx,TA,3,3,3246.9826056957245,2800000,1e-05,20,0.1,12,False,55
+12,1088,329,2523,614,2147,9,0,1,233,48.89,1940.0,new,experiments/results/TA_2_2/base_features_2h/60.onnx,TA,3,3,3538.441865682602,3050000,1e-05,20,0.1,12,False,60
+13,1057,222,2205,354,3073,937,0,1,9,157.59,1992.0,new,experiments/results/TA_2_2/base_features_2h/65.onnx,TA,3,3,3835.5382006168365,3300000,1e-05,20,0.1,12,False,65
+14,1085,234,1960,383,3315,697,0,1,8,200.78,2560.0,new,experiments/results/TA_2_2/base_features_2h/70.onnx,TA,3,3,4129.157065153122,3550000,1e-05,20,0.1,12,False,70
+15,1085,248,2282,403,3138,670,0,1,286,136.88,2224.0,new,experiments/results/TA_2_2/base_features_2h/75.onnx,TA,3,3,4427.629196643829,3800000,1e-05,20,0.1,12,False,75
+16,1090,220,2099,353,3888,751,0,1,32,221.78,2963.0,new,experiments/results/TA_2_2/base_features_2h/80.onnx,TA,3,3,4721.597473859787,4050000,1e-05,20,0.1,12,False,80
+17,1039,266,2075,440,2894,648,0,1,83,201.79,2106.0,new,experiments/results/TA_2_2/base_features_2h/85.onnx,TA,3,3,5022.459642648697,4300000,1e-05,20,0.1,12,False,85
+18,1023,221,1876,375,2834,622,0,1,3,52.58,2101.0,new,experiments/results/TA_2_2/base_features_2h/90.onnx,TA,3,3,5317.155847787857,4550000,1e-05,20,0.1,12,False,90
+19,1053,187,1850,291,2913,639,0,1,8,19.58,2262.0,new,experiments/results/TA_2_2/base_features_2h/95.onnx,TA,3,3,5609.878816843033,4800000,1e-05,20,0.1,12,False,95
+20,1091,143,2178,201,2797,334,0,1,228,123.9,2173.0,new,experiments/results/TA_2_2/base_features_2h/100.onnx,TA,3,3,5908.541843175888,5050000,1e-05,20,0.1,12,False,100
+21,1091,238,2301,407,2624,757,0,1,300,130.7,1813.0,new,experiments/results/TA_2_2/base_features_2h/105.onnx,TA,3,3,6209.105182647705,5300000,1e-05,20,0.1,12,False,105
+22,1091,190,1955,293,3534,613,0,1,126,107.7,2718.0,new,experiments/results/TA_2_2/base_features_2h/110.onnx,TA,3,3,6502.07700753212,5550000,1e-05,20,0.1,12,False,110
+23,1054,329,2415,597,3722,1023,0,1,232,71.96,2162.0,new,experiments/results/TA_2_2/base_features_2h/115.onnx,TA,3,3,6805.866797447205,5800000,1e-05,20,0.1,12,False,115
+24,1091,282,2025,480,4027,665,0,1,13,23.7,3159.0,new,experiments/results/TA_2_2/base_features_2h/120.onnx,TA,3,3,7099.77178645134,6050000,1e-05,20,0.1,12,False,120
