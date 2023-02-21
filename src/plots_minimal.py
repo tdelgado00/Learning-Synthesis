@@ -44,26 +44,29 @@ def metric_evolution_over_agents(path, n, k, metric_column_name):
 
 def align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
     aligned = pd.DataFrame(columns=selected_agent_df.columns)
+    mono_sizes = []
     for index, row in mono_df.iterrows():
         n, k = row["n"], row["k"]
         selected_row = selected_agent_df.loc[(selected_agent_df['n']==n) & (selected_agent_df['k']==k)]
         if len(selected_row) != 0:
             aligned = pd.concat([aligned,selected_row])
+            mono_sizes.append(row["expanded transitions"])
+    aligned["mono_size"] = mono_sizes
 
     return aligned
 
-def aligned_transitions_by_total_plant_size(selected_agent_path, mono_path ="experiments/results/ResultsPaper/AT.csv"):
-    selected_agent_df = pd.read_csv(selected_agent_path)
-    monolithic_df = pd.read_csv(mono_path)
+def aligned_transitions_by_total_plant_size_one_problem(selected_agent_path, problem_name, mono_dirs_path ="experiments/results/ResultsPaper/"):
 
+    selected_agent_df = pd.read_csv(selected_agent_path)
+    mono_path = mono_dirs_path+problem_name+".csv"
+    monolithic_df = pd.read_csv(mono_path)
+    monolithic_df = monolithic_df[monolithic_df["controllerType"]=="mono"]
     #order_by_plant_size = monolithic_df
     mono = monolithic_expansions(mono_path)[["expanded transitions", "n", "k"]]
-
     mono.sort_values("expanded transitions", inplace=True)
-
     selected_agent_df = align_agent_rows_with_mono_by_parameters(mono, selected_agent_df)
 
-    return selected_agent_df[["expanded_transitions","n","k"]]
+    return selected_agent_df[["expanded transitions","n","k", "mono_size"]]
 def monolithic_expansions(path):
     monolithic_df = pd.read_csv(path)
     monolithic_df = monolithic_df.loc[monolithic_df["controllerType"] == "mono"]
@@ -74,6 +77,24 @@ def monolithic_expansions(path):
     monolithic_df = fill_df(monolithic_df, 15)
     return monolithic_df
 
+def aligned_transitions_by_total_plant_size_one_algorithm(algorithm_path_list, problem_name_list):
+    dfs = {}
+    assert(len(algorithm_path_list)==len(problem_name_list))
+    for (path,problem) in zip(algorithm_path_list,problem_name_list):
+        dfs.update({problem : aligned_transitions_by_total_plant_size_one_problem(path,problem)})
+
+    return dfs
+def aligned_transitions_by_total_plant_size(paths_by_algorithm, problem_name_list):
+    dfs_by_algorithm = {}
+    for (algorithm_name, paths) in paths_by_algorithm.items():
+        dfs_by_algorithm[algorithm_name] = aligned_transitions_by_total_plant_size_one_algorithm(paths.values(),problem_name_list)
+    return dfs_by_algorithm
+problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+path_dict = {
+"labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/"+ problem + "_2_2/labelsThatReach/all_15_15000_TO:10h.csv" for problem in problems},
+"boolean": {problem: "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/"+ problem + "_2_2/boolean/all_15_15000_TO:10h.csv" for problem in problems},
+"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems}
+}
 if __name__ == '__main__':
     """problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
     print(get_solved_series("labelsThatReach/all_15_15000_TO:10h.csv", problems))
@@ -84,8 +105,8 @@ if __name__ == '__main__':
     #TODO(3): scatterplot
     print(table_solved_instances(["labelsThatReach/all_15_15000_TO:10h.csv","all_random1_1500015000.csv", "all_ra_15000t.csv" ], problems, ["best/5000 with 15000","random 15000", "ra 15000"]))
     """
-    path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv"
-    path2 = "/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean_2/all_AT_15_-1_TO:10m.csv"
+    path = "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv"
+    path2 = "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/AT_2_2/boolean_2/all_15_-1_TO:10m.csv"
     series = metric_evolution_over_agents(path, 2, 2, "expanded transitions")
     #series = metric_evolution_over_agents("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean/upTo:15_timeout2h_ebudget5000_generalization_all.csv", 2, 2, "expanded transitions")
 
@@ -93,4 +114,26 @@ if __name__ == '__main__':
 
     #plt.show()
     ##the correct ordering for the scatterPlot...
-    aligned_transitions_by_total_plant_size(path2)
+    a = aligned_transitions_by_total_plant_size_one_problem(path_dict["boolean"]["AT"], "AT")
+
+    boolean_paths = [path_dict["boolean"][problem] for problem in problems]
+    ra_paths = [path_dict["RA"][problem] for problem in problems]
+    labelsThatReach_paths = [path_dict["labelsThatReach"][problem] for problem in problems]
+    dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
+
+    dfsdfs = aligned_transitions_by_total_plant_size(path_dict, problems)
+    breakpoint()
+    i = 0
+
+    fig, axs = plt.subplots(1,6,figsize=(5 * 6, 6))
+
+    for ax,problem in zip(axs,problems):
+        ax.scatter(x = dfsdfs["boolean"][problem]["mono_size"], y =dfsdfs["boolean"][problem]["expanded transitions"],color="red")
+        ax.scatter(x=dfsdfs["labelsThatReach"][problem]["mono_size"], y=dfsdfs["labelsThatReach"][problem]["expanded transitions"],
+                   color="blue")
+ 
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+        ax.autoscale(enable=None, axis="x", tight=True)
+    plt.tight_layout()
+    plt.savefig("scatter.jpg", dpi=500)
