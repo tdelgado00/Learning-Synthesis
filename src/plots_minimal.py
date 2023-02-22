@@ -2,7 +2,7 @@ import pandas as pd
 from util import *
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from typing import Dict
 class selectionPreprocessingData():
     def __init__(self, abs_path):
         print("Yet to be implemented")
@@ -39,7 +39,7 @@ def metric_evolution_over_agents(path, n, k, metric_column_name):
     df = pd.read_csv(path)
     df = notExceeded(df)
     df = df[(df['n']==n) & (df['k']==k)]
-    return -df[[metric_column_name, "idx"]]
+    return df[[metric_column_name, "idx"]]
 
 
 def align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
@@ -89,29 +89,51 @@ def aligned_transitions_by_total_plant_size(paths_by_algorithm, problem_name_lis
     for (algorithm_name, paths) in paths_by_algorithm.items():
         dfs_by_algorithm[algorithm_name] = aligned_transitions_by_total_plant_size_one_algorithm(paths.values(),problem_name_list)
     return dfs_by_algorithm
+
+
+def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]], problems = ["AT", "BW", "CM", "DP", "TA", "TL"], img_name = "scatter.jpg"):
+    """
+        In: A dictionary of dictionaries where each dictionary has the results of the final execution of the selected agent
+        Out: A scatterplot with the expanded transitions per finished problem, where the x-axis is the total plant size and the y-axis is the strategy's expanded transitions (log scale).
+        Each DataFrame must have the columns 'mono_size' and 'expanded transitions' (as the x and y axis respectively).
+
+    """
+    fig, axs = plt.subplots(1, 6, figsize=(5 * 6, 6))
+    colorMapping = {
+        "boolean" : "red",
+        "labelsThatReach" : "green",
+        "RA" : "black"
+
+    }
+    for ax, problem in zip(axs, problems):
+        for agent in agent_dfs.keys():
+            assert agent in colorMapping.keys(), "Color not supported"
+            ax.scatter(x=agent_dfs[agent][problem]["mono_size"], y=agent_dfs[agent][problem]["expanded transitions"],
+                       color=colorMapping[agent])
+            ax.set_yscale("log")
+            ax.set_xscale("log")
+            ax.autoscale(enable=None, axis="x", tight=True)
+    plt.tight_layout()
+    plt.savefig(img_name, dpi=500)
+
+
 problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
 path_dict = {
-"labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/"+ problem + "_2_2/labelsThatReach/all_15_15000_TO:10h.csv" for problem in problems},
-"boolean": {problem: "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/"+ problem + "_2_2/boolean/all_15_15000_TO:10h.csv" for problem in problems},
-"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems}
+"labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/labelsThatReach/all_15_15000_TO:10h.csv" for problem in problems},
+"boolean": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/boolean/all_15_15000_TO:10h.csv" for problem in problems},
+"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems}
 }
+
+
+
+
 if __name__ == '__main__':
-    """problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
-    print(get_solved_series("labelsThatReach/all_15_15000_TO:10h.csv", problems))
-    print(get_solved_series("labelsThatReach/all_15_-1_TO:10m.csv", problems))
-    print(get_solved_series("all_random1_1500015000.csv", problems))
-    print(get_solved_series("all_ra_30m_15.csv", problems))
-    #TODO(2): make this more verbose. Classes?
-    #TODO(3): scatterplot
-    print(table_solved_instances(["labelsThatReach/all_15_15000_TO:10h.csv","all_random1_1500015000.csv", "all_ra_15000t.csv" ], problems, ["best/5000 with 15000","random 15000", "ra 15000"]))
-    """
-    path = "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv"
-    path2 = "/home/marco/Desktop/Learning-Synthesis-newdirstructure/experiments/results/AT_2_2/boolean_2/all_15_-1_TO:10m.csv"
+
+    path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv"
+    path2 = "/home/marco/Desktop/Learning-Synthesis/experiments/experiments/results/AT_2_2/boolean_2/all_15_-1_TO:10m.csv"
     series = metric_evolution_over_agents(path, 2, 2, "expanded transitions")
-    #series = metric_evolution_over_agents("/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/boolean/upTo:15_timeout2h_ebudget5000_generalization_all.csv", 2, 2, "expanded transitions")
 
-    sns.lineplot(data = series, y="expanded transitions", x="idx")
-
+    #sns.lineplot(data = series, y="expanded transitions", x="idx")
     #plt.show()
     ##the correct ordering for the scatterPlot...
     a = aligned_transitions_by_total_plant_size_one_problem(path_dict["boolean"]["AT"], "AT")
@@ -122,18 +144,6 @@ if __name__ == '__main__':
     dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
     dfsdfs = aligned_transitions_by_total_plant_size(path_dict, problems)
-    breakpoint()
+
     i = 0
-
-    fig, axs = plt.subplots(1,6,figsize=(5 * 6, 6))
-
-    for ax,problem in zip(axs,problems):
-        ax.scatter(x = dfsdfs["boolean"][problem]["mono_size"], y =dfsdfs["boolean"][problem]["expanded transitions"],color="red")
-        ax.scatter(x=dfsdfs["labelsThatReach"][problem]["mono_size"], y=dfsdfs["labelsThatReach"][problem]["expanded transitions"],
-                   color="blue")
- 
-        ax.set_yscale("log")
-        ax.set_xscale("log")
-        ax.autoscale(enable=None, axis="x", tight=True)
-    plt.tight_layout()
-    plt.savefig("scatter.jpg", dpi=500)
+    transitions_scatter_by_agent(dfsdfs,img_name="trial_1.jpg")
