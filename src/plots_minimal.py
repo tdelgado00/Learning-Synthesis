@@ -2,28 +2,26 @@ import pandas as pd
 from util import *
 import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Dict
+from typing import Dict, OrderedDict
 
 
-def get_solved_series(filepath, problems):
-    solved_by_problem = pd.Series(index = problems ,dtype = float)
-    insert_solved_instances_for_each_problem(filepath, problems, solved_by_problem)
+def get_solved_series(filepath_by_problem : Dict, problem_names : list[str]):
+    solved_by_problem = pd.Series(index = problem_names ,dtype = float)
+    insert_solved_instances_for_each_problem(filepath_by_problem, solved_by_problem)
     return solved_by_problem
 
 
-def insert_solved_instances_for_each_problem(filepath, problems, solved_by_problem):
-    for problem in problems:
-        solved_instances = solved_by_agent(filepath)
+def insert_solved_instances_for_each_problem(filepath_by_problem : Dict, solved_by_problem : pd.Series):
+    for problem, path in filepath_by_problem.items():
+        solved_instances = solved_by_agent(path)
         solved_by_problem[problem] = solved_instances[0]
 
-def table_solved_instances(filepaths, problems, agent_names):
-    return pd.DataFrame([get_solved_series(filepath, problems) for filepath in filepaths], index = agent_names)
+def table_solved_instances( filepaths_by_agent : OrderedDict[str,Dict[str,str]], problems : list[str] = ["AT", "BW", "CM", "DP", "TA", "TL"]):
+    return pd.DataFrame([get_solved_series(filepaths, problems) for (agent_name ,filepaths) in filepaths_by_agent.items()], index = filepaths_by_agent.keys())
 
 def expanded_transitions_through_whole_problem_for_agent(filename):
     raise NotImplementedError
 
-def scatterplot(filename):
-    raise NotImplementedError
 
 def metric_evolution_over_agents(path, n, k, metric_column_name):
     df = pd.read_csv(path)
@@ -77,7 +75,7 @@ def aligned_transitions_by_total_plant_size_one_algorithm(algorithm_path_list, p
         dfs.update({problem : _aligned_transitions_by_total_plant_size_one_problem(path, problem)})
 
     return dfs
-def aligned_transitions_by_total_plant_size(paths_by_algorithm : Dict[str,  list[str]], problem_name_list : str):
+def aligned_transitions_by_total_plant_size(paths_by_algorithm : Dict[str,  list[str]], problem_name_list : str = ["AT", "BW", "CM", "DP", "TA", "TL"]):
     """
     In: A dictionary where keys are algorithm names and keys are a list of the paths to each problem performance .csv files.
     Out: The same dictionary, but replacing the list by a dictionary where keys are problem names and values are the respective DataFrames of the .csv files.
@@ -124,7 +122,8 @@ problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
 path_dict = {
 "labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/labelsThatReach/all_15_15000_TO:10h.csv" for problem in problems},
 "boolean": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/boolean/all_15_15000_TO:10h.csv" for problem in problems},
-"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems}
+"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems},
+"GPUboolean255_255_5" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/GPUboolean255_255_5/all_ra_15000t.csv" for problem in problems}
 }
 
 
@@ -141,11 +140,12 @@ if __name__ == '__main__':
     ##the correct ordering for the scatterPlot...
 
 
-    agents_results_by_name_and_problem = aligned_transitions_by_total_plant_size(path_dict, problems)
+    agents_results_by_name_and_problem = aligned_transitions_by_total_plant_size(path_dict)
     boolean_paths = path_dict["boolean"].values()
     dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
-    table_solved_instances()
 
+    res = table_solved_instances(path_dict)
+    breakpoint()
     i = 0
     #transitions_scatter_by_agent(agents_results_by_name_and_problem, img_name="trial_1.jpg")
