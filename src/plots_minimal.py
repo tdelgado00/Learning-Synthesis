@@ -3,31 +3,21 @@ from util import *
 import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import Dict
-class selectionPreprocessingData():
-    def __init__(self, abs_path):
-        print("Yet to be implemented")
-        self.df = pd.read_csv(abs_path)
 
-class selectedAgentData():
-    def __init__(self, abs_path):
-        print("Yet to be implemented")
-        self.df = pd.read_csv(abs_path)
 
-def get_solved_series(filename, problems):
-
+def get_solved_series(filepath, problems):
     solved_by_problem = pd.Series(index = problems ,dtype = float)
-    insert_solved_instances_for_each_problem(filename, problems, solved_by_problem)
+    insert_solved_instances_for_each_problem(filepath, problems, solved_by_problem)
     return solved_by_problem
 
 
-def insert_solved_instances_for_each_problem(filename, problems, solved_by_problem):
+def insert_solved_instances_for_each_problem(filepath, problems, solved_by_problem):
     for problem in problems:
-        path_to_csv = results_path(problem, file=filename)
-        solved_instances = solved_by_agent(path_to_csv)
+        solved_instances = solved_by_agent(filepath)
         solved_by_problem[problem] = solved_instances[0]
 
-def table_solved_instances(filenames, problems, agent_names):
-    return pd.DataFrame([get_solved_series(filename, problems) for filename in filenames], index = agent_names)
+def table_solved_instances(filepaths, problems, agent_names):
+    return pd.DataFrame([get_solved_series(filepath, problems) for filepath in filepaths], index = agent_names)
 
 def expanded_transitions_through_whole_problem_for_agent(filename):
     raise NotImplementedError
@@ -42,7 +32,7 @@ def metric_evolution_over_agents(path, n, k, metric_column_name):
     return df[[metric_column_name, "idx"]]
 
 
-def align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
+def _align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
     aligned = pd.DataFrame(columns=selected_agent_df.columns)
     mono_sizes = []
     for index, row in mono_df.iterrows():
@@ -55,8 +45,7 @@ def align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
 
     return aligned
 
-def aligned_transitions_by_total_plant_size_one_problem(selected_agent_path, problem_name, mono_dirs_path ="experiments/results/ResultsPaper/"):
-
+def _aligned_transitions_by_total_plant_size_one_problem(selected_agent_path, problem_name, mono_dirs_path ="experiments/results/ResultsPaper/"):
     selected_agent_df = pd.read_csv(selected_agent_path)
     mono_path = mono_dirs_path+problem_name+".csv"
     monolithic_df = pd.read_csv(mono_path)
@@ -64,7 +53,7 @@ def aligned_transitions_by_total_plant_size_one_problem(selected_agent_path, pro
     #order_by_plant_size = monolithic_df
     mono = monolithic_expansions(mono_path)[["expanded transitions", "n", "k"]]
     mono.sort_values("expanded transitions", inplace=True)
-    selected_agent_df = align_agent_rows_with_mono_by_parameters(mono, selected_agent_df)
+    selected_agent_df = _align_agent_rows_with_mono_by_parameters(mono, selected_agent_df)
 
     return selected_agent_df[["expanded transitions","n","k", "mono_size"]]
 def monolithic_expansions(path):
@@ -78,22 +67,30 @@ def monolithic_expansions(path):
     return monolithic_df
 
 def aligned_transitions_by_total_plant_size_one_algorithm(algorithm_path_list, problem_name_list):
+    """
+    In: A list of paths to a selected algorithm evaluations up to (15,15) for a set of problems, and their respective problem names.
+    Out:
+    """
     dfs = {}
     assert(len(algorithm_path_list)==len(problem_name_list))
     for (path,problem) in zip(algorithm_path_list,problem_name_list):
-        dfs.update({problem : aligned_transitions_by_total_plant_size_one_problem(path,problem)})
+        dfs.update({problem : _aligned_transitions_by_total_plant_size_one_problem(path, problem)})
 
     return dfs
-def aligned_transitions_by_total_plant_size(paths_by_algorithm, problem_name_list):
+def aligned_transitions_by_total_plant_size(paths_by_algorithm : Dict[str,  list[str]], problem_name_list : str):
+    """
+    In: A dictionary where keys are algorithm names and keys are a list of the paths to each problem performance .csv files.
+    Out: The same dictionary, but replacing the list by a dictionary where keys are problem names and values are the respective DataFrames of the .csv files.
+    """
     dfs_by_algorithm = {}
     for (algorithm_name, paths) in paths_by_algorithm.items():
         dfs_by_algorithm[algorithm_name] = aligned_transitions_by_total_plant_size_one_algorithm(paths.values(),problem_name_list)
     return dfs_by_algorithm
 
 
-def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]], problems = ["AT", "BW", "CM", "DP", "TA", "TL"], img_name = "scatter.jpg"):
+def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]], problems : list[str] = ["AT", "BW", "CM", "DP", "TA", "TL"], img_name : str = "scatter.jpg"):
     """
-        In: A dictionary of dictionaries where each dictionary has the results of the final execution of the selected agent
+        In: A dictionary of dictionaries where each dictionary has the results of the final execution of the selected agent. (As returned in aligned_transitions_by_total_plant_size)
         Out: A scatterplot with the expanded transitions per finished problem, where the x-axis is the total plant size and the y-axis is the strategy's expanded transitions (log scale).
         Each DataFrame must have the columns 'mono_size' and 'expanded transitions' (as the x and y axis respectively).
 
@@ -105,7 +102,9 @@ def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]]
         "RA" : "black"
 
     }
+
     for ax, problem in zip(axs, problems):
+        legends = []
         for agent in agent_dfs.keys():
             assert agent in colorMapping.keys(), "Color not supported"
             ax.scatter(x=agent_dfs[agent][problem]["mono_size"], y=agent_dfs[agent][problem]["expanded transitions"],
@@ -113,6 +112,10 @@ def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]]
             ax.set_yscale("log")
             ax.set_xscale("log")
             ax.autoscale(enable=None, axis="x", tight=True)
+            legends.append(agent)
+        ax.legend(legends)
+
+
     plt.tight_layout()
     plt.savefig(img_name, dpi=500)
 
@@ -136,14 +139,13 @@ if __name__ == '__main__':
     #sns.lineplot(data = series, y="expanded transitions", x="idx")
     #plt.show()
     ##the correct ordering for the scatterPlot...
-    a = aligned_transitions_by_total_plant_size_one_problem(path_dict["boolean"]["AT"], "AT")
 
-    boolean_paths = [path_dict["boolean"][problem] for problem in problems]
-    ra_paths = [path_dict["RA"][problem] for problem in problems]
-    labelsThatReach_paths = [path_dict["labelsThatReach"][problem] for problem in problems]
+
+    agents_results_by_name_and_problem = aligned_transitions_by_total_plant_size(path_dict, problems)
+    boolean_paths = path_dict["boolean"].values()
     dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
-    dfsdfs = aligned_transitions_by_total_plant_size(path_dict, problems)
+    table_solved_instances()
 
     i = 0
-    transitions_scatter_by_agent(dfsdfs,img_name="trial_1.jpg")
+    #transitions_scatter_by_agent(agents_results_by_name_and_problem, img_name="trial_1.jpg")
