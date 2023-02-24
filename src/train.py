@@ -94,10 +94,7 @@ def train_round_robin(agent, copy_freq, early_stopping, env, incremental, instan
             last_obs[instance] = agent.train(env[instance], max_eps=1, copy_freq=copy_freq,
                                              last_obs=last_obs.get(instance), early_stopping=early_stopping)
 
-
-if __name__ == "__main__":
-    start = time.time()
-    features = {
+features = {
         "ra feature": False,
         "context features": True,
         "labels": True,
@@ -109,7 +106,7 @@ if __name__ == "__main__":
         "labelsThatReach_feature": True,
         "only boolean": True,
     }
-    agent_params = {
+agent_params = {
         "eta": 1e-5,
         "first epsilon": 1.0,
         "last epsilon": 0.01,
@@ -126,6 +123,9 @@ if __name__ == "__main__":
         "momentum": 0.9,
         "nesterov": True
     }
+
+if __name__ == "__main__":
+    start = time.time()
 
     if len(sys.argv) != 2:
         print("A folder name to save results should be specified.")

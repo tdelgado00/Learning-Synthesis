@@ -70,7 +70,7 @@ def aligned_transitions_by_total_plant_size_one_algorithm(algorithm_path_list, p
     Out:
     """
     dfs = {}
-    assert(len(algorithm_path_list)==len(problem_name_list))
+    #assert(len(algorithm_path_list)==len(problem_name_list))
     for (path,problem) in zip(algorithm_path_list,problem_name_list):
         dfs.update({problem : _aligned_transitions_by_total_plant_size_one_problem(path, problem)})
 
@@ -97,7 +97,8 @@ def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]]
     colorMapping = {
         "boolean" : "red",
         "labelsThatReach" : "green",
-        "RA" : "black"
+        "RA" : "black",
+
 
     }
 
@@ -123,7 +124,7 @@ path_dict = {
 "labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/labelsThatReach/all_15_15000_TO:10h.csv" for problem in problems},
 "boolean": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/boolean/all_15_15000_TO:10h.csv" for problem in problems},
 "RA" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems},
-"GPUboolean255_255_5" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/GPUboolean255_255_5/all_ra_15000t.csv" for problem in problems}
+"GPUboolean255_255_5" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/GPUboolean255_255_5/all_15_15000_TO:10h.csv" for problem in ["DP"]}
 }
 
 
@@ -144,8 +145,9 @@ if __name__ == '__main__':
     boolean_paths = path_dict["boolean"].values()
     dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
+    #Print solved instances by agent, with paths specified in path_dict:
+    res = table_solved_instances(path_dict, problems=["DP"])
+    print(res)
 
-    res = table_solved_instances(path_dict)
-    breakpoint()
-    i = 0
-    #transitions_scatter_by_agent(agents_results_by_name_and_problem, img_name="trial_1.jpg")
+    #print scatter plot of expansions done by agent ordered by problem total size and log scaled:
+    transitions_scatter_by_agent(agents_results_by_name_and_problem, img_name="trial_1.jpg")
