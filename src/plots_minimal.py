@@ -95,7 +95,7 @@ def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]]
     """
     fig, axs = plt.subplots(1, 6, figsize=(5 * 6, 6))
     colorMapping = {
-        "boolean" : "red",
+        "boolean_1" : "red",
         "labelsThatReach" : "green",
         "RA" : "black",
 
@@ -121,10 +121,10 @@ def transitions_scatter_by_agent(agent_dfs : Dict[str , Dict[str, pd.DataFrame]]
 
 problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
 path_dict = {
-"labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/labelsThatReach/all_15_15000_TO:10h.csv" for problem in problems},
-"boolean": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/boolean/all_15_15000_TO:10h.csv" for problem in problems},
-"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/all_ra_15000t.csv" for problem in problems},
-"GPUboolean255_255_5" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/"+ problem + "_2_2/GPUboolean255_255_5/all_15_15000_TO:10h.csv" for problem in ["DP"]}
+"labelsThatReach": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/labelsThatReach/labelsThatReach_1/"+ problem + "/all_15_15000_TO:10h.csv" for problem in problems},
+"boolean_1": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean/boolean_1/"+ problem + "/all_15_15000_TO:10h.csv" for problem in problems},
+"RA" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/RA/"+ problem + "/all_ra_15000t.csv" for problem in problems},
+#"GPUboolean255_255_5" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/GPUboolean255_255_5/"+ problem + "/all_15_15000_TO:10h.csv" for problem in ["DP"]}
 }
 
 
@@ -132,8 +132,8 @@ path_dict = {
 
 if __name__ == '__main__':
 
-    path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/AT_2_2/labelsThatReach/generalization_all_15_10h_100_5000.csv"
-    path2 = "/home/marco/Desktop/Learning-Synthesis/experiments/experiments/results/AT_2_2/boolean_2/all_15_-1_TO:10m.csv"
+    path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/labelsThatReach/labelsThatReach_1/AT/generalization_all_15_10h_100_5000.csv"
+    path2 = "/home/marco/Desktop/Learning-Synthesis/experiments/experiments/results/boolean_2/AT/all_15_-1_TO:10m.csv"
     series = metric_evolution_over_agents(path, 2, 2, "expanded transitions")
 
     #sns.lineplot(data = series, y="expanded transitions", x="idx")
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
 
     agents_results_by_name_and_problem = aligned_transitions_by_total_plant_size(path_dict)
-    boolean_paths = path_dict["boolean"].values()
+    boolean_paths = path_dict["boolean_1"].values()
     dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
     #Print solved instances by agent, with paths specified in path_dict:
