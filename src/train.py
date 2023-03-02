@@ -105,6 +105,7 @@ features = {
         "visits feature": False,
         "labelsThatReach_feature": True,
         "only boolean": True,
+        "components_by_state" : True
     }
 agent_params = {
         "eta": 1e-5,

@@ -18,7 +18,9 @@ class DCSSolverEnv:
         self.problemFilename = filename([problem, n, k])
         self.normalize_reward = normalize_reward
         self.problem_size = read_monolithic()[("expanded transitions", problem)][k][n]
-        self.detached_initial_componentwise_info = FeatureBasedExplorationHeuristic.compileFSP("fsp/"+problem+"/"+"-".join([problem, str(n), str(k)])+".fsp")
+        self.detached_initial_componentwise_info = None
+        if features["components_by_state"]:
+            self.detached_initial_componentwise_info = FeatureBasedExplorationHeuristic.compileFSP("fsp/"+problem+"/"+"-".join([problem, str(n), str(k)])+".fsp").getFirst()
         self.javaEnv = DCSForPython("labels/" + problem + ".txt" if features["labels"] else "mock", 10000,
                                     features["ra feature"],
                                     features["context features"],

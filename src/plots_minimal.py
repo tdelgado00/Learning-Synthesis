@@ -146,7 +146,7 @@ if __name__ == '__main__':
     dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
     #Print solved instances by agent, with paths specified in path_dict:
-    res = table_solved_instances(path_dict, problems=["DP"])
+    res = table_solved_instances(path_dict)
     print(res)
 
     #print scatter plot of expansions done by agent ordered by problem total size and log scaled:

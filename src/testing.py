@@ -39,7 +39,7 @@ def test_ra(problem, n, k, timeout="30m", ebudget=-1):
 
 
 def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=False, ebudget=-1,
-               file="not specified in test_agent", verbose=False):
+               file="not specified in test_agent", verbose=False, components_by_state = False):
     """Testing a specific agent in a given instance of a problem"""
     command = ["timeout", timeout, "java", "-Xmx8g", "-XX:MaxDirectMemorySize=512m", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
@@ -70,26 +70,20 @@ def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=F
     else:
         command += ["-s", "0"]
 
-    if path != "mock" and uses_feature(path, "je feature"):
-        command += ["-j"]
+    if path != "mock" and uses_feature(path, "je feature"): command += ["-j"]
 
-    if path != "mock" and uses_feature(path, "nk feature"):
-        command += ["-n"]
+    if path != "mock" and uses_feature(path, "nk feature"): command += ["-n"]
 
-    if path != "mock" and uses_feature(path, "prop feature"):
-        command += ["-p"]
+    if path != "mock" and uses_feature(path, "prop feature"): command += ["-p"]
 
-    if path != "mock" and uses_feature(path, "visits feature"):
-        command += ["-v"]
+    if path != "mock" and uses_feature(path, "visits feature"): command += ["-v"]
 
-    if path != "mock" and uses_feature(path, "only boolean"):
-        command += ["-b"]
+    if path != "mock" and uses_feature(path, "only boolean"): command += ["-b"]
 
-    if path != "mock" and uses_feature(path, "labelsThatReach_feature"):
-        command += ["-t"]
-    if ebudget > -1:
-        command += ["-e", str(ebudget)]
+    if path != "mock" and uses_feature(path, "labelsThatReach_feature"): command += ["-t"]
+    if ebudget > -1: command += ["-e", str(ebudget)]
 
+    if(components_by_state): command+=["-z"]
     command += ["-f", str(max_frontier)]
 
     if verbose: print("Testing agent at ", str(n), " ", str(k), " of ", problem, "from", file, "\n")
@@ -306,6 +300,51 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
 
     df = pd.DataFrame(df)
     df.to_csv(agentPath + "/generalization_all" + joinAsStrings([up_to, timeout,total,ebudget])+ ".csv")
+
+
+def test_training_agents_generalization_2(problem, file, extrapolation_space, timeout, total=100, max_frontier=1000000,
+                                        solved_crit=budget_and_time, ebudget = -1, verbose=True, agentPath = None,
+                                          path_to_analysis = "./generalization_all.csv", components_by_state = False):
+    """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
+    """
+        + *problem:* a string indicating the name of the problem to test the agent at.
+        + *file:* indicates the name of the directory where the agents are to be stored at the ```experiments/results/<used_training_context>``` directory.
+        + *up_to* indicates the maximum value used for the $n,k$ possible combinations  of the specified problem to test the specified agent at.
+        + *timeout:* a string indicating the time budget allowed for the agent to solve one single context
+        + *total:* the size of the used subset.
+        + *max_frontier* the budget of possible actions allowed in a single expansion step.
+        + *solved_crit* a function that decides whether or not continue testing when the previous adjacent context were not solved (by default, when the adjacent contexts exceeded the expansion and/or time budget).
+        + *ebudget*: an integer that specifies the expansions budget. -1 indicates no limit.
+    """
+    df = []
+    start = time.time()
+    #breakpoint()
+    agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentPath) if "onnx" in f])
+    np.random.seed(0)
+
+    tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
+
+    extrapolation_space.sort()
+    up_to = max(extrapolation_space[-1])
+    for i in tested_agents:
+        solved = [[False for _ in range(up_to)] for _ in range(up_to)]
+        if verbose: print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
+        for n in range(up_to):
+            for k in range(up_to):
+                if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
+                    #FIXME por alguna razon el if siempre es falso y (n,k)=(0,0)
+                    print((n,k))
+                    if((n + 1,k + 1 ) in extrapolation_space):
+                        df.append(test_agent(agentPath, problem, n + 1, k + 1, max_frontier=max_frontier,timeout=timeout, ebudget=ebudget, file = file, verbose = False,components_by_state = components_by_state)[0])
+                        print("tested ", n, k)
+                    else: continue
+                    df[-1]["idx"] = i
+                    if solved_crit(df[-1]):
+                        solved[n][k] = True
+        if verbose: print("Solved:", np.sum(solved))
+
+    df = pd.DataFrame(df)
+    df.to_csv(path_to_analysis)
 
 
 def get_problem_labels(problem, eps=5):
