@@ -326,8 +326,8 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
 
     extrapolation_space.sort()
     up_to = max(extrapolation_space[-1])
-    solved_previous = True
     for i in tested_agents:
+        solved_previous = True
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
         if verbose: print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
         for n in range(up_to):
