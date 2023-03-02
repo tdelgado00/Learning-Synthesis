@@ -1,1 +1,2 @@
-""
+,expanded transitions,synthesis time(ms),OutOfMem,Exception,algorithm,heuristic,problem,n,k,transitions/ms,expansion_budget_exceeded,idx
+0,,,False,True,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/components_by_state_DP_3_3/,DP,3,1,,false,0

@@ -1,6 +1,6 @@
 from train import *
 from itertools import product
-from testing import test_training_agents_generalization_2
+from testing import test_training_agents_generalization_k_fixed
 class Experiment():
     def __init__(self, folder_name : str, results_path : str, description : str):
         self.name = folder_name
@@ -16,10 +16,10 @@ class PreSelectionTesting(Experiment):
 
     def run(self, timeout_per_problem, random_subset_size = 100, max_frontier=1000000, solved_crit=budget_and_time, ebudget=-1, verbose=True, output_file_name ="pre_selection_testing.csv"):
         agentPath = self.trained_experiment.results_path
-        test_training_agents_generalization_2(self.trained_experiment.problem, self.trained_experiment.results_path, extrapolation_space,
-                                              timeout_per_problem, total=random_subset_size, max_frontier=max_frontier,
-                                              solved_crit=solved_crit, ebudget=ebudget, verbose=verbose, agentPath=agentPath,
-                                              path_to_analysis=self.trained_experiment.results_path+output_file_name, components_by_state = self.trained_experiment.features["components_by_state"])
+        test_training_agents_generalization_k_fixed(self.trained_experiment.problem, self.trained_experiment.results_path, extrapolation_space,
+                                                    timeout_per_problem, total=random_subset_size, max_frontier=max_frontier,
+                                                    solved_crit=solved_crit, ebudget=ebudget, verbose=verbose, agentPath=agentPath,
+                                                    path_to_analysis=self.trained_experiment.results_path+output_file_name, components_by_state = self.trained_experiment.features["components_by_state"])
 class TrainingExperiment(Experiment):
 
     def __init__(self, folder_name : str, results_path : str, description : str, context, features):

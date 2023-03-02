@@ -302,9 +302,9 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
     df.to_csv(agentPath + "/generalization_all" + joinAsStrings([up_to, timeout,total,ebudget])+ ".csv")
 
 
-def test_training_agents_generalization_2(problem, file, extrapolation_space, timeout, total=100, max_frontier=1000000,
-                                        solved_crit=budget_and_time, ebudget = -1, verbose=True, agentPath = None,
-                                          path_to_analysis = "./generalization_all.csv", components_by_state = False):
+def test_training_agents_generalization_k_fixed(problem, file, extrapolation_space, timeout, total=100, max_frontier=1000000,
+                                                solved_crit=budget_and_time, ebudget = -1, verbose=True, agentPath = None,
+                                                path_to_analysis = "./generalization_all.csv", components_by_state = False):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
     """
         + *problem:* a string indicating the name of the problem to test the agent at.
@@ -326,21 +326,22 @@ def test_training_agents_generalization_2(problem, file, extrapolation_space, ti
 
     extrapolation_space.sort()
     up_to = max(extrapolation_space[-1])
+    solved_previous = True
     for i in tested_agents:
         solved = [[False for _ in range(up_to)] for _ in range(up_to)]
         if verbose: print("Testing agent", i, "with 5s timeout. Time:", time.time() - start)
         for n in range(up_to):
             for k in range(up_to):
-                if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    #FIXME por alguna razon el if siempre es falso y (n,k)=(0,0)
-                    print((n,k))
-                    if((n + 1,k + 1 ) in extrapolation_space):
-                        df.append(test_agent(agentPath, problem, n + 1, k + 1, max_frontier=max_frontier,timeout=timeout, ebudget=ebudget, file = file, verbose = False,components_by_state = components_by_state)[0])
-                        print("tested ", n, k)
-                    else: continue
+                if ((n + 1,k + 1 ) in extrapolation_space) and solved_previous:
+                    #FIXME tira error MTSA
+                    df.append(test_agent(agentPath, problem, n + 1, k + 1, max_frontier=max_frontier,timeout=timeout, ebudget=ebudget, file = file, verbose = False,components_by_state = components_by_state)[0])
+                    print("tested ", n, k)
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):
                         solved[n][k] = True
+                    else:
+                        solved_previous = False
+                        print("Cut at ", n+1 , k+1)
         if verbose: print("Solved:", np.sum(solved))
 
     df = pd.DataFrame(df)
