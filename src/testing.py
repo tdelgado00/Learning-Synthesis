@@ -38,13 +38,14 @@ def test_ra(problem, n, k, timeout="30m", ebudget=-1):
     return results, None
 
 
-def test_agent(path, problem, n, k, max_frontier=1000000, timeout="30m", debug=False, ebudget=-1,
+def test_agent(path, problem, n, k, agent_number, max_frontier=1000000, timeout="30m", debug=False, ebudget=-1,
                file="not specified in test_agent", verbose=False, components_by_state = False):
+
     """Testing a specific agent in a given instance of a problem"""
     command = ["timeout", timeout, "java", "-Xmx8g", "-XX:MaxDirectMemorySize=512m", "-classpath", "mtsa.jar",
                "MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking.FeatureBasedExplorationHeuristic",
                "-i", fsp_path(problem, n, k),
-               "-m", path]
+               "-m", path + str(agent_number) + ".onnx"]
 
     if debug:
         command += ["-d"]
@@ -281,7 +282,6 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
     """
     df = []
     start = time.time()
-    #breakpoint()
     agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentPath) if "onnx" in f])
     np.random.seed(0)
     tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
@@ -292,7 +292,7 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
         for n in range(up_to):
             for k in range(up_to):
                 if (n == 0 or solved[n - 1][k]) and (k == 0 or solved[n][k - 1]):
-                    df.append(test_agent(agentPath, problem, n + 1, k + 1, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False)[0])
+                    df.append(test_agent(agentPath, problem, n + 1, k + 1, i, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False)[0])
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):
                         solved[n][k] = True
@@ -303,7 +303,7 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
 
 
 def test_training_agents_generalization_k_fixed(problem, file, extrapolation_space, timeout, total=100, max_frontier=1000000,
-                                                solved_crit=budget_and_time, ebudget = -1, verbose=True, agentPath = None,
+                                                solved_crit=budget_and_time, ebudget = -1, verbose=True, agentsPath = None,
                                                 path_to_analysis = "./generalization_all.csv", components_by_state = False):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
     """
@@ -318,12 +318,10 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
     """
     df = []
     start = time.time()
-    #breakpoint()
-    agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentPath) if "onnx" in f])
+    agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentsPath) if "onnx" in f])
     np.random.seed(0)
 
     tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
-
     extrapolation_space.sort()
     up_to = max(extrapolation_space[-1])
     for i in tested_agents:
@@ -334,8 +332,8 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
             for k in range(up_to):
                 if ((n + 1,k + 1 ) in extrapolation_space) and solved_previous:
                     #FIXME tira error MTSA
-                    df.append(test_agent(agentPath, problem, n + 1, k + 1, max_frontier=max_frontier,timeout=timeout, ebudget=ebudget, file = file, verbose = False,components_by_state = components_by_state)[0])
-                    print("tested ", n, k)
+                    df.append(test_agent(agentsPath, problem, n + 1, k + 1, i, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False, components_by_state = components_by_state)[0])
+                    print("tested ", n + 1, k + 1)
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):
                         solved[n][k] = True

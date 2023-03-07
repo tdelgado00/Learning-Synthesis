@@ -103,9 +103,9 @@ features = {
         "nk feature": False,
         "prop feature": False,
         "visits feature": False,
-        "labelsThatReach_feature": True,
+        "labelsThatReach_feature": False,
         "only boolean": True,
-        "components_by_state" : True
+        "components_by_state" : False
     }
 agent_params = {
         "eta": 1e-5,

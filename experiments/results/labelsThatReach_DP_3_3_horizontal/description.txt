@@ -1,0 +1,7 @@
+Description: components_by_state_DP_3_3 had bad results, finished.txt has a description of those failures and this experiment aims to: 
+ 1. Confirm if this bad performance is due to the new feature (ir could also be or the training (3,3) itself or some bug). 
+ 2. Explore the possibility of horizontal generalization along k. In this case, with k=3.
+Agent params: 
+{'eta': 1e-05, 'first epsilon': 1.0, 'last epsilon': 0.01, 'epsilon decay steps': 250000, 'nnsize': (20,), 'optimizer': 'sgd', 'model': 'pytorch', 'target q': True, 'reset target freq': 10000, 'experience replay': True, 'buffer size': 10000, 'batch size': 10, 'nstep': 1, 'momentum': 0.9, 'nesterov': True}
+NN features: 
+{'ra feature': False, 'context features': True, 'labels': True, 'state labels': 1, 'je feature': True, 'nk feature': False, 'prop feature': False, 'visits feature': False, 'labelsThatReach_feature': True, 'only boolean': True, 'components_by_state': False}
