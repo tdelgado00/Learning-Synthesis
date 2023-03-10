@@ -1,6 +1,7 @@
 from train import *
 from itertools import product
 from testing import test_training_agents_generalization_k_fixed
+import copy
 class Experiment():
     def __init__(self, folder_name : str, results_path : str, description : str):
         self.name = folder_name
@@ -21,8 +22,9 @@ class PreSelectionTesting():
                                                         timeout_per_problem, total=random_subset_size, max_frontier=max_frontier,
                                                         solved_crit=solved_crit, ebudget=ebudget, verbose=verbose, agentsPath=agentsPath,
                                                         path_to_analysis=self.trained_experiment.results_path+output_file_name, components_by_state = self.trained_experiment.features["components_by_state"])
-        agentsPath = other_format["results_path"]
-        test_training_agents_generalization_k_fixed(other_format["problem"],
+        else:
+            agentsPath = other_format["results_path"]
+            test_training_agents_generalization_k_fixed(other_format["problem"],
                                                     other_format["results_path"], extrapolation_space,
                                                     timeout_per_problem, total=random_subset_size,
                                                     max_frontier=max_frontier,
@@ -40,7 +42,7 @@ class TrainingExperiment(Experiment):
         self.env = generateEnvironments(self.training_contexts, features)
         self.nfeatures = self.env[context].javaEnv.getNumberOfFeatures()
         self.folder_name = folder_name
-        self.features = features
+        self.features = copy.deepcopy(features)
         self.agent_params = None
         self.agent = None
         self.problem = context[0]
@@ -85,19 +87,32 @@ if __name__ == "__main__":
     results_path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/"
     description = "testing testing"
 
-    training_experiment = TrainingExperiment("components_by_state_DP_3_3_over_boolean", results_path, description, ("DP",3,3), features)
 
-    training_experiment.init_agent(agent_params)
-    training_experiment.run()
+    for k in range(5,16,2):
+        features["components_by_state"] = False
+        training_experiment_1 = TrainingExperiment(f"boolean_DP_3_{k}_over_boolean", results_path, description,
+                                                 ("DP", 3, k), features)
+        training_experiment_1.init_agent(agent_params)
+        training_experiment_1.run()
+        features["components_by_state"] = True
+        training_experiment_2 = TrainingExperiment(f"components_by_state_DP_3_{k}_over_boolean", results_path, description,
+                                                 ("DP", 3, k), features)
+        training_experiment_2.init_agent(agent_params)
+        training_experiment_2.run()
 
-    ns = list(range(1, 16))
-    ks = [3]
-    extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
-    extrapolation_space = [(e[1],e[0]) for e in extrapolation_space]
-    other_format = {"results_path" : results_path, "features" : features, "problem" : "DP"}
-    agent_analysis = PreSelectionTesting(training_experiment,extrapolation_space=extrapolation_space,description='agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="first_try.csv")')
+        ns = list(range(1, 16))
+        ks = [k]
+        extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
+        extrapolation_space = [(e[1],e[0]) for e in extrapolation_space]
+        #other_format = {"results_path" : results_path, "features" : features, "problem" : "DP"}
+        agent_analysis_1 = PreSelectionTesting(training_experiment_1,extrapolation_space=extrapolation_space,description='agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="first_try.csv")')
 
-    agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="100_subset_5000_budget.csv", other_format = other_format)
+        agent_analysis_1.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="100_subset_5000_budget.csv")
+
+        agent_analysis_2 = PreSelectionTesting(training_experiment_2, extrapolation_space=extrapolation_space,
+                                             description='agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="first_try.csv")')
+
+        agent_analysis_2.run("10h", random_subset_size=100, ebudget=5000, output_file_name="100_subset_5000_budget.csv")
 
 
 

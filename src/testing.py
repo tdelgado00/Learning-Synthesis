@@ -320,7 +320,6 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
     start = time.time()
     agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentsPath) if "onnx" in f])
     np.random.seed(0)
-
     tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
     extrapolation_space.sort()
     up_to = max(extrapolation_space[-1])

@@ -1,33 +1,6 @@
 Fully trained. This function should write a summary of training stats in the future.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Basic analysis and observations(EN):
-Initial glimpses of the results from 10:
-1. components_by_state trains almost twice as many agents.
-2. There are boolean agents trained on (2,2) with a transition budget of 5000 that can solve all problems with n=3, while components_by_state struggled to solve up to k=8.
-3. Obs: However, the agents that solve the most instances of components_by_state expand fewer transitions up to exactly k=3 (inclusive). After that, boolean "expands less and less" (meaning the best boolean agents for each pair (n,k) expand a proportionally smaller number of transitions compared to the best agents of components_by_state).
-4. I am now running the evaluation of components_by_state on ALL agents because I saw that it can solve more instances (question for Tomi: why did it manage to find more "record" agents?).
-OBS:
-The i-th feature within components_by_state indicates: "there is some 'philosopher' component in state i".
-This information is quite relevant when there are 1 or 2 philosophers, but as the number of philosophers increases,
-these features provide less and less information (extreme case: we are in (3,15), \
-the i-th feature is equally valuable whether there is only 1 philosopher in i or 15 philosophers in i). Therefore,
-these features do not distinguish well between exploration states for the n variable.
-HYPOTHESIS: As n increases, it becomes increasingly likely that the features are set to 1, and therefore as exploration progresses over time,
-these features provide less and less information. However, the weights are identical, so they are given the same importance as at the beginning of exploration.
-Interesting metric: analyze the percentage of states that set components_by_state[i] to 1 relative to the total number of explored states
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Analisis y resultados basicos:
-Vistazos iniciales de los resultados de 10:
-1. components_by_state llega a entrenar casi el doble de agentes
-2. hay agentes de boolean entrenado en 2,2 con budget de transiciones = 5000 que llegan a resolver todos los problemas con n=3 mientras que components_by_state llego con sudor y lagrimas hasta k=8
-3. obs: sin embargo, los agentes que mas instancias resuelven de components_by_state expanden menos transiciones hasta exactamente k=3 (inclusive), a partir de ahi, boolean "expande menos cada vez mas" (osea los mejores agentes de boolean para cada par (n,k) expanden cada vez menos proporcion de transiciones que los mejores agentes de components_by_state)
-4. Ahora estoy corriendo la evaluacion de components_by_state sobre TODOS los agentes porque vi que llego a resolver mas (pregunta a tomi: porque supo encontrar mas agentes "record"?)
-OBS: la i-esima feature dentro de components_by_state indica: "hay alguna componente "filosofo" en el estado i". Esto cuando hay 1 o 2 filosofos es informacion
-bastante relevante, pero a medida que aumenta la cantidad de filosofos estas features dan cada vez menos informacion (caso extremo: estamos en (3,15),
-la feature i-esima vale lo mismo si hay 1 solo filosofo en i que si hay 15 filosofos en i).
-Osea estas features no distinguen bien estados de exploracion para n variable.
-
 HIPOTESIS: A medida que aumenta n es cada vez mas probable que las features esten en 1 y por lo tanto a medida que avanza la exploracion en el tiempo,
 estas features tienen cada vez menos informacion, pero los pesos son identicos y por lo tanto se les otorga la misma importancia que al principio de la exploracion.
 
