@@ -84,21 +84,27 @@ class TrainingExperiment(Experiment):
 
 
 if __name__ == "__main__":
-    results_path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/"
+    results_path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean"
     description = "testing testing"
 
 
-    for k in range(5,16,2):
+    for k in range(1,16,2):
         features["components_by_state"] = False
-        training_experiment_1 = TrainingExperiment(f"boolean_DP_3_{k}_over_boolean", results_path, description,
-                                                 ("DP", 3, k), features)
+        training_experiment_1 = TrainingExperiment(f"boolean_DP_2_{k}_over_boolean", results_path, description,
+                                                 ("DP", 2, k), features)
         training_experiment_1.init_agent(agent_params)
         training_experiment_1.run()
+
+        time.sleep(60)
+
         features["components_by_state"] = True
-        training_experiment_2 = TrainingExperiment(f"components_by_state_DP_3_{k}_over_boolean", results_path, description,
-                                                 ("DP", 3, k), features)
+        training_experiment_2 = TrainingExperiment(f"components_by_state_DP_2_{k}_over_boolean", results_path, description,
+                                                 ("DP", 2, k), features)
         training_experiment_2.init_agent(agent_params)
         training_experiment_2.run()
+
+        time.sleep(60)
+
 
         ns = list(range(1, 16))
         ks = [k]
@@ -109,10 +115,14 @@ if __name__ == "__main__":
 
         agent_analysis_1.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="100_subset_5000_budget.csv")
 
+        time.sleep(60)
+
         agent_analysis_2 = PreSelectionTesting(training_experiment_2, extrapolation_space=extrapolation_space,
                                              description='agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="first_try.csv")')
 
         agent_analysis_2.run("10h", random_subset_size=100, ebudget=5000, output_file_name="100_subset_5000_budget.csv")
+
+        time.sleep(60)
 
 
 

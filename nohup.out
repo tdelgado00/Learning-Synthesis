@@ -3980,3 +3980,134 @@ Traceback (most recent call last):
   File "/usr/lib/python3.8/os.py", line 223, in makedirs
     mkdir(name, mode)
 FileExistsError: [Errno 17] File exists: '/home/marco/Desktop/Learning-Synthesis/experiments/results//boolean_DP_3_9_over_boolean/'
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=30, out_features=20, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=20, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Starting training for instances [('DP', 2, 1)]
+Number of features: 30
+Path: /home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean/
+Agent params: {'eta': 1e-05, 'first epsilon': 1.0, 'last epsilon': 0.01, 'epsilon decay steps': 250000, 'nnsize': (20,), 'optimizer': 'sgd', 'model': 'pytorch', 'target q': True, 'reset target freq': 10000, 'experience replay': True, 'buffer size': 10000, 'batch size': 10, 'nstep': 1, 'momentum': 0.9, 'nesterov': True}
+Features: {'ra feature': False, 'context features': True, 'labels': True, 'state labels': 1, 'je feature': True, 'nk feature': False, 'prop feature': False, 'visits feature': False, 'labelsThatReach_feature': False, 'only boolean': True, 'components_by_state': False}
+Initializing buffer with 10000 observations per instance, and 1 instances.
+Done.
+Agent 0 saved. Training time: 0.7616310119628906 Training steps: 0
+New best at instance ('DP', 2, 1)! 191 Steps: 190
+New best at instance ('DP', 2, 1)! 159 Steps: 349
+New best at instance ('DP', 2, 1)! 151 Steps: 500
+New best at instance ('DP', 2, 1)! 127 Steps: 1420
+New best at instance ('DP', 2, 1)! 124 Steps: 3323
+New best at instance ('DP', 2, 1)! 114 Steps: 4072
+Agent 1 saved. Training time: 5.381242275238037 Training steps: 5000
+New best at instance ('DP', 2, 1)! 113 Steps: 9723
+Agent 2 saved. Training time: 9.716249704360962 Training steps: 10000
+Agent 3 saved. Training time: 14.234033107757568 Training steps: 15000
+New best at instance ('DP', 2, 1)! 109 Steps: 15967
+Agent 4 saved. Training time: 18.273210763931274 Training steps: 20000
+New best at instance ('DP', 2, 1)! 104 Steps: 20968
+Agent 5 saved. Training time: 22.2873318195343 Training steps: 25000
+Agent 6 saved. Training time: 26.254125356674194 Training steps: 30000
+New best at instance ('DP', 2, 1)! 100 Steps: 30495
+Agent 7 saved. Training time: 30.65268635749817 Training steps: 35000
+Agent 8 saved. Training time: 34.44848442077637 Training steps: 40000
+New best at instance ('DP', 2, 1)! 96 Steps: 44215
+Agent 9 saved. Training time: 38.335508584976196 Training steps: 45000
+Agent 10 saved. Training time: 43.039575815200806 Training steps: 50000
+Using cpu device
+NeuralNetwork(
+  (layers): ModuleList(
+    (0): Linear(in_features=30, out_features=20, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=20, out_features=1, bias=True)
+  )
+)
+Learning rate: 1e-05
+Starting training for instances [('DP', 2, 1)]
+Number of features: 30
+Path: /home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean/
+Agent params: {'eta': 1e-05, 'first epsilon': 1.0, 'last epsilon': 0.01, 'epsilon decay steps': 250000, 'nnsize': (20,), 'optimizer': 'sgd', 'model': 'pytorch', 'target q': True, 'reset target freq': 10000, 'experience replay': True, 'buffer size': 10000, 'batch size': 10, 'nstep': 1, 'momentum': 0.9, 'nesterov': True}
+Features: {'ra feature': False, 'context features': True, 'labels': True, 'state labels': 1, 'je feature': True, 'nk feature': False, 'prop feature': False, 'visits feature': False, 'labelsThatReach_feature': False, 'only boolean': True, 'components_by_state': False}
+Initializing buffer with 10000 observations per instance, and 1 instances.
+New best at instance ('DP', 2, 1)! 78 Steps: 52132
+Done.
+Agent 0 saved. Training time: 0.04053354263305664 Training steps: 0
+New best at instance ('DP', 2, 1)! 208 Steps: 207
+New best at instance ('DP', 2, 1)! 149 Steps: 356
+New best at instance ('DP', 2, 1)! 145 Steps: 681
+New best at instance ('DP', 2, 1)! 128 Steps: 809
+Agent 11 saved. Training time: 48.99638819694519 Training steps: 55000
+New best at instance ('DP', 2, 1)! 108 Steps: 2651
+New best at instance ('DP', 2, 1)! 94 Steps: 4229
+Agent 1 saved. Training time: 5.398850917816162 Training steps: 5000
+Agent 12 saved. Training time: 54.41748666763306 Training steps: 60000
+Agent 2 saved. Training time: 10.446777582168579 Training steps: 10000
+Agent 13 saved. Training time: 59.62438702583313 Training steps: 65000
+New best at instance ('DP', 2, 1)! 92 Steps: 13722
+Agent 3 saved. Training time: 15.427240133285522 Training steps: 15000
+Agent 14 saved. Training time: 64.58053374290466 Training steps: 70000
+Agent 4 saved. Training time: 20.783589124679565 Training steps: 20000
+Agent 15 saved. Training time: 70.1619164943695 Training steps: 75000
+New best at instance ('DP', 2, 1)! 89 Steps: 23580
+Agent 5 saved. Training time: 25.925026893615723 Training steps: 25000
+Agent 16 saved. Training time: 75.18638491630554 Training steps: 80000
+Agent 6 saved. Training time: 30.70490527153015 Training steps: 30000
+Agent 17 saved. Training time: 80.22705268859863 Training steps: 85000
+Agent 7 saved. Training time: 35.6002082824707 Training steps: 35000
+Agent 18 saved. Training time: 85.13248252868652 Training steps: 90000
+Agent 8 saved. Training time: 40.60362672805786 Training steps: 40000
+Agent 19 saved. Training time: 90.19642686843872 Training steps: 95000
+Agent 9 saved. Training time: 45.55003643035889 Training steps: 45000
+Agent 20 saved. Training time: 95.18729782104492 Training steps: 100000
+Agent 10 saved. Training time: 50.57624363899231 Training steps: 50000
+Agent 21 saved. Training time: 100.32204723358154 Training steps: 105000
+Agent 11 saved. Training time: 55.696572065353394 Training steps: 55000
+Agent 22 saved. Training time: 105.88885760307312 Training steps: 110000
+Agent 12 saved. Training time: 61.223583936691284 Training steps: 60000
+Agent 23 saved. Training time: 111.23743009567261 Training steps: 115000
+Agent 13 saved. Training time: 66.3048927783966 Training steps: 65000
+Agent 24 saved. Training time: 116.13772368431091 Training steps: 120000
+Agent 14 saved. Training time: 71.26731204986572 Training steps: 70000
+Agent 25 saved. Training time: 121.08552289009094 Training steps: 125000
+Agent 15 saved. Training time: 76.70041251182556 Training steps: 75000
+Agent 26 saved. Training time: 126.29509377479553 Training steps: 130000
+Agent 16 saved. Training time: 81.81973719596863 Training steps: 80000
+New best at instance ('DP', 2, 1)! 75 Steps: 134414
+Agent 27 saved. Training time: 131.54583382606506 Training steps: 135000
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f3a38f3ad15, pid=83448, tid=83448
+#
+# JRE version: OpenJDK Runtime Environment (11.0.18+10) (build 11.0.18+10-post-Ubuntu-0ubuntu120.04.1)
+# Java VM: OpenJDK 64-Bit Server VM (11.0.18+10-post-Ubuntu-0ubuntu120.04.1, mixed mode, sharing, tiered, compressed oops, g1 gc, linux-amd64)
+# Problematic frame:
+# C  [libapt-pkg.so.6.0+0x11ad15]
+#
+# Core dump will be written. Default location: Core dumps may be processed with "/usr/share/apport/apport -p%p -s%s -c%c -d%d -P%P -u%u -g%g -- %E" (or dumping to /home/marco/Desktop/Learning-Synthesis/core.83448)
+#
+# An error report file with more information is saved as:
+# /home/marco/Desktop/Learning-Synthesis/hs_err_pid83448.log
+Traceback (most recent call last):
+  File "src/experiment.py", line 96, in <module>
+    training_experiment_1.run()
+  File "src/experiment.py", line 66, in run
+    train_agent(instances=self.training_contexts, pathToAgents=self.results_path, agent_params=self.agent_params, agent=self.agent,
+  File "/home/marco/Desktop/Learning-Synthesis/src/train.py", line 48, in train_agent
+    agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
+  File "/home/marco/Desktop/Learning-Synthesis/src/agent.py", line 83, in train
+    obs2, reward, done, info = env.step(a)
+  File "/home/marco/Desktop/Learning-Synthesis/src/environment.py", line 54, in step
+    self.javaEnv.expandAction(action)
+jpype._core.JVMNotRunning: Java Virtual Machine is not running
+
+#
+# If you would like to submit a bug report, please visit:
+#   https://bugs.launchpad.net/ubuntu/+source/openjdk-lts
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
