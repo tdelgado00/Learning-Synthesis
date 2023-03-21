@@ -1,0 +1,9 @@
+,expanded states,used states,expanded transitions,used transitions,synthesis time(ms),findNewGoals,findNewErrors,propagateGoals,propagateErrors,memory(mb),heuristic time(ms),expansion_budget_exceeded,OutOfMem,algorithm,heuristic,problem,n,k,transitions/ms
+0,4,0,3,0,169,0,0,0,1,0.0,11.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,1,1,0.01775147928994083
+1,44,25,55,32,227,5,1,1,2,20.66,53.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,2,1,0.2422907488986784
+2,170,50,219,74,321,5,1,1,5,24.66,122.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,3,1,0.6822429906542056
+3,535,63,693,108,589,5,28,1,11,34.53,358.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,4,1,1.1765704584040746
+4,1925,102,2481,219,2044,5,126,1,20,58.39,1718.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,5,1,1.2137964774951076
+5,1081,173,2186,466,1352,5,0,1,12,50.9,1088.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,6,1,1.6168639053254439
+6,11416,308,14989,1017,89062,5,66,1,59,211.83,87663.0,false,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,7,1,0.16829848869326985
+7,6519,0,15001,0,43520,0,404,0,5,0.0,42182.0,true,False,new,/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_1_over_boolean//57.onnx,DP,8,1,0.34469209558823527

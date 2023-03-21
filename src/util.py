@@ -92,9 +92,7 @@ def read_results(lines):
     return results
 
 
-def best_generalization_agent_ebudget(problem, file,up_to, timeout,total,ebudget):
-    df = pd.read_csv("experiments/results/" + filename(
-        [problem, 2, 2]) + "/" + file + "/generalization_all"+ joinAsStrings([up_to, timeout,total,ebudget])+".csv")
+def best_generalization_agent_ebudget(df):
     df = notExceeded(df)
     if df.shape[0]==0:
         return None

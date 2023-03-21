@@ -1,3 +1,5 @@
+import pandas as pd
+from testing import test_agent
 from train import *
 from itertools import product
 from testing import test_training_agents_generalization_k_fixed
@@ -78,19 +80,45 @@ class TrainingExperiment(Experiment):
             f.write("Fully trained. This function should write a summary of training stats in the future.") #FIXME
 
 
-"""class SingleAgentTesting(Experiment):
-    "First run full PreSelectionTesting"
-    raise NotImplementedError"""
+class AgentSelection():
 
+    def __init__(self, info_dict, agents_path):
+        self.info_dict = info_dict
+        self.agents_path = agents_path
+    def get_best(self, pre_selection_testing_csv_path, criterion = best_generalization_agent_ebudget):
+        """
+        Get the best agent resulting from the experiment whose data is stored at pre_selection_testing_csv_path, under the specified criterion.
+        "criterion" should be a function that receives a DataFrame and returns the path to the best agent with the agent number.
+        """
+        df = pd.read_csv(pre_selection_testing_csv_path)
+        agent = criterion(df)
+        
+        return (self.agents_path + str(agent) + ".onnx", agent)
+
+
+
+    def test_agent(self, agent_path, agent_number, timeout, ebudget, extrapolation_space, components_by_state):
+        df_rows = []
+        for problem_instance in extrapolation_space:
+            results, debug = test_agent(self.agents_path,self.info_dict["problem"], problem_instance[0], problem_instance[1], agent_number = agent_number, timeout = timeout, ebudget=ebudget, components_by_state=components_by_state)
+            df_rows.append(pd.Series(results))
+            print(results)
+            if(results['expansion_budget_exceeded']== 'true'):
+                print(f"Expansion budget exceeded at {problem_instance}")
+                break
+
+        return pd.DataFrame(df_rows)
 
 if __name__ == "__main__":
-    results_path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean"
+    results_path_cbs = "/home/marco/Desktop/Learning-Synthesis/experiments/results/components_by_state_DP_2_k_over_boolean/"
+    results_path_boolean = "/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/"
     description = "testing testing"
 
-
-    for k in range(1,16,2):
+    features["components_by_state"] = True
+    info_dict = {"problem" : "DP"}
+    for k in range(2,15,2):
         features["components_by_state"] = False
-        training_experiment_1 = TrainingExperiment(f"boolean_DP_2_{k}_over_boolean", results_path, description,
+        training_experiment_1 = TrainingExperiment(f"boolean_DP_2_{k}_over_boolean", results_path_boolean, description,
                                                  ("DP", 2, k), features)
         training_experiment_1.init_agent(agent_params)
         training_experiment_1.run()
@@ -98,7 +126,7 @@ if __name__ == "__main__":
         time.sleep(60)
 
         features["components_by_state"] = True
-        training_experiment_2 = TrainingExperiment(f"components_by_state_DP_2_{k}_over_boolean", results_path, description,
+        training_experiment_2 = TrainingExperiment(f"components_by_state_DP_2_{k}_over_boolean", results_path_cbs, description,
                                                  ("DP", 2, k), features)
         training_experiment_2.init_agent(agent_params)
         training_experiment_2.run()
@@ -124,5 +152,16 @@ if __name__ == "__main__":
 
         time.sleep(60)
 
+    for k in range(2, 15, 2):
+        ns = list(range(1, 15))
+        ks = [k]
+        extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
+        extrapolation_space = [(e[1], e[0]) for e in extrapolation_space]
 
+        path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/components_by_state_DP_2_k_over_boolean/components_by_state_DP_2_{k}_over_boolean/"
+        path_to_agents_results_in_level_k = path_to_agents + "100_subset_5000_budget.csv"
 
+        best_agent_testing = AgentSelection(info_dict, path_to_agents)
+        (best_agent_path, best_agent_number) = best_agent_testing.get_best(pre_selection_testing_csv_path=path_to_agents_results_in_level_k)
+        df_performances = best_agent_testing.test_agent(best_agent_path, agent_number=best_agent_number, timeout="10h", ebudget=15000, extrapolation_space=extrapolation_space, components_by_state = features["components_by_state"])
+        df_performances.to_csv(path_to_agents + f"/15000_{best_agent_number}.csv")

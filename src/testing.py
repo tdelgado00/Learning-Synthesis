@@ -37,7 +37,6 @@ def test_ra(problem, n, k, timeout="30m", ebudget=-1):
     results["k"] = k
     return results, None
 
-
 def test_agent(path, problem, n, k, agent_number, max_frontier=1000000, timeout="30m", debug=False, ebudget=-1,
                file="not specified in test_agent", verbose=False, components_by_state = False):
 
@@ -130,7 +129,7 @@ def test_agent(path, problem, n, k, agent_number, max_frontier=1000000, timeout=
         expansionMsg = ", EXPANSION BUDGET EXCEEDED"
     if verbose: print("Total expanded transitions: ",results["expanded transitions"], expansionMsg)
     results["algorithm"] = "new"
-    results["heuristic"] = path
+    results["heuristic"] = path + "/" + str(agent_number) + ".onnx"
     results["problem"] = problem
     results["n"] = n
     results["k"] = k
