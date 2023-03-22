@@ -97,7 +97,7 @@ class AgentSelection():
 
 
 
-    def test_agent(self, agent_path, agent_number, timeout, ebudget, extrapolation_space, components_by_state):
+    def test_agent(self, agent_path, agent_number, timeout, ebudget, extrapolation_space, components_by_state, debug = False):
         df_rows = []
         for problem_instance in extrapolation_space:
             results, debug = test_agent(self.agents_path,self.info_dict["problem"], problem_instance[0], problem_instance[1], agent_number = agent_number, timeout = timeout, ebudget=ebudget, components_by_state=components_by_state)
@@ -110,28 +110,56 @@ class AgentSelection():
         return pd.DataFrame(df_rows)
 
 if __name__ == "__main__":
-    results_path_cbs = "/home/marco/Desktop/Learning-Synthesis/experiments/results/components_by_state_DP_2_k_over_boolean/"
-    results_path_boolean = "/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/"
-    description = "testing testing"
+    results_path_cbs = "/home/marco/Desktop/Learning-Synthesis/experiments/results/COMPLETE_components_by_state_DP_2_k_over_boolean/"
+    description = "Components by state feature for DP, considering ALL of the component type states"
 
     features["components_by_state"] = True
     info_dict = {"problem" : "DP"}
-    for k in range(2,15,2):
-        features["components_by_state"] = False
-        training_experiment_1 = TrainingExperiment(f"boolean_DP_2_{k}_over_boolean", results_path_boolean, description,
-                                                 ("DP", 2, k), features)
-        training_experiment_1.init_agent(agent_params)
-        training_experiment_1.run()
+    for k in range(1, 16):
+        ns = list(range(1, 15))
+        ks = [k]
+        extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
+        extrapolation_space = [(e[1], e[0]) for e in extrapolation_space]
 
+        path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/COMPLETE_components_by_state_DP_2_k_over_boolean/COMPLETE_components_by_state_DP_2_{k}_over_boolean/"
+        path_to_agents_results_in_level_k = path_to_agents + "100_subset_5000_budget.csv"
+
+        best_agent_testing = AgentSelection(info_dict, path_to_agents)
+        (best_agent_path, best_agent_number) = best_agent_testing.get_best(
+            pre_selection_testing_csv_path=path_to_agents_results_in_level_k)
+        df_performances = best_agent_testing.test_agent(best_agent_path, agent_number=best_agent_number, timeout="10h",
+                                                        ebudget=15000, extrapolation_space=extrapolation_space,
+                                                        components_by_state=features["components_by_state"], debug=True)
+        df_performances.to_csv(path_to_agents + f"/15000_{best_agent_number}.csv")
+        time.sleep(60)
+    """for k in range(2, 15,2):
+        ns = list(range(1, 15))
+        ks = [k]
+        extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
+        extrapolation_space = [(e[1], e[0]) for e in extrapolation_space]
+
+        path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_{k}_over_boolean/"
+        path_to_agents_results_in_level_k = path_to_agents + "100_subset_5000_budget.csv"
+
+        best_agent_testing = AgentSelection(info_dict, path_to_agents)
+        (best_agent_path, best_agent_number) = best_agent_testing.get_best(pre_selection_testing_csv_path=path_to_agents_results_in_level_k)
+        df_performances = best_agent_testing.test_agent(best_agent_path, agent_number=best_agent_number, timeout="10h", ebudget=15000, extrapolation_space=extrapolation_space, components_by_state = features["components_by_state"])
+        df_performances.to_csv(path_to_agents + f"/15000_{best_agent_number}.csv")
         time.sleep(60)
 
-        features["components_by_state"] = True
-        training_experiment_2 = TrainingExperiment(f"components_by_state_DP_2_{k}_over_boolean", results_path_cbs, description,
+---------------------------
+  if __name__ == "__main__":
+    results_path_cbs = "/home/marco/Desktop/Learning-Synthesis/experiments/results/COMPLETE_components_by_state_DP_2_k_over_boolean/"
+    description = "Components by state feature for DP, considering ALL of the component type states"
+
+    features["components_by_state"] = False
+    info_dict = {"problem" : "DP"}
+    for k in range(1,16):
+        training_experiment_2 = TrainingExperiment(f"COMPLETE_components_by_state_DP_2_{k}_over_boolean", results_path_cbs, description,
                                                  ("DP", 2, k), features)
         training_experiment_2.init_agent(agent_params)
         training_experiment_2.run()
 
-        time.sleep(60)
 
 
         ns = list(range(1, 16))
@@ -139,10 +167,6 @@ if __name__ == "__main__":
         extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
         extrapolation_space = [(e[1],e[0]) for e in extrapolation_space]
         #other_format = {"results_path" : results_path, "features" : features, "problem" : "DP"}
-        agent_analysis_1 = PreSelectionTesting(training_experiment_1,extrapolation_space=extrapolation_space,description='agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="first_try.csv")')
-
-        agent_analysis_1.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="100_subset_5000_budget.csv")
-
         time.sleep(60)
 
         agent_analysis_2 = PreSelectionTesting(training_experiment_2, extrapolation_space=extrapolation_space,
@@ -151,17 +175,19 @@ if __name__ == "__main__":
         agent_analysis_2.run("10h", random_subset_size=100, ebudget=5000, output_file_name="100_subset_5000_budget.csv")
 
         time.sleep(60)
-
-    for k in range(2, 15, 2):
+    for k in range(1, 16):
         ns = list(range(1, 15))
         ks = [k]
         extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
         extrapolation_space = [(e[1], e[0]) for e in extrapolation_space]
 
-        path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/components_by_state_DP_2_k_over_boolean/components_by_state_DP_2_{k}_over_boolean/"
+        path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean_DP_2_k_over_boolean/boolean_DP_2_{k}_over_boolean/"
         path_to_agents_results_in_level_k = path_to_agents + "100_subset_5000_budget.csv"
 
         best_agent_testing = AgentSelection(info_dict, path_to_agents)
         (best_agent_path, best_agent_number) = best_agent_testing.get_best(pre_selection_testing_csv_path=path_to_agents_results_in_level_k)
         df_performances = best_agent_testing.test_agent(best_agent_path, agent_number=best_agent_number, timeout="10h", ebudget=15000, extrapolation_space=extrapolation_space, components_by_state = features["components_by_state"])
         df_performances.to_csv(path_to_agents + f"/15000_{best_agent_number}.csv")
+        time.sleep(60)      
+        
+        """
