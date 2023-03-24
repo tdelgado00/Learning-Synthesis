@@ -329,7 +329,6 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
         for n in range(up_to):
             for k in range(up_to):
                 if ((n + 1,k + 1 ) in extrapolation_space) and solved_previous:
-                    #FIXME tira error MTSA
                     df.append(test_agent(agentsPath, problem, n + 1, k + 1, i, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False, components_by_state = components_by_state)[0])
                     print("tested ", n + 1, k + 1)
                     df[-1]["idx"] = i

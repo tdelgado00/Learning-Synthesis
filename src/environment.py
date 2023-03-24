@@ -33,7 +33,6 @@ class DCSSolverEnv:
                                     features["only boolean"], self.detached_initial_componentwise_info
                                     )
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
-
         self.info = dict(features)
         self.info.update({
             "nfeatures": self.nfeatures,
@@ -50,7 +49,6 @@ class DCSSolverEnv:
         return r
 
     def step(self, action):
-        self.javaEnv.compute()
         self.javaEnv.expandAction(action)
         if not self.javaEnv.isFinished():
             return self.get_actions(), self.reward(), False, {}
