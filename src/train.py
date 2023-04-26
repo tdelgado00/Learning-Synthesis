@@ -18,7 +18,7 @@ def train_agent(instances,
                 total_steps=500000,
                 copy_freq=5000,
                 early_stopping=True,
-                verbose=False, agent=None, env = None, pathToAgents=None):
+                verbose=False, agent=None, env = None, pathToAgents=None, top=1000):
     """
         + *agent_params:* a dictionary with the agent's hyperparameter values. See the original example for better understanding.
         + *features:* a dictionary with the truth value per feature name, for indicating which ones to use. See the original example for better understanding.
@@ -46,7 +46,7 @@ def train_agent(instances,
     else:
 
         agent.train(env[instances[0]], seconds=seconds, max_steps=total_steps, copy_freq=copy_freq,
-                    save_at_end=True, early_stopping=early_stopping, pathToAgents=pathToAgents)
+                    save_at_end=True, early_stopping=early_stopping, pathToAgents=pathToAgents, top=top)
 
     if pathToAgents is not None:
         with open(pathToAgents + "/" + "training_data.pkl", "wb") as f:
@@ -105,7 +105,8 @@ features = {
         "visits feature": False,
         "labelsThatReach_feature": False,
         "only boolean": True,
-        "components_by_state" : False
+        "components_by_state" : False,
+        "exploration_graph" : True
     }
 agent_params = {
         "eta": 1e-5,

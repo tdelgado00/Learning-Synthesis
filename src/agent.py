@@ -63,7 +63,7 @@ class Agent:
         print("Done.")
 
 
-    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, early_stopping=False, save_at_end=False, ebudget = -1, pathToAgents = None):
+    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, early_stopping=False, save_at_end=False, ebudget = -1, pathToAgents = None,top=1000):
         if self.training_start is None:
             self.training_start = time.time()
             self.last_best = 0
@@ -76,7 +76,7 @@ class Agent:
         obs = env.reset() if (last_obs is None) else last_obs
 
         last_steps = []
-        while True:
+        while top:
             a = self.get_action(obs, self.epsilon)
             last_steps.append(obs[a])
 
@@ -116,6 +116,7 @@ class Agent:
 
             if self.training_steps % copy_freq == 0 and pathToAgents is not None:
                 self.save(env.info, path=pathToAgents)
+                top-=1
 
             if self.params["target q"] and self.training_steps % self.params["reset target freq"] == 0:
                 if self.verbose:

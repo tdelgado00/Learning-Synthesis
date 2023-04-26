@@ -83,6 +83,7 @@ def test_agent(path, problem, n, k, agent_number, max_frontier=1000000, timeout=
     if path != "mock" and uses_feature(path, "labelsThatReach_feature"): command += ["-t"]
     if ebudget > -1: command += ["-e", str(ebudget)]
 
+
     if(components_by_state): command+=["-z"]
     command += ["-f", str(max_frontier)]
 
@@ -303,7 +304,7 @@ def test_training_agents_generalization(problem, file, up_to, timeout, total=100
 
 def test_training_agents_generalization_k_fixed(problem, file, extrapolation_space, timeout, total=100, max_frontier=1000000,
                                                 solved_crit=budget_and_time, ebudget = -1, verbose=True, agentsPath = None,
-                                                path_to_analysis = "./generalization_all.csv", components_by_state = False):
+                                                path_to_analysis = "./generalization_all.csv", components_by_state = False, debugging=True):
     """ Step (S2): Testing a uniform sample of the trained agents with a reduced budget. """
     """
         + *problem:* a string indicating the name of the problem to test the agent at.
@@ -318,7 +319,6 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
     df = []
     start = time.time()
     agents_saved = sorted([int(f[:-5]) for f in os.listdir(agentsPath) if "onnx" in f])
-    np.random.seed(0)
     tested_agents = sorted(np.random.choice(agents_saved, min(total, len(agents_saved)), replace=False))
     extrapolation_space.sort()
     up_to = max(extrapolation_space[-1])
@@ -329,7 +329,7 @@ def test_training_agents_generalization_k_fixed(problem, file, extrapolation_spa
         for n in range(up_to):
             for k in range(up_to):
                 if ((n + 1,k + 1 ) in extrapolation_space) and solved_previous:
-                    df.append(test_agent(agentsPath, problem, n + 1, k + 1, i, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False, components_by_state = components_by_state)[0])
+                    df.append(test_agent(agentsPath, problem, n + 1, k + 1, i, max_frontier=max_frontier, timeout=timeout, ebudget=ebudget, file = file, verbose = False, components_by_state = components_by_state, debug=debugging)[0])
                     print("tested ", n + 1, k + 1)
                     df[-1]["idx"] = i
                     if solved_crit(df[-1]):

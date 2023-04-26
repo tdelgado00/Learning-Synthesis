@@ -17,13 +17,13 @@ class PreSelectionTesting():
         self.trained_experiment = trained_agents_experiment
         self.description = description
 
-    def run(self, timeout_per_problem, random_subset_size = 100, max_frontier=1000000, solved_crit=budget_and_time, ebudget=-1, verbose=True, output_file_name ="pre_selection_testing.csv", other_format = False):
+    def run(self, timeout_per_problem, random_subset_size = 100, max_frontier=1000000, solved_crit=budget_and_time, ebudget=-1, verbose=True, output_file_name ="pre_selection_testing.csv", other_format = False,debugging=True):
         if not other_format:
             agentsPath = self.trained_experiment.results_path
             test_training_agents_generalization_k_fixed(self.trained_experiment.problem, self.trained_experiment.results_path, extrapolation_space,
                                                         timeout_per_problem, total=random_subset_size, max_frontier=max_frontier,
                                                         solved_crit=solved_crit, ebudget=ebudget, verbose=verbose, agentsPath=agentsPath,
-                                                        path_to_analysis=self.trained_experiment.results_path+output_file_name, components_by_state = self.trained_experiment.features["components_by_state"])
+                                                        path_to_analysis=self.trained_experiment.results_path+output_file_name, components_by_state = self.trained_experiment.features["components_by_state"], debugging=debugging)
         else:
             agentsPath = other_format["results_path"]
             test_training_agents_generalization_k_fixed(other_format["problem"],
@@ -34,7 +34,7 @@ class PreSelectionTesting():
                                                     agentsPath=agentsPath,
                                                     path_to_analysis=other_format["results_path"] + output_file_name,
                                                     components_by_state=other_format["features"][
-                                                        "components_by_state"])
+                                                        "components_by_state"],debugging=debugging)
 
 class TrainingExperiment(Experiment):
 
@@ -62,11 +62,11 @@ class TrainingExperiment(Experiment):
                               agent_params["momentum"], agent_params["nesterov"], network=nn)
         return nn_model
 
-    def run(self):
+    def run(self, top = 1000):
         assert(not os.path.exists(self.results_path + "finished.txt")), "Experiment is already fully trained, training would override previous agents."
         self.partially_trained = True
         train_agent(instances=self.training_contexts, pathToAgents=self.results_path, agent_params=self.agent_params, agent=self.agent,
-                    env=self.env, features=self.features)
+                    env=self.env, features=self.features, top=top)
         self.flag_as_fully_trained()
 
     def write_description(self):
@@ -92,7 +92,7 @@ class AgentSelection():
         """
         df = pd.read_csv(pre_selection_testing_csv_path)
         agent = criterion(df)
-        
+
         return (self.agents_path + str(agent) + ".onnx", agent)
 
 
@@ -110,22 +110,22 @@ class AgentSelection():
         return pd.DataFrame(df_rows)
 
 if __name__ == "__main__":
-    problems = ["DP", "AT","BW", "CM", "TA", "TL"]
+    problems = ["DP", ]#"AT","BW", "CM", "TA", "TL"
     for problem in problems:
-        results_path_cbs = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/COMPLETE_components_by_state_{problem}_2_k_over_boolean/"
+        results_path_cbs = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/{problem}_GAE_over_boolean/"
         description = f"Components by state feature for {problem}, considering ALL of the component type states AND excluding components that vary with N"
 
-        features["components_by_state"] = True
+
         info_dict = {"problem" : problem}
-        for k in range(1,16):
-            training_experiment_2 = TrainingExperiment(f"COMPLETE_components_by_state_{problem}_2_{k}_over_boolean", results_path_cbs, description,
+        for k in range(2,2):
+            training_experiment_2 = TrainingExperiment(f"{problem}_GAE_2_{k}_over_boolean", results_path_cbs, description,
                                                      (problem, 2, k), features)
             training_experiment_2.init_agent(agent_params)
-            training_experiment_2.run()
+            training_experiment_2.run(50)
 
 
             ns = list(range(1, 16))
-            ks = [k]
+            ks = list(range(1, 16))
             extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
             extrapolation_space = [(e[1],e[0]) for e in extrapolation_space]
             #other_format = {"results_path" : results_path, "features" : features, "problem" : problem}
@@ -134,16 +134,11 @@ if __name__ == "__main__":
             agent_analysis_2 = PreSelectionTesting(training_experiment_2, extrapolation_space=extrapolation_space,
                                                  description='agent_analysis.run("10h", random_subset_size = 100,ebudget=5000, output_file_name="first_try.csv")')
 
-            agent_analysis_2.run("10h", random_subset_size=100, ebudget=5000, output_file_name="100_subset_5000_budget.csv")
+            agent_analysis_2.run("10h", random_subset_size=100, ebudget=5000, output_file_name="100_subset_5000_budget.csv", debugging=False,solved_crit=budget_and_time)
 
             time.sleep(60)
-        for k in range(1, 16):
-            ns = list(range(1, 16))
-            ks = [k]
-            extrapolation_space = list(list(zip(ks, element))[0] for element in product(ns, repeat=len(ks)))
-            extrapolation_space = [(e[1], e[0]) for e in extrapolation_space]
 
-            path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/COMPLETE_components_by_state_{problem}_2_k_over_boolean/COMPLETE_components_by_state_{problem}_2_{k}_over_boolean/"
+            path_to_agents = f"/home/marco/Desktop/Learning-Synthesis/experiments/results/{problem}_GAE_over_boolean/{problem}_GAE_2_{k}_over_boolean/"
             path_to_agents_results_in_level_k = path_to_agents + "100_subset_5000_budget.csv"
 
             best_agent_testing = AgentSelection(info_dict, path_to_agents)
@@ -152,11 +147,3 @@ if __name__ == "__main__":
             df_performances.to_csv(path_to_agents + f"/15000_{best_agent_number}.csv")
             time.sleep(60)
 
-"""if __name__ == "__main__":
-    results_path_cbs = "/home/marco/Desktop/Learning-Synthesis/experiments/results/COMPLETE_components_by_state_DP_2_k_over_boolean/"
-    description = "Components by state feature for DP, considering ALL of the component type states"
-
-    features["components_by_state"] = True
-    info_dict = {"problem" : "DP"}
-"""
-        
