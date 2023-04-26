@@ -52,10 +52,13 @@ class DCSSolverEnv:
 
     def step(self, action):
         child_compostate = self.javaEnv.expandAction(action)
+        child_is_marked = child_compostate[3]
         if(self.exploration_graph is not None):
-            self.exploration_graph.add_node(child_compostate[0])
+            self.exploration_graph.add_node(child_compostate[0], )
             self.exploration_graph.add_node(child_compostate[2])
             self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label = child_compostate[1])
+
+
         if not self.javaEnv.isFinished():
             return self.get_actions(), self.reward(), False, {}
         else:
