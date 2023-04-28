@@ -137,6 +137,9 @@ def parse_args():
     parser.add_argument("--max-instance-size", type=int, default=15,
                         help="Maximum value for parameters (n, k) on steps 2 and 3")
 
+    parser.add_argument("--exploration-graph", action=argparse.BooleanOptionalAction, default=False,
+                        help="Enables the re-construction of the exploration graph in python, to be used by an agent.")
+
     args = parser.parse_args()
     args.nn_size = (20,)
 

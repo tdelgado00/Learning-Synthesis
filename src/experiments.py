@@ -33,7 +33,7 @@ class TrainingExperiment(Experiment):
         envs = {}
         for instance in self.training_contexts:
             n, k = instance
-            envs[instance] = DCSSolverEnv(self.problem, n, k, self.args, self.results_path + "features.txt")
+            envs[instance] = DCSSolverEnv(self.problem, n, k, self.args, self.results_path + "features.txt", exploration_graph=self.args.exploration_graph)
         return envs
 
     def init_agent(self):

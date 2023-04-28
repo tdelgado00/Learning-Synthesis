@@ -2,14 +2,14 @@ import jpype
 import jpype.imports
 from util import *
 from plots import read_monolithic
-
+import networkx as nx
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])
 from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForPython, FeatureBasedExplorationHeuristic
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k, args, features_path, normalize_reward=False):
+    def __init__(self, problem, n, k, args, features_path, normalize_reward=False, exploration_graph=False):
         self.problem = problem
         self.n = n
         self.k = k
@@ -39,6 +39,8 @@ class DCSSolverEnv:
             "problem": self.problem,
             "expansion_budget_exceeded": "false"
         }
+        self.exploration_graph = None
+        if exploration_graph: self.exploration_graph = nx.DiGraph()
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
@@ -47,7 +49,15 @@ class DCSSolverEnv:
         return r
 
     def step(self, action):
-        self.javaEnv.expandAction(action)
+        if self.exploration_graph is not None:
+            child_compostate = self.javaEnv.expandAction(action)
+            child_is_marked = child_compostate[3]
+            self.exploration_graph.add_node(child_compostate[0], )
+            self.exploration_graph.add_node(child_compostate[2])
+            self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
+        else:
+            self.javaEnv.expandAction(action)
+
         if not self.javaEnv.isFinished():
             return self.get_actions(), self.reward(), False, {}
         else:
@@ -68,5 +78,5 @@ class DCSSolverEnv:
         return {
             "synthesis time(ms)": float(self.javaEnv.getSynthesisTime()),
             "expanded transitions": int(self.javaEnv.getExpandedTransitions()),
-            "expanded states": int(self.javaEnv.getExpandedStates()),
+            "expanded states": int(self.javaEnv.getExpandedStates())
         }

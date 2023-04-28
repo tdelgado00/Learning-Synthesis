@@ -64,7 +64,8 @@ class Agent:
         print("Done.")
 
     def train(self, env, seconds=None, max_steps=None, max_eps=None, save_freq=200000, last_obs=None,
-              early_stopping=False, save_at_end=False, results_path=None):
+              early_stopping=False, save_at_end=False, results_path=None, top=1000):
+
         if self.training_start is None:
             self.training_start = time.time()
             self.last_best = 0
@@ -77,7 +78,7 @@ class Agent:
         obs = env.reset() if (last_obs is None) else last_obs
 
         last_steps = []
-        while True:
+        while top:  # What is top used for?
             a = self.get_action(obs, self.epsilon)
             last_steps.append(obs[a])
 
@@ -117,6 +118,7 @@ class Agent:
 
             if self.training_steps % save_freq == 0 and results_path is not None:
                 self.save(env.info, path=results_path)
+                top -= 1
 
             if self.args.target_q and self.training_steps % self.args.reset_target_freq == 0:
                 if self.verbose:
