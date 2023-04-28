@@ -1,8 +1,6 @@
 import numpy as np
 import json
-import sys
 import pandas as pd
-import pickle
 
 
 def results_path(problem, n=2, k=2, file=""):
@@ -23,12 +21,15 @@ def filename(parameters):
 
 def last_agent(df):
     return df["idx"].max()
-def joinAsStrings(listOfArgs):
+
+
+def join_as_strings(listOfArgs):
     res = ""
-    for arg in listOfArgs: res+=("_"+str(arg))
+    for arg in listOfArgs: res += ("_" + str(arg))
     return res
 
-def best_agent_2_2(problem, file,up_to=None, used_testing_timeout=None,total=None,used_testing_ebudget=None):
+
+def best_agent_2_2(problem, file):
     return best_agent_n_k(problem, file, 2, 2)
 
 
@@ -45,7 +46,8 @@ def best_agent_n_k(problem, file, n=2, k=2):
     return max(idxs)
 
 
-def best_generalization_agent(problem, file,up_to=None, used_testing_timeout=None,total=None,used_testing_ebudget=None):
+def best_generalization_agent(problem, file, up_to=None, used_testing_timeout=None, total=None,
+                              used_testing_ebudget=None):
     df = pd.read_csv("experiments/results/" + filename([problem, 2, 2]) + "/" + file + "/generalization_all.csv")
     max_idx = df["idx"].max()
     solved = [0 for _ in range(max_idx + 1)]
@@ -55,6 +57,22 @@ def best_generalization_agent(problem, file,up_to=None, used_testing_timeout=Non
     for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
         expanded[x] = cant
     perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
+    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
+
+
+def best_generalization_agent_ebudget(df):
+    df = notExceeded(df)
+    if df.shape[0] == 0:
+        return None
+    max_idx = df["idx"].max()
+    solved = [0 for i in range(max_idx + 1)]
+    expanded = [0 for i in range(max_idx + 1)]
+    for x, cant in dict(df["idx"].value_counts()).items():
+        solved[x] = cant
+    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
+        expanded[x] = cant
+    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
+
     return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
 
 
@@ -92,22 +110,6 @@ def read_results(lines):
     return results
 
 
-def best_generalization_agent_ebudget(df):
-    df = notExceeded(df)
-    if df.shape[0]==0:
-        return None
-    max_idx = df["idx"].max()
-    solved = [0 for i in range(max_idx + 1)]
-    expanded = [0 for i in range(max_idx + 1)]
-    for x, cant in dict(df["idx"].value_counts()).items():
-        solved[x] = cant
-    for x, cant in dict(df.groupby("idx")["expanded transitions"].sum()).items():
-        expanded[x] = cant
-    perf = [(solved[i], expanded[i], i) for i in range(max_idx + 1)]
-
-    return max(perf, key=lambda t: (t[0], -t[1], t[2]))[2]
-
-
 def solved_by_agent(path):
     df = pd.read_csv(path)
     df = notExceeded(df)
@@ -140,15 +142,16 @@ def parse_java_debug(debug):
         actions = []
         features = []
         for j in range(n):
-            line = debug[i + 1 + j].split(" ")
+            line = debug[i + 1 + j].split("] ")[1]
+            line = line.split(" ")
             actions.append(line[0])
             features.append([float(x) for x in line[1:nfeatures + 1]])
-        values = [float(x) for x in debug[i + 1 + n:i + 1 + 2 * n]]
-        selected = float(debug[i + 1 + 2 * n])
+        values = [float(x) for x in debug[i + 1 + n].split(" ") if x != ""]
+        selected = float(debug[i + 2 + n])
         steps.append(
             {"frontier size": n, "nfeatures": nfeatures, "actions": actions, "features": features, "values": values,
              "selected": selected})
-        i += n * 2 + 2
+        i += n + 3
     return steps
 
 
@@ -177,6 +180,6 @@ def read_monolithic():
         monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
     return monolithic_results
 
+
 def budget_and_time(series):
     return series["expansion_budget_exceeded"] == 'false' and not np.isnan(series["synthesis time(ms)"])
-

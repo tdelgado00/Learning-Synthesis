@@ -14,64 +14,19 @@ class Model:
         pass
 
     def predict(self, s):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def eval_batch(self, obss):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def eval(self, s):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def best(self, s):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def current_loss(self):
-        raise NotImplementedError
-
-
-class MLPModel(Model):
-
-    def __init__(self, nnsize, optimizer, eta):
-        super().__init__()
-        self.model = MLPRegressor(hidden_layer_sizes=nnsize,
-                                  solver=optimizer,
-                                  learning_rate="constant",  # only used with sgd optimizer
-                                  learning_rate_init=eta)
-
-        self.has_learned_something = False
-
-    def eval_batch(self, obss):
-        return np.array([np.max(self.predict(s)) for s in obss])
-
-    def eval(self, s):
-        return np.max(self.predict(s))
-
-    def best(self, s):
-        return np.argmax(self.predict(s))
-
-    def predict(self, s):
-        if not self.has_learned_something or s is None:
-            return 0
-        return self.model.predict(s)
-
-    def single_update(self, s, value):
-        self.model.partial_fit([s], [value])
-        self.has_learned_something = True
-
-    def batch_update(self, s, value):
-        self.model.partial_fit(s, value)
-        self.has_learned_something = True
-
-    def to_onnx(self):
-        X_test = np.array([[0 for _ in range(self.nfeatures())]]).astype(np.float32)
-        onnx_model = to_onnx(self.model, X_test).SerializeToString()
-        return onnx_model, InferenceSession(onnx_model)
-
-    def nfeatures(self):
-        return self.model.n_features_in_
-
-    def current_loss(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class OnnxModel(Model):
@@ -96,12 +51,12 @@ class OnnxModel(Model):
         return np.max(self.predict(s))
 
     def current_loss(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class TorchModel(Model):
 
-    def __init__(self, nfeatures, eta=1e-5, momentum=0.9, nesterov=True, network = None):
+    def __init__(self, args, nfeatures, network=None):
         super().__init__()
         self.nfeatures = nfeatures
         self.n, self.k = None, None
@@ -110,12 +65,15 @@ class TorchModel(Model):
         print("Using", self.device, "device")
         self.model = network
         print(self.model)
-        print("Learning rate:", eta)
+        print("Learning rate:", args.learning_rate)
 
         self.loss_fn = nn.MSELoss()
 
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=eta,
-                                         momentum=momentum, nesterov=nesterov, weight_decay=1e-4)
+        self.optimizer = torch.optim.SGD(self.model.parameters(),
+                                         lr=args.learning_rate,
+                                         momentum=args.momentum,
+                                         nesterov=args.nesterov,
+                                         weight_decay=args.weight_decay)
 
         self.has_learned_something = False
 

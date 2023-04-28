@@ -6,15 +6,14 @@ import numpy as np
 import os
 
 from replay_buffer import ReplayBuffer
-from model import MLPModel, OnnxModel, TorchModel
+from model import OnnxModel
 
 
 class Agent:
-    def __init__(self, params, nn_model, save_file=None, verbose=False):
-        self.params = params
-        #if params["model"] == "sklearn":
-         #   self.model = MLPModel(params["nnsize"], params["optimizer"], params["eta"])
-        assert(nn_model!=None)
+    def __init__(self, args, nn_model, save_file=None, verbose=False):
+        assert nn_model is not None
+
+        self.args = args
         self.model = nn_model
 
         self.target = None
@@ -25,7 +24,7 @@ class Agent:
 
         self.training_start = None
         self.training_steps = 0
-        self.epsilon = params["first epsilon"]
+        self.epsilon = args.first_epsilon
 
         self.verbose = verbose
 
@@ -50,28 +49,30 @@ class Agent:
 
     def initializeBuffer(self, envs):
         """ Initialize replay buffer uniformly with experiences from a set of environments """
-        exp_per_instance = self.params["buffer size"] // len(envs)
+        exp_per_instance = self.args.buffer_size // len(envs)
 
         print("Initializing buffer with", exp_per_instance, "observations per instance, and", len(envs), "instances.")
 
-        self.buffer = ReplayBuffer(self.params["buffer size"])
+        self.buffer = ReplayBuffer(self.args.buffer_size)
         for env in envs.values():
-            random_experience = ReplayBuffer.get_experience_from_random_policy(env, total_steps=exp_per_instance, nstep=self.params["nstep"])
+            random_experience = ReplayBuffer.get_experience_from_random_policy(env,
+                                                                               total_steps=exp_per_instance,
+                                                                               nstep=self.args.n_step)
             for action_features, reward, obs2 in random_experience:
                 self.buffer.add(action_features, reward, obs2)
 
         print("Done.")
 
-
-    def train(self, env, seconds=None, max_steps=None, max_eps=None, copy_freq=200000, last_obs=None, early_stopping=False, save_at_end=False, ebudget = -1, pathToAgents = None):
+    def train(self, env, seconds=None, max_steps=None, max_eps=None, save_freq=200000, last_obs=None,
+              early_stopping=False, save_at_end=False, results_path=None):
         if self.training_start is None:
             self.training_start = time.time()
             self.last_best = 0
 
         steps, eps = 0, 0
 
-        epsilon_step = (self.params["first epsilon"] - self.params["last epsilon"])
-        epsilon_step /= self.params["epsilon decay steps"]
+        epsilon_step = (self.args.first_epsilon - self.args.last_epsilon)
+        epsilon_step /= self.args.epsilon_decay_steps
 
         obs = env.reset() if (last_obs is None) else last_obs
 
@@ -82,15 +83,15 @@ class Agent:
 
             obs2, reward, done, info = env.step(a)
 
-            if self.params["experience replay"]:
+            if self.args.exp_replay:
                 if done:
                     for j in range(len(last_steps)):
                         self.buffer.add(last_steps[j], -len(last_steps) + j, None)
                     last_steps = []
                 else:
-                    if len(last_steps) >= self.params["nstep"]:
-                        self.buffer.add(last_steps[0], -self.params["nstep"], obs2)
-                    last_steps = last_steps[len(last_steps) - self.params["nstep"] + 1:]
+                    if len(last_steps) >= self.args.n_step:
+                        self.buffer.add(last_steps[0], -self.args.n_step, obs2)
+                    last_steps = last_steps[len(last_steps) - self.args.n_step + 1:]
                 self.batch_update()
             else:
                 self.update(obs, a, reward, obs2)
@@ -114,10 +115,10 @@ class Agent:
             else:
                 obs = obs2
 
-            if self.training_steps % copy_freq == 0 and pathToAgents is not None:
-                self.save(env.info, path=pathToAgents)
+            if self.training_steps % save_freq == 0 and results_path is not None:
+                self.save(env.info, path=results_path)
 
-            if self.params["target q"] and self.training_steps % self.params["reset target freq"] == 0:
+            if self.args.target_q and self.training_steps % self.args.reset_target_freq == 0:
                 if self.verbose:
                     print("Resetting target.")
                 self.target = OnnxModel(self.model)
@@ -144,11 +145,12 @@ class Agent:
                 print("Converged!")
                 break
 
-            if self.epsilon > self.params["last epsilon"] + 1e-10:
+            if self.epsilon > self.args.last_epsilon + 1e-10:
                 self.epsilon -= epsilon_step
 
-        if pathToAgents is not None and save_at_end:
-            self.save(env.info, pathToAgents)
+        if results_path is not None and save_at_end:
+            self.save(env.info, results_path)
+
         return obs.copy()
 
     def get_action(self, s, epsilon):
@@ -171,7 +173,7 @@ class Agent:
             print("Single update. Value:", value+reward)
 
     def batch_update(self):
-        action_featuress, rewards, obss2 = self.buffer.sample(self.params["batch size"])
+        action_featuress, rewards, obss2 = self.buffer.sample(self.args.batch_size)
         if self.target is not None:
             values = self.target.eval_batch(obss2)
         else:
@@ -191,7 +193,7 @@ class Agent:
                 "training time": time.time() - self.training_start,
                 "training steps": self.training_steps,
             }
-            info.update(self.params)
+            info.update(vars(self.args))
             info.update(env_info)
             json.dump(info, f)
 

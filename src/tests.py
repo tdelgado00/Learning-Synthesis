@@ -1,7 +1,7 @@
 import os
 from environment import generateEnvironments
 from testing import test_agent, test_training_agents_generalization, test_agent_all_instances
-#from testing import test_onnx, test_agents_q
+# from testing import test_onnx, test_agents_q
 from util import *
 from train import train_agent
 import time
@@ -9,41 +9,42 @@ from model import *
 from agent import Agent
 from shutil import rmtree
 
-
-
-
 sample_params = {
-        "eta": 1e-5,
-        "first epsilon": 1.0,
-        "last epsilon": 0.01,
-        "epsilon decay steps": 250000,
-        "nnsize": (20,),
-        "optimizer": "sgd",
-        "model": "pytorch",
-        "target q": True,
-        "reset target freq": 10000,
-        "experience replay": True,
-        "buffer size": 10000,
-        "batch size": 10,
-        "nstep": 1,
-        "momentum": 0.9,
-        "nesterov": True
-    }
+    "eta": 1e-5,
+    "first epsilon": 1.0,
+    "last epsilon": 0.01,
+    "epsilon decay steps": 250000,
+    "nnsize": (20,),
+    "optimizer": "sgd",
+    "model": "pytorch",
+    "target q": True,
+    "reset target freq": 10000,
+    "experience replay": True,
+    "buffer size": 10000,
+    "batch size": 10,
+    "nstep": 1,
+    "momentum": 0.9,
+    "nesterov": True
+}
 sample_features = {
-        "ra feature": False,
-        "context features": True,
-        "labels": True,
-        "state labels": 1,
-        "je feature": True,
-        "nk feature": False,
-        "prop feature": False,
-        "visits feature": False,
-        "labelsThatReach_feature": True,
-        "only boolean": True,
-    }
+    "ra feature": False,
+    "context features": True,
+    "labels": True,
+    "state labels": 1,
+    "je feature": True,
+    "nk feature": False,
+    "prop feature": False,
+    "visits feature": False,
+    "labelsThatReach_feature": True,
+    "only boolean": True,
+}
+
+
 class ExperimentalTester:
-    """This class performs a basic white and black box tests on the core functionalities to train the agent and test it on the full benchmark"""
-    #TODO: lo mas importante es que corran train_agent, test_training_agents_generalization y test_agent_all_instances y que guarden los archivos correctamente
+    """This class performs a basic white and black box tests on the core functionalities
+    to train the agent and test it on the full benchmark"""
+
+    # TODO: lo mas importante es que corran train_agent, test_training_agents_generalization y test_agent_all_instances y que guarden los archivos correctamente
     def __init__(self, training_contexts, modelName, agent, env):
         self.training_contexts = training_contexts
         self.modelName = modelName
@@ -56,35 +57,39 @@ class ExperimentalTester:
         self.testSampleAgentsAreStoredCorrectly()
         self.testSampleAgentsEvaluationsAreStoredCorrectly()
         self.testSampleAgentsGeneralizationIsStoredCorrectly()
+
     def testCompleteTrainingParams(self):
-        assert(sample_params.keys() == self.agent.params.keys())
+        assert (sample_params.keys() == self.agent.params.keys())
         print("PASSED")
 
     def testCompleteTrainingFeatures(self):
-        assert(sample_features.keys() == self.env[self.training_contexts[0]].features.keys())
+        assert (sample_features.keys() == self.env[self.training_contexts[0]].features.keys())
         print("PASSED")
 
     def testSampleAgentsAreStoredCorrectly(self, problem):
-        #rmtree(pathToModel, ignore_errors=True)
+        # rmtree(pathToModel, ignore_errors=True)
 
         correct_path_format = "experiments/results/test/test_1/" + problem
-        train_agent(instances = self.training_contexts, agent_params=sample_params, agent = self.agent, env = self.env, features=sample_features, total_steps=100, copy_freq=10, pathToAgents=correct_path_format)
+        train_agent(instances=self.training_contexts, agent_params=sample_params, agent=self.agent, env=self.env,
+                    features=sample_features, total_steps=100, copy_freq=10, pathToAgents=correct_path_format)
         modelFolderFiles = os.listdir(correct_path_format)
         modelFolderFiles = [f for f in modelFolderFiles if os.path.isfile(correct_path_format + '/' + f)]
-        assert(len(modelFolderFiles)>0)
+        assert (len(modelFolderFiles) > 0)
         print("PASSED")
+
     def testSampleAgentsEvaluationsAreStoredCorrectly(self, problem):
 
         correct_path_format = "experiments/results/test/test_1/" + problem
-        #breakpoint()
-        pathToCsv = correct_path_format + "/generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv"
+        # breakpoint()
+        pathToCsv = correct_path_format + "/generalization_all" + joinAsStrings([2, "5s", 100, 100]) + ".csv"
         try:
             os.remove(pathToCsv)
         except FileNotFoundError:
             print("Not previously evaluated")
-        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", total=100, ebudget=100, verbose=True, agentPath=correct_path_format)
+        test_training_agents_generalization(self.training_contexts[0][0], self.modelName, 2, "5s", total=100,
+                                            ebudget=100, verbose=True, agentPath=correct_path_format)
 
-        assert("generalization_all"+joinAsStrings([2, "5s", 100, 100])+".csv" in os.listdir(correct_path_format))
+        assert ("generalization_all" + joinAsStrings([2, "5s", 100, 100]) + ".csv" in os.listdir(correct_path_format))
         print("PASSED")
 
     def testSampleAgentsGeneralizationIsStoredCorrectly(self):
@@ -94,36 +99,38 @@ class ExperimentalTester:
             os.remove(pathToCsv)
         except FileNotFoundError:
             print("Not previously evaluated")
-        test_agent_all_instances(problem=self.training_contexts[0][0], file=self.modelName, up_to=2, timeout="5s", selection=best_generalization_agent_ebudget,ebudget=100,
-                                            name="all", total=100, used_testing_timeout = "5s")
+        test_agent_all_instances(problem=self.training_contexts[0][0], file=self.modelName, up_to=2, timeout="5s",
+                                 selection=best_generalization_agent_ebudget, ebudget=100,
+                                 name="all", total=100, used_testing_timeout="5s")
         file_name = ("all" + "_" + problem + "_" + str(2) + "_" + str(100) + "_TO:" + "5s" + ".csv")
         assert (file_name in os.listdir(pathToModel))
         print("PASSED")
 
     def testMaintainsConsistentPerformanceWithPreviousVersions(self):
-        #TODO: problema es que hay cosas del algoritmo que estan aleatorizados (ej: parametros de la red)
+        # TODO: problema es que hay cosas del algoritmo que estan aleatorizados (ej: parametros de la red)
         pass
 
     def testTrainingDeviceIsCorrect(self):
-            pass
-            # assert(self.agent.model.device == )
+        pass
+        # assert(self.agent.model.device == )
 
     def testInferenceDeviceIsCorrect(self):
-            pass
+        pass
 
     def testNetworkIsCorrectlyInitialized(self):
-            pass
+        pass
 
 
 def tests():
     pass
-    #test_training_pipeline()
-    #test_java_and_python_coherent()
+    # test_training_pipeline()
+    # test_java_and_python_coherent()
 
 
 if __name__ == "__main__":
 
-    print("Insert your experimental variation here to fast-test the full training and evaluation pipeline. Starts in 5 seconds...")
+    print(
+        "Insert your experimental variation here to fast-test the full training and evaluation pipeline. Starts in 5 seconds...")
     time.sleep(5)
     for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         exp_folder = "testSampleName"
@@ -136,13 +143,12 @@ if __name__ == "__main__":
         nn_model = TorchModel(nfeatures, sample_params["eta"],
                               sample_params["momentum"], sample_params["nesterov"], network=nn)
 
-        agent = Agent(sample_params, save_file=results_path(problem,file = exp_folder), verbose=False, nn_model=nn_model)
-
+        agent = Agent(sample_params, save_file=results_path(problem, file=exp_folder), verbose=False, nn_model=nn_model)
 
         tester = ExperimentalTester(training_contexts, exp_folder, agent, env)
-        #tester.testSampleAgentsAreStoredCorrectly(problem)
+        # tester.testSampleAgentsAreStoredCorrectly(problem)
         tester.testSampleAgentsEvaluationsAreStoredCorrectly(problem)
-    #tests()
+    # tests()
 
 """
 def test_java_and_python_coherent():

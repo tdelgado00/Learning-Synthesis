@@ -1,744 +1,167 @@
-import matplotlib.pyplot as plt
-import pandas
-import seaborn as sns
-import os
-
-from util import results_path
+import pandas as pd
 from util import *
-from plots_util import *
-
-import jpype
-
-if not jpype.isJVMStarted():
-    jpype.startJVM(classpath=['mtsa.jar'])
-
-plt.rc('axes', labelsize=14)
-plt.rc('xtick', labelsize=12)
-plt.rc('ytick', labelsize=12)
-
-grey = "#d0e1d4"
-red = "#ed6a5a"
-blue = "#008bf8"
-green = "#08a045"
-green1 = "#adc178"
-green2 = "#045c27"
-white = "#ffffff"
-yellow = "#ffff00"
-
-
-def plot_line(value, label, color, ax, fontsize):
-    ax.text(5, value, label, {"fontsize": fontsize})
-    ax.axhline(y=value, color=color, linestyle="-")
-
-
-def add_rounded_idx(df, base):
-    df["rounded idx"] = df["idx"].apply(lambda idx: idx // base * base if idx < 100 else 100 - base)
-    df = df.loc[df["idx"] <= (df["rounded idx"].max() - 1) * base]
-    return df
-
-
-def add_convolution(df, window_size):
-    df["mean transitions"] = list(
-        np.convolve(list(df["expanded transitions"]), np.ones(window_size), mode='valid') / window_size) + \
-                             [np.nan for _ in range(window_size - 1)]
-    df["mean transitions / total"] = df["mean transitions"] / df["total transitions"]
-    return df
-
-
-def fillna(df):
-    df["expanded transitions"] = df["expanded transitions"].fillna(df["expanded transitions"].max() + 10)
-    return df
-
-
-def onlyifsolvedlast(res):
-    for n in range(1, 16):
-        for k in range(1, 16):
-            if (n > 1 and res[n - 1][k] == float("inf")) or (k > 1 and res[n][k - 1] == float("inf")):
-                res[n][k] = float("inf")
-    return res
-
-
-def get_pivot(df, metric="expanded transitions", require_solved_last=True):
-    df = fill_df(df, 15)
-    df = df.pivot("n", "k", metric)
-    df = df.fillna(float("inf"))
-    if require_solved_last:
-        df = onlyifsolvedlast(df)
-    return df
-
-
-def plot_ra_and_random_trans(data, problem, n, k, ax, fontsize=15):
-    ra = get_trans(data["ra 10m"][problem], n, k)
-    random_min = min(data["random small"][(problem, n, k)])
-    random_mean = np.mean(data["random small"][(problem, n, k)])
-    plot_line(-ra, "RA", "red", ax, fontsize)
-    plot_line(-random_min, "Random max", "green", ax, fontsize)
-    plot_line(-random_mean, "Random mean", "green", ax, fontsize)
-
-
-def train_transitions_min(used_problems, used_files, data, save_dir):
-    print("Saving training transitions")
-    with open(save_dir + "train trans.txt", "w+") as f:
-        for problem in data["train"].keys():
-            f.write(problem + "\n")
-            for file in data["train"][problem].keys():
-                f.write(file + " " + str(data["train"][problem][file]["expanded transitions"].min()) + "\n")
-
-
-def get_trans(df, n, k):
-    loc = df.loc[(df["n"] == n) & (df["k"] == k)]["expanded transitions"]
-    if len(loc) == 0:
-        return np.nan
-    else:
-        assert len(loc) == 1
-        return loc.iat[0]
-
-
-def plot_2_2_3_3(used_problems, used_files, data, path, metric="expanded transitions"):
-    used_problems = [p for p in used_problems if p != "CM"]
-    f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-
-    for i in range(len(used_problems)):
-        problem = used_problems[i]
-        ax = axs[i] if len(used_problems) > 1 else axs
-
-        assert len({g for f, g in used_files}) == 1
-        dfs = [data["all"][problem][file] for file, group in used_files]
-        dfs = [df.loc[(df["n"] == 2) & (df["k"] == 2)].copy() for df in dfs] + \
-              [df.loc[(df["n"] == 3) & (df["k"] == 3)].copy() for df in dfs]
-        if metric == "mean transitions":
-            dfs = [add_convolution(df, 10) for df in dfs]
-
-        df = pd.concat(dfs, ignore_index=True)
-
-        df["reward"] = -df[metric + " / total"]
-        sns.lineplot(data=df, x="idx", y="reward", ax=ax, ci="sd", hue="n", palette=["red", "blue"])
-
-        mono_2_2 = data["mono"]["expanded transitions", problem][2][2]
-        mono_3_3 = data["mono"]["expanded transitions", problem][3][3]
-        ra_2_2 = get_trans(data["ra 10m"][problem], 2, 2)
-        plot_line(-ra_2_2 / mono_2_2, "RA 2 2", "red", ax, 15)
-        ra_3_3 = get_trans(data["ra 10m"][problem], 3, 3)
-        plot_line(-ra_3_3 / mono_3_3, "RA 3 3", "blue", ax, 15)
-
-        ax.set_title(problem, fontdict={"fontsize": 18})
-
-    handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
-    plt.legend(handles, labels, prop={'size': 15}, loc="lower right")
-    plt.tight_layout()
-    if metric == "mean transitions":
-        plt.savefig(path + "mean 2 2 3 3" + ".jpg")
-    else:
-        plt.savefig(path + "2 2 3 3" + ".jpg")
-
-
-def plot_test_transitions(used_problems, used_files, data, path, n=2, k=2, metric="expanded transitions", units=False):
-    print("Plotting test transitions")
-    if n >= 3 or k >= 3:
-        used_problems = [p for p in used_problems if p != "CM"]
-    f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-    fout = open(path + "test trans " + str(n) + " " + str(k) + ".txt", "w+")
-
-    for i in range(len(used_problems)):
-        problem = used_problems[i]
-        ax = axs[i] if len(used_problems) > 1 else axs
-
-        dfs = [data["all"][problem][file] for file, group in used_files]
-        dfs = [df.loc[(df["n"] == n) & (df["k"] == k)].copy() for df in dfs]
-        if metric == "mean transitions":
-            dfs = [add_convolution(df, 10) for df in dfs]
-        df = pd.concat(dfs, ignore_index=True)
-
-        df["reward"] = -df[metric]
-        if (units):
-            sns.lineplot(data=df, x="idx", y="reward", ax=ax, hue="group", estimator=None, units=True)
-        else:
-            sns.lineplot(data=df, x="idx", y="reward", ax=ax, ci="sd", hue="group")
-
-        ra = get_trans(data["ra 10m"][problem], n, k)
-        plot_line(-ra, "RA", "red", ax, 15)
-
-        fout.write(problem + "\n")
-        fout.write("RA " + str(ra) + "\n")
-        for file, dfg in df.groupby("file"):
-            m = dfg["expanded transitions"].min()
-            fout.write(file + " " + str(m) + " " + str(dfg.loc[dfg["expanded transitions"] == m]["idx"].iat[0]) + "\n")
-
-        if (n, k) == (2, 2):
-            random_min = min(data["random small"][(problems[i], n, k)])
-            random_mean = np.mean(data["random small"][(problems[i], n, k)])
-            plot_line(-random_min, "Random max", "green", ax, 15)
-            plot_line(-random_mean, "Random mean", "green", ax, 15)
-
-        ax.set_title(" ".join([problem, str(n), str(k)]), fontdict={"fontsize": 18})
-
-    handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
-    plt.legend(handles, labels, prop={'size': 15}, loc="lower right")
-    plt.tight_layout()
-    u = "units" if units else ""
-    if metric == "mean transitions":
-        plt.savefig(path + " ".join(["mean", str(n), str(k)]) + u + ".jpg")
-    else:
-        plt.savefig(path + " ".join([str(n), str(k)]) + u + ".jpg")
-
-
-def transitions_table(used_problems, used_files, data, path):
-    print("Saving transitions table")
-    print(path)
-    instances = [(2, 2), (2, 3), (3, 2), (3, 3), (4, 4)]
-    fout = open(path + "transitions_table.txt", "w+")
-    dfs = []
-    groups = list({g for f, g in used_files})
-    for i in range(len(used_problems)):
-        df = []
-        p = used_problems[i]
-        for key in data["agent 10m"].keys():
-            if key != "all":
-                groups += list({g + " " + key for f, g in used_files})
-
-        agent_results = {g: {(n, k): [] for n, k in instances} for g in groups}
-        for f, g in used_files:
-            results = data["agent 10m"]["all"][p][f].pivot("n", "k", "expanded transitions")
-            for n, k in instances:
-                agent_results[g][(n, k)].append(results[k][n])
-            for key in data["agent 10m"].keys():
-                if key != "all":
-                    results = data["agent 10m"][key][p][f].pivot("n", "k", "expanded transitions")
-                    for n, k in instances:
-                        agent_results[g + " " + key][(n, k)].append(results[k][n])
-        for g, results in agent_results.items():
-            agent_row = {(n, k): results[(n, k)] for n, k in instances}
-            agent_row["approach"] = g
-            df.append(agent_row)
-
-        ra_row = {(n, k): [get_trans(data["ra 10m"][p], n, k)] for n, k in instances}
-        random_row = {(n, k): [get_trans(data["random 10m"][p][i], n, k) for i in range(len(data["random 10m"][p]))]
-                      for n, k in instances}
-        ra_row["approach"], random_row["approach"] = "RA", "random"
-
-        toNan = lambda x: np.nan if x == float("inf") else x
-        mono_row = {(n, k): [toNan(data["mono"]["expanded transitions", p][k][n])] for n, k in instances}
-        mono_row["approach"] = "total"
-
-        df += [ra_row, random_row, mono_row]
-        df = pd.DataFrame(df)
-        df["problem"] = p
-        dfs.append(df)
-    df = pd.concat(dfs, ignore_index=True)
-    df = df[instances]
-    indexes = [(p, ap) for p in used_problems for ap in groups + ["RA", "Random", "Total"]]
-    df.index = pd.MultiIndex.from_tuples(indexes)
-
-    def format(x):
-        if np.any(np.isnan(x)):
-            return "nan"
-        if len(x) == 1:
-            return "$" + str(x[0]) + "$"
-        return "$" + str(np.round(np.mean(x), 2)) + " \pm " + str(np.round(np.std(x), 2)) + "$"
-
-    s = df.style.format(formatter=format)
-
-    fout.write(s.to_latex(position="h", position_float="centering",
-                          hrules=True, label="tbl:generalization", caption="Styled LaTeX Table",
-                          multirow_align="c", multicol_align="r", clines="skip-last;data") + "\n")
-
-    fout.close()
-
-    df.to_csv(path + "transitions_table.csv")
-
-
-def plot_loss(used_problems, used_files, data, path):
-    print("Plotting loss")
-    f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-
-    for i in range(len(used_problems)):
-        p = used_problems[i]
-        ax = axs[i] if len(used_problems) > 1 else axs
-        df = pd.concat(list(data["train"][p].values()), ignore_index=True)
-        df.dropna(subset=["loss"])
-        sns.lineplot(data=df, x="training steps", y="loss", ax=ax, hue="group", ci="sd", alpha=0.6)
-
-        ax.get_legend().remove()
-        # if i != 0:
-        #    ax.get_yaxis().set_visible(False)
-        ax.set_title(used_problems[i], fontdict={"fontsize": 18})
-
-    handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
-    plt.legend(handles, labels, prop={'size': 15}, loc="lower right")
-    plt.tight_layout()
-    plt.savefig(path + "/loss.jpg")
-
-
-def process_training_data(data, used_problems, used_files, base=10000, window_size=10):
-    print("Processing training data")
-    normalized = False
-    for problem in used_problems:
-        data["bucket train"][problem] = {}
-        for file, group in used_files:
-            if problem not in data["train"].keys() or not file in data["train"][problem].keys():
-                continue
-            big_df = data["train"][problem][file]
-
-            big_df["training steps"] = big_df["training steps"] // base * base
-
-            grouped_df = big_df.groupby("training steps")
-            df = pd.DataFrame({"training steps": grouped_df["training steps"].first()})
-            df["expanded transitions"] = grouped_df["expanded transitions"].mean()
-
-            # in each group problem, n and k should be constant
-            df["n"] = grouped_df["n"].first()
-            df["k"] = grouped_df["k"].first()
-            df["problem"] = grouped_df["problem"].first()
-
-            df["total transitions"] = df.apply(
-                lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]],
-                axis=1)
-
-            df["min transitions"] = df["expanded transitions"].cummin()
-            df["group"] = big_df["group"].iat[0]
-            df["file"] = big_df["file"].iat[0]
-
-            if normalized:
-                df['norm transitions'] = df.groupby('total transitions')["expanded transitions"].apply(
-                    lambda x: (x - x.mean()) / x.std())
-                df["mean transitions"] = list(
-                    np.convolve(list(df["norm transitions"]), np.ones(window_size), mode='valid') / window_size) + [
-                                             np.nan for _ in range(window_size - 1)]
-            else:
-                df["mean transitions"] = list(
-                    np.convolve(list(df["expanded transitions"]), np.ones(window_size), mode='valid') / window_size) + \
-                                         [np.nan for _ in range(window_size - 1)]
-            data["bucket train"][problem][file] = df
-
-
-def plot_training_transitions(used_problems, used_files, data, path):
-    print("Plotting training transitions")
-    f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-
-    for i in range(len(used_problems)):
-        p = used_problems[i]
-        ax = axs[i] if len(used_problems) > 1 else axs
-        max_step = min([data["bucket train"][p][f]["training steps"].max() for f, g in used_files])
-        df = pd.concat(list(data["bucket train"][p].values()), ignore_index=True)
-
-        # df["reward"] = -df["min transitions"]
-        df["reward"] = -df["mean transitions"]
-
-        print("Plotting", p)
-
-        # plotting units
-        sns.lineplot(data=df, x="training steps", y="reward", ax=ax, hue="group", ci=None, alpha=0.5, estimator=None,
-                     units="file", linewidth=1.0, legend=False, color="blue")
-
-        # plotting average
-        sns.lineplot(data=df.loc[df["training steps"] <= max_step], x="training steps", y="reward", ax=ax, hue="group",
-                     ci=None, linewidth=2, alpha=1.0, color="blue")
-
-        # sns.lineplot(data=df, x="training steps", y="reward", ax=ax, hue="file", alpha=0.7, ci=None)
-
-        plot_ra_and_random_trans(data, p, 2, 2, ax, fontsize=16)
-
-        if i > 0:
-            axs[i].set_ylabel("")
-        else:
-            axs[i].set_ylabel("expanded transitions", fontdict={"size": 18})
-        axs[i].set_xlabel("training steps", fontdict={"size": 17})
-        ax.get_legend().remove()
-        ax.set_title(used_problems[i], fontdict={"fontsize": 20})
-
-    handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
-    plt.legend(handles, labels, prop={'size': 16}, loc="lower right")
-    plt.tight_layout()
-    plt.savefig(path + "/training.jpg")
-
-
-def plot_scatter_generalization(used_problems, used_files, data, path, budget="15000t", name="agent 15000t"):
-    f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-    for i in range(len(used_problems)):
-        p = used_problems[i]
-        print(p)
-        df = pd.concat(data[name]["all"][p].values(), ignore_index=True)
-        df["heuristic"] = "RL"
-        data["ra " + budget][p]["heuristic"] = "RA"
-        df = pd.concat([df, data["ra " + budget][p]], ignore_index=True)
-        for dfr in data["random " + budget][p]:
-            dfr["heuristic"] = "Random"
-        df = pd.concat([df] + data["random " + budget][p], ignore_index=True)
-
-        to_append = []
-        for h in ["Random", "RL", "RA"]:
-            for n in range(1, 16):
-                for k in range(1, 16):
-                    if len(df.loc[(df["n"] == n) & (df["k"] == k) & (df["heuristic"] == h)]) == 0:
-                        to_append.append(
-                            {"problem": p, "n": n, "k": k, "expanded transitions": float("inf"), "heuristic": h})
-        df = pd.concat([df, pd.DataFrame(to_append)], ignore_index=True)
-
-        df["total transitions"] = df.apply(
-            lambda r: data["mono"]["expanded transitions", r["problem"]][r["k"]][r["n"]],
-            axis=1)
-
-        #df = df.loc[(df["n"] > 1) & (df["k"] > 1)]
-        if name == "agent 15000t":
-            df = df.loc[(df["expanded transitions"] != float("inf")) & ~np.isnan(df["expanded transitions"])]
-            df["expansion_budget_exceeded"] = df["expansion_budget_exceeded"].astype(bool)
-            df = df.loc[~df["expansion_budget_exceeded"]]
-
-        df = df.loc[df["total transitions"] != float("inf")]
-        total_trans = sorted(list(df["total transitions"].unique()))
-        df["instance"] = df.apply(lambda r: total_trans.index(r["total transitions"]), axis=1)
-
-        df["expanded transitions / total"] = df["expanded transitions"] / df["total transitions"]
-        df["log rel trans"] = np.log(df["expanded transitions"])
-        metric = "expanded transitions / total"
-        metric = "log rel trans"
-        metric = "expanded transitions"
-
-        if name != "agent 15000t":
-            df[metric] = df.apply(
-                lambda r: r[metric] if (not np.isnan(r[metric]) and r[metric] != float("inf")) else np.max(
-                    df.loc[df[metric] < float("inf")][metric]) * 5, axis=1)
-        axs[i].set_title(p, fontdict={"fontsize": 20})
-        sns.scatterplot(data=df, x="total transitions", y=metric, hue="heuristic",
-                        style="heuristic", markers=["o", "P", "X"], alpha=0.7, ax=axs[i], s=100)
-        axs[i].get_legend().remove()
-        handles, labels = (axs[0] if len(used_problems) > 1 else axs).get_legend_handles_labels()
-        axs[0].legend(handles, labels, prop={'size': 16}, loc="upper left")
-        breakpoint()
-        axs[i].set_yscale("log")
-        axs[i].set_xscale("log")
-        if i > 0:
-            axs[i].set_ylabel("")
-        else:
-            axs[i].set_ylabel("expanded transitions", fontdict={"size": 18})
-        axs[i].set_xlabel("instance size", fontdict={"size": 17})
-        df["inst-n-k"] = df.apply(lambda r: (r["instance"], r["n"], r["k"]), axis=1)
-        print(df["expanded transitions"].max())
+import matplotlib.pyplot as plt
+import seaborn as sns
+from typing import Dict, OrderedDict
+
+
+def get_solved_series(filepath_by_problem: Dict, problem_names: list[str]):
+    solved_by_problem = pd.Series(index=problem_names, dtype=float)
+    insert_solved_instances_for_each_problem(filepath_by_problem, solved_by_problem)
+    return solved_by_problem
+
+
+def insert_solved_instances_for_each_problem(filepath_by_problem: Dict, solved_by_problem: pd.Series):
+    for problem, path in filepath_by_problem.items():
+        solved_instances = solved_by_agent(path)
+        solved_by_problem[problem] = solved_instances[0]
+
+
+def table_solved_instances(filepaths_by_agent: OrderedDict[str, Dict[str, str]],
+                           problems: list[str] = ["AT", "BW", "CM", "DP", "TA", "TL"]):
+    return pd.DataFrame(
+        [get_solved_series(filepaths, problems) for (agent_name, filepaths) in filepaths_by_agent.items()],
+        index=filepaths_by_agent.keys())
+
+
+def expanded_transitions_through_whole_problem_for_agent(filename):
+    raise NotImplementedError()
+
+
+def metric_evolution_over_agents(path, n, k, metric_column_name):
+    df = pd.read_csv(path)
+    df = notExceeded(df)
+    df = df[(df['n'] == n) & (df['k'] == k)]
+    return df[[metric_column_name, "idx"]]
+
+
+def _align_agent_rows_with_mono_by_parameters(mono_df, selected_agent_df):
+    aligned = pd.DataFrame(columns=selected_agent_df.columns)
+    mono_sizes = []
+    for index, row in mono_df.iterrows():
+        n, k = row["n"], row["k"]
+        selected_row = selected_agent_df.loc[(selected_agent_df['n'] == n) & (selected_agent_df['k'] == k)]
+        if len(selected_row) != 0:
+            aligned = pd.concat([aligned, selected_row])
+            mono_sizes.append(row["expanded transitions"])
+    aligned["mono_size"] = mono_sizes
+
+    return aligned
+
+
+def _aligned_transitions_by_total_plant_size_one_problem(selected_agent_path, problem_name,
+                                                         mono_dirs_path="experiments/results/ResultsPaper/"):
+    selected_agent_df = pd.read_csv(selected_agent_path)
+    mono_path = mono_dirs_path + problem_name + ".csv"
+    monolithic_df = pd.read_csv(mono_path)
+    monolithic_df = monolithic_df[monolithic_df["controllerType"] == "mono"]
+    # order_by_plant_size = monolithic_df
+    mono = monolithic_expansions(mono_path)[["expanded transitions", "n", "k"]]
+    mono.sort_values("expanded transitions", inplace=True)
+    selected_agent_df = _align_agent_rows_with_mono_by_parameters(mono, selected_agent_df)
+
+    return selected_agent_df[["expanded transitions", "n", "k", "mono_size"]]
+
+
+def monolithic_expansions(path):
+    monolithic_df = pd.read_csv(path)
+    monolithic_df = monolithic_df.loc[monolithic_df["controllerType"] == "mono"]
+    monolithic_df["n"] = monolithic_df["testcase"].apply(lambda t: int(t.split("-")[1]))
+    monolithic_df["k"] = monolithic_df["testcase"].apply(lambda t: int(t.split("-")[2]))
+    monolithic_df["expanded transitions"] = monolithic_df["expandedTransitions"]
+    monolithic_df = monolithic_df.dropna(subset=["expanded transitions"])
+    monolithic_df = fill_df(monolithic_df, 15)
+    return monolithic_df
+
+
+def aligned_transitions_by_total_plant_size_one_algorithm(algorithm_path_list, problem_name_list):
+    """
+    In: A list of paths to a selected algorithm evaluations up to (15,15) for a set of problems, and their respective problem names.
+    Out:
+    """
+    dfs = {}
+    # assert(len(algorithm_path_list)==len(problem_name_list))
+    for (path, problem) in zip(algorithm_path_list, problem_name_list):
+        dfs.update({problem: _aligned_transitions_by_total_plant_size_one_problem(path, problem)})
+
+    return dfs
+
+
+def aligned_transitions_by_total_plant_size(paths_by_algorithm: Dict[str, list[str]],
+                                            problem_name_list: str = ["AT", "BW", "CM", "DP", "TA", "TL"]):
+    """
+    In: A dictionary where keys are algorithm names and keys are a list of the paths to each problem performance .csv files.
+    Out: The same dictionary, but replacing the list by a dictionary where keys are problem names and values are the respective DataFrames of the .csv files.
+    """
+    dfs_by_algorithm = {}
+    for (algorithm_name, paths) in paths_by_algorithm.items():
+        dfs_by_algorithm[algorithm_name] = aligned_transitions_by_total_plant_size_one_algorithm(paths.values(),
+                                                                                                 problem_name_list)
+    return dfs_by_algorithm
+
+
+def transitions_scatter_by_agent(agent_dfs: Dict[str, Dict[str, pd.DataFrame]],
+                                 problems: list[str] = ["AT", "BW", "CM", "DP", "TA", "TL"],
+                                 img_name: str = "scatter.jpg"):
+    """
+        In: A dictionary of dictionaries where each dictionary has the results of the final execution of the selected agent. (As returned in aligned_transitions_by_total_plant_size)
+        Out: A scatterplot with the expanded transitions per finished problem, where the x-axis is the total plant size and the y-axis is the strategy's expanded transitions (log scale).
+        Each DataFrame must have the columns 'mono_size' and 'expanded transitions' (as the x and y axis respectively).
+
+    """
+    fig, axs = plt.subplots(1, 6, figsize=(5 * 6, 6))
+    colorMapping = {
+        "boolean_1": "red",
+        "labelsThatReach": "green",
+        "RA": "black",
+
+    }
+
+    for ax, problem in zip(axs, problems):
+        legends = []
+        for agent in agent_dfs.keys():
+            assert agent in colorMapping.keys(), "Color not supported"
+            ax.scatter(x=agent_dfs[agent][problem]["mono_size"], y=agent_dfs[agent][problem]["expanded transitions"],
+                       color=colorMapping[agent])
+            ax.set_yscale("log")
+            ax.set_xscale("log")
+            ax.autoscale(enable=None, axis="x", tight=True)
+            legends.append(agent)
+        ax.legend(legends)
 
     plt.tight_layout()
-    plt.savefig(path + "scatter.jpg", dpi=500)
+    plt.savefig(img_name, dpi=500)
 
 
-def plot_solved_training(used_problems, used_files, data, path):
-    print("Plot solved training")
+problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+path_dict = {
+    "labelsThatReach": {
+        problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/labelsThatReach/labelsThatReach_1/" + problem + "/all_15_15000_TO:10h.csv"
+        for problem in problems},
+    "boolean_1": {
+        problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/boolean/boolean_1/" + problem + "/all_15_15000_TO:10h.csv"
+        for problem in problems},
+    "RA": {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/RA/" + problem + "/all_ra_15000t.csv"
+           for problem in problems},
+    # "GPUboolean255_255_5" : {problem: "/home/marco/Desktop/Learning-Synthesis/experiments/results/GPUboolean255_255_5/"+ problem + "/all_15_15000_TO:10h.csv" for problem in ["DP"]}
+}
 
-    def get_df_solved(problem, file, group):
-        df = data["all"][problem][file]
+if __name__ == '__main__':
+    path = "/home/marco/Desktop/Learning-Synthesis/experiments/results/labelsThatReach/labelsThatReach_1/AT/generalization_all_15_10h_100_5000.csv"
+    path2 = "/home/marco/Desktop/Learning-Synthesis/experiments/experiments/results/boolean_2/AT/all_15_-1_TO:10m.csv"
+    series = metric_evolution_over_agents(path, 2, 2, "expanded transitions")
 
-        df_solved = []
-        for x, cant in dict(df["idx"].value_counts()).items():
-            df_solved.append({"idx": x, "solved": cant})
-        df_solved = pd.DataFrame(df_solved)
-        df_solved.sort_values(by="idx", inplace=True)
+    # sns.lineplot(data = series, y="expanded transitions", x="idx")
+    # plt.show()
+    # the correct ordering for the scatterPlot...
 
-        df_solved["file"] = file
-        df_solved["group"] = group
+    agents_results_by_name_and_problem = aligned_transitions_by_total_plant_size(path_dict)
+    boolean_paths = path_dict["boolean_1"].values()
+    dfs = aligned_transitions_by_total_plant_size_one_algorithm(boolean_paths, problems)
 
-        window_size = 10
-        df_solved["max solved"] = df_solved["solved"].cummax()
-        df_solved["mean solved"] = list(
-            np.convolve(list(df_solved["solved"]), np.ones(window_size), mode='valid') / window_size) + \
-                                   [np.nan for _ in range(window_size - 1)]
-        return df_solved
+    # Print solved instances by agent, with paths specified in path_dict:
+    res = table_solved_instances(path_dict)
+    print(res)
 
-    df_solved = {p: pd.concat([get_df_solved(p, f, g) for f, g in used_files], ignore_index=True) for p in
-                 used_problems}
-    solved_ra = {p: len(list(data["ra 5s"][p]["expanded transitions"].dropna())) for p in used_problems}
-    solved_random = {p: len(list(data["random 5s"][p]["expanded transitions"].dropna())) / 20 for p in used_problems}
-
-    fout = open(path + "/solved max.txt", "w+")
-    for problem in used_problems:
-        fout.write(problem + "\n")
-
-        fout.write("RA " + str(solved_ra[problem]) + "\n")
-        for file, dfg in df_solved[problem].groupby("file"):
-            fout.write(file + " " + str(dfg["solved"].max()) + " at idx: " + str(dfg["solved"].argmax()) + "\n")
-    fout.close()
-
-    for metric in ["solved", "mean solved"]:
-        f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-        for i in range(len(used_problems)):
-            problem = used_problems[i]
-            ax = axs[i] if len(used_problems) > 1 else axs
-
-            plot_line(solved_ra[problem], "RA", "red", ax, 15)
-            plot_line(solved_random[problem], "Random", "green", ax, 15)
-
-            # sns.lineplot(data=df_solved[problem], x="idx", y="solved", ax=ax, estimator=None, units="file", ci="sd",
-            #             hue="group")
-            df = df_solved[problem]
-
-            # plotting units
-            sns.lineplot(data=df, x="idx", y=metric, ax=ax, hue="group", ci="None", alpha=0.5, estimator=None,
-                         units="file", linewidth=1.0, legend=False)
-            # sns.lineplot(data=df, x="idx", y=metric, ax=ax, ci="sd", hue="group")
-
-            # plotting average
-            # sns.lineplot(data=df, x="idx", y=metric, ax=ax, hue="group",
-            #            ci=None, linewidth=2, alpha=1.0, color="blue")
-
-            ax.set_title(problem)
-
-        plt.tight_layout()
-        plt.savefig(path + metric + " training.jpg", dpi=500)
-
-
-def plot_15_15(used_problems, path, files1, file2, figure_name, name, require_solved_last=True):
-    print("Plotting 15 15", files1, file2)
-    vmin = -3
-    vmax = 3
-
-    def get_solved_value(a, r):
-        # Possibilities:
-        # 0. not solved
-        # 1. not solved by the agent and solved by RA
-        # 2. solved sometimes by the agent and not solved by RA
-        # 3. solved sometimes by the agent and solved by RA
-        # 4. solved always by the agent and not solved by RA
-        # 5. solved always by the agent and solved by RA
-
-        solved_ra = r != float("inf")
-        solved_agent = [ai != float("inf") for ai in a]
-        if not np.any(solved_agent):
-            return 0 if not solved_ra else 1
-        elif np.all(solved_agent):
-            return 4 if not solved_ra else 5
-        else:
-            return 2 if not solved_ra else 3
-
-    def get_trans_rel_solved(a, r):
-        if r == float("inf") or np.any([ai == float("inf") for ai in a]):
-            return np.nan
-        else:
-            return np.mean([np.log2(ai / r) for ai in a])
-
-    def get_df(dfs1, df2, func):
-        m = np.zeros(shape=(15, 15))
-        for n in range(15):
-            for k in range(15):
-                r = df2[k + 1][n + 1]
-                a = [df[k + 1][n + 1] for df in dfs1]
-                m[n, k] = func(a, r)
-        return m
-
-    trans_df = {}
-    solved_df = {}
-    for i in range(len(used_problems)):
-        p = used_problems[i]
-        dfs1 = [get_pivot(data["agent 10m"][name][p][f], require_solved_last=require_solved_last) for f in files1]
-        if file2 == "ra":
-            df2 = get_pivot(data["ra 10m"][p], require_solved_last=require_solved_last)
-        elif file2 == "random":
-            df2 = get_pivot(data["random 10m"][p][0], require_solved_last=require_solved_last)
-        elif file2 == "mono":
-            df2 = data["mono"]["expanded transitions", p]
-        else:
-            df2 = get_pivot(data["agent 10m"][name][p][file2], require_solved_last=require_solved_last)
-
-        trans_df[p] = get_df(dfs1, df2, get_trans_rel_solved)
-        solved_df[p] = get_df(dfs1, df2, get_solved_value)
-
-    for trans in [False, True]:
-        f, axs = plt.subplots(1, len(used_problems), figsize=(5 * len(used_problems), 6))
-        for i in range(len(used_problems)):
-            p = used_problems[i]
-            ax = axs[i] if len(used_problems) > 1 else axs
-
-            # annot_df = pd.DataFrame(solved_df[p])
-            cmap = "coolwarm" if trans else [white, red, green2, yellow, green, grey]
-
-            sns.heatmap(data=trans_df[p] if trans else solved_df[p],
-                        cmap=cmap,
-                        annot=trans, annot_kws={"size": 6},
-                        xticklabels=list(range(1, 16)),
-                        yticklabels=list(range(1, 16)),
-                        ax=ax, cbar=True, vmin=vmin if trans else 0, vmax=vmax if trans else 5)
-
-            # for problem, n, k in train_instances(p):
-            #                 ax.text(k - 0.5, n - 0.5, "X",
-            #                         horizontalalignment='center',
-            #                         verticalalignment='center',
-            #                         )
-
-            ax.invert_yaxis()
-            ax.set_title(p, fontsize=30)
-
-        plt.tight_layout()
-        plt.savefig(path + "15 15 " + figure_name + (" trans" if trans else " solved") + ".jpg", dpi=200)
-
-
-def solved_table(used_problems, used_files, data, path, add_mono=False, name="all_trans", budget="15000t"):
-    print("Writing solved table")
-
-    def solved_metric(df, factor=1):
-        return len(df["expanded transitions"].dropna()) / factor
-
-    agent_data = "agent " + budget
-    ra_data = "ra " + budget
-
-    metric = solved_metric
-
-    groups = list({g for f, g in used_files})
-
-    for key in data[agent_data].keys():
-        if key != name:
-            groups += list({g + " " + key for f, g in used_files})
-
-    groups += ["random", "ra"]
-    if add_mono:
-        groups += ["mono"]
-
-    problem_columns = used_problems + ["all"]
-    if "multiple" in groups:
-        problem_columns.append("all (AT, BW, DP, TA)")
-    results = {p: {ap: [] for ap in groups} for p in problem_columns}
-
-    for i in range(len(used_problems)):
-        p = problems[i]
-        for file, group in used_files:
-            if group == "multiple" and (p not in ["AT", "TA", "BW", "DP"]):
-                continue
-
-            df = data[agent_data][name][p][file]
-            results[p][group].append(metric(df))
-
-            for key in data[agent_data].keys():
-                if key != name:
-                    df = data[agent_data][key][p][file]
-                    results[p][group + " " + key].append(metric(df))
-
-        results[p]["random"] += [metric(data["random 10m"][p][i]) for i in range(len(data["random 10m"][p]))]
-        results[p]["ra"].append(metric(data[ra_data][p]))
-        if add_mono:
-            assert metric == solved_metric
-            mono_solved = np.sum(
-                [data["mono"]["expanded transitions", p][k][n] != float("inf") for n in range(1, 16) for k in
-                 range(1, 16)])
-            results[p]["mono"].append(mono_solved)
-
-    for group in groups:
-        n = len(results[used_problems[0]][group])
-        if group != "multiple":
-            results["all"][group] = [0 for j in range(n)]
-            for j in range(n):
-                for problem in problems:
-                    results["all"][group][j] += results[problem][group][j]
-
-        if "multiple" in groups:
-            results["all (AT, BW, DP, TA)"][group] = [0 for j in range(n)]
-            for j in range(n):
-                for problem in ["AT", "BW", "DP", "TA"]:
-                    results["all (AT, BW, DP, TA)"][group][j] += results[problem][group][j]
-
-    for p in problem_columns:
-        breakpoint()
-        print(p, np.array(results[p]["RL"]) - np.array(results[p]["best22"]))
-        print(np.mean(np.array(results[p]["RL"]) - np.array(results[p]["best22"])))
-
-    # with open(path + "ttest_results.txt", "w+") as f:
-    #     for problem in problems + ["all"]:
-    #         f.write(problem + "\n")
-    #         random = results[problem]["random"][0]
-    #         ra = results[problem]["ra"][0] / random
-    #         agent = np.array(results[problem]["RL"]) / random
-    #         f.write(str(np.round(np.mean(agent), 2)) + " ")
-    #         f.write(str(np.round(ra, 2)) + " ")
-    #         f.write(str(ttest_1samp(agent - ra, 0, alternative="two-sided").pvalue) + "\n")
-
-    rows = [{"approach": ap} for ap in groups]
-    for problem in problem_columns:
-        for j in range(len(groups)):
-            r = results[problem][groups[j]]
-            if len(r) == 0:
-                continue
-            mean = np.round(np.mean(r), 2)
-            std = np.round(np.std(r), 2)
-            if std > 0.0001:
-                rows[j][problem] = str(mean) + " ± " + str(std)
-            else:
-                rows[j][problem] = str(mean)
-
-    dft = pd.DataFrame(rows)
-
-    dft["approach"] = dft["approach"].apply(lambda a: " ".join(a.split("_")))
-
-    with open(path + "latex_table.txt", "w+") as f:
-
-        f.write(dft.style.hide(axis="index").to_latex(
-            column_format="llllllll", position="h", position_float="centering",
-            hrules=True, label="tbl:generalization",
-            multirow_align="t", multicol_align="r") + "\n")
-
-        f.write(dft.set_index("approach").transpose().style.to_latex(
-            column_format="lllll", position="tb", position_float="centering",
-            hrules=True, label="tbl:generalization",
-            multirow_align="t", multicol_align="r") + "\n")
-
-        for problem in problem_columns:
-            f.write(problem + "\n")
-            for group in groups:
-                f.write(group + " " + str(results[problem][group]) + "\n")
-
-
-def pipeline_plot_15_15(files1, file2, figure_name, name, require_solved_last):
-    return lambda used_problems, used_files, data, path: plot_15_15(used_problems, path, files1, file2, figure_name,
-                                                                    name, require_solved_last)
-
-
-if __name__ == "__main__":
-    path = "experiments/figures/paper/"
-    if not os.path.exists(path):
-        print("Creating dir", path)
-        os.makedirs(path)
-
-    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
-
-    ffiles = ["labelsThatReach"]
-
-    files = []
-    files += [(f, "RL") for f in ffiles]
-
-    data = {}
-    data["mono"] = read_monolithic()
-    read_ra_and_random(problems, data)
-    read_test(data, problems, files)
-    read_training(data, problems, files)
-    process_training_data(data, problems, files, base=5000, window_size=10)
-    data["random small"] = read_random_small()
-    data["agent 15000t"] = {}
-    agents_10m = {}
-    for p1 in problems:
-        agents_10m[p1] = {}
-        for file, g in files:
-            agents_10m[p1][file] = pd.read_csv(results_path(p1, file=file) + "/" + "all_"+p1+"_15_15000_TO:10h" + ".csv")
-    data["agent 15000t"]["all"] = agents_10m
-    data["agent 10m"] = {}
-    data["agent 10m"]["all_trans"] = read_agents_evaluation(problems, files, name="all_trans")
-    data["agent 10m"]["best22"] = read_agents_evaluation(problems, files, name="all_best22")
-    pipeline = [
-        lambda p, f, d, pth: solved_table(p, f, d, pth, name="all", add_mono=False),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="expanded transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=2, k=2, metric="mean transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="expanded transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=3, k=3, metric="mean transitions"),
-        plot_2_2_3_3,
-        lambda p, f, d, pth: plot_2_2_3_3(p, f, d, pth, metric="mean transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="expanded transitions"),
-        lambda p, f, d, pth: plot_test_transitions(p, f, d, pth, n=4, k=4, metric="mean transitions"),
-        train_transitions_min,
-        plot_scatter_generalization,
-        plot_training_transitions,
-        transitions_table,
-        lambda p, f, d, pth: solved_table(p, f, d, pth, long_timeout=False),
-        plot_solved_training,
-        plot_loss,
-        #pipeline_plot_15_15(ffiles, "ra", "RL vs RA 30m", "all30m", require_solved_last=False),
-        #pipeline_plot_15_15(ffiles, "random", "RL vs Random mean", "all", require_solved_last=False),
-        #pipeline_plot_15_15(ffiles, "mono", "RL vs mono"),
-        # pipeline_plot_15_15(ffiles, under_test, "baseline vs under test", "all", require_solved_last=True),
-        # pipeline_plot_15_15([under_test], "ra", "under test vs ra", "all", require_solved_last=True),
-        # pipeline_plot_15_15([under_test], "random", "under test vs random")
-    ]
-
-    for e in pipeline:
-        e(problems, files, data, path)
+    # print scatter plot of expansions done by agent ordered by problem total size and log scaled:
+    transitions_scatter_by_agent(agents_results_by_name_and_problem, img_name="trial_1.jpg")
