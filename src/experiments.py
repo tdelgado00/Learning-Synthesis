@@ -18,7 +18,6 @@ class Experiment:
 
 
 class TrainingExperiment(Experiment):
-
     def __init__(self, args, problem: str, context: tuple[int, int]):
         super().__init__(args, problem)
         self.save_features()

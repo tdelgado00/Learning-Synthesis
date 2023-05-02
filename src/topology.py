@@ -1,9 +1,15 @@
-import experiment
+import random
+
+import experiments
 import torch
 import torch_geometric.transforms as T
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import train_test_split_edges
 from torch_geometric.nn import GAE
+from main import parse_args
+from src.environment import DCSSolverEnv
+
+
 class GCNEncoder(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(GCNEncoder, self).__init__()
@@ -15,12 +21,37 @@ class GCNEncoder(torch.nn.Module):
         return self.conv2(x, edge_index)
 
 
+class RandomExplorationForGCNTraining(experiments.TrainingExperiment):
+
+    def __init__(self, args, problem: str, context: tuple[int, int]):
+        print("Warning 1: this is now working exclusively on one graph being expanded. Pending round robin and curriculum expansions for GCN training. Be careful with expansions and snapshots.")
+        print("Warning 2: To be debugged")
+        args.exploration_graph = True
+        super().__init__(args,problem,context)
+        del self.agent
+        del self.nfeatures
+
+    def expand(self):
+
+        breakpoint()
+        single_environment = self.envs[self.training_contexts[0]]
+        rand_transition = random.choice(single_environment.get_actions())
+        single_environment.step(rand_transition)
+
+
+    def graphSnapshot(self):
+        return self.envs[self.training_contexts[0]].explorationGraph
+
+
 class GAETrainer:
-    def __init__(self, graphnet):
+    def __init__(self, gae_graphnet : torch.nn.Module, exploration : RandomExplorationForGCNTraining):
+        print("Warning 1: still to be implemented for parrallel-training on multiple and diverse graphs, and for non random explorations.")
+        print("Warning 2: To be debugged")
+        self.exploration = exploration
+        self.gae = gae_graphnet
         raise NotImplementedError
 
-
-    def train(self, graph_sampling_frequency, context):
+    def train(self, graph_sampling_frequency, context, exploration_heuristic = "Random"):
         #idea: tomar grafos de exploracion aleatoria con cierta frecuencia, en cada muestra llevar adelante un entrenamiento del autoencoder
         raise NotImplementedError
 
