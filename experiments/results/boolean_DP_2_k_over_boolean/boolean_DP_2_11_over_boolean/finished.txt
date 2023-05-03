@@ -1,1 +1,0 @@
-Fully trained. This function should write a summary of training stats in the future.

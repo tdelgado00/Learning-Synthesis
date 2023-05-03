@@ -1,7 +1,0 @@
-Fully trained. This function should write a summary of training stats in the future.
-
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-HIPOTESIS: A medida que aumenta n es cada vez mas probable que las features esten en 1 y por lo tanto a medida que avanza la exploracion en el tiempo,
-estas features tienen cada vez menos informacion, pero los pesos son identicos y por lo tanto se les otorga la misma importancia que al principio de la exploracion.
-
-Metrica interesante: analizar el porcentaje de estados que setean components_by_state[i]=1  con respecto al total de estados explorados.

@@ -1,3 +1,0 @@
-DP
-RA 202.0
-labelsThatReach 926.0 46

@@ -1,3 +1,0 @@
-DP
-RA 32.0
-labelsThatReach 46.0 55
