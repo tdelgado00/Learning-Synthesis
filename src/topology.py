@@ -7,7 +7,7 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.utils import train_test_split_edges
 from torch_geometric.nn import GAE
 from main import parse_args
-from src.environment import DCSSolverEnv
+from environment import DCSSolverEnv
 
 
 class GCNEncoder(torch.nn.Module):
@@ -22,7 +22,6 @@ class GCNEncoder(torch.nn.Module):
 
 
 class RandomExplorationForGCNTraining(experiments.TrainingExperiment):
-
     def __init__(self, args, problem: str, context: tuple[int, int]):
         print("Warning 1: this is now working exclusively on one graph being expanded. Pending round robin and curriculum expansions for GCN training. Be careful with expansions and snapshots.")
         print("Warning 2: To be debugged")
@@ -44,10 +43,10 @@ class RandomExplorationForGCNTraining(experiments.TrainingExperiment):
 
 
 class GAETrainer:
-    def __init__(self, gae_graphnet : torch.nn.Module, exploration : RandomExplorationForGCNTraining):
+    def __init__(self, gae_graphnet : torch.nn.Module, explorations : list[RandomExplorationForGCNTraining]):
         print("Warning 1: still to be implemented for parrallel-training on multiple and diverse graphs, and for non random explorations.")
         print("Warning 2: To be debugged")
-        self.exploration = exploration
+        self.explorations = explorations
         self.gae = gae_graphnet
         raise NotImplementedError
 
@@ -56,4 +55,13 @@ class GAETrainer:
         raise NotImplementedError
 
 
+if __name__ == "__main__":
 
+    args = parse_args()
+    breakpoint()
+    example_exploration = RandomExplorationForGCNTraining(args, "AT", (2,2))
+
+    i = 10
+    while(i):
+        example_exploration.expand()
+        i-=1

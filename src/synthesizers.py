@@ -1,5 +1,4 @@
 from util import *
-import numpy as np
 import subprocess
 import time
 from util import parse_java_debug

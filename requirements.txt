@@ -11,3 +11,5 @@ matplotlib~=3.5.1
 seaborn~=0.11.2
 torch_xla
 jpype1
+networkx
+torch_geometric
