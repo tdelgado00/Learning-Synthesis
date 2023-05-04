@@ -33,7 +33,7 @@ class RandomExplorationForGCNTraining(experiments.TrainingExperiment):
     def expand(self):
 
         breakpoint()
-        single_environment = self.envs[self.training_contexts[0]]
+        single_environment = self.env[self.training_contexts[0]]
         rand_transition = random.choice(single_environment.get_actions())
         single_environment.step(rand_transition)
 
