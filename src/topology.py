@@ -29,12 +29,10 @@ class RandomExplorationForGCNTraining(experiments.TrainingExperiment):
         super().__init__(args,problem,context)
         del self.agent
         del self.nfeatures
-
+        self.env[context].reset()
     def expand(self):
-
-        breakpoint()
         single_environment = self.env[self.training_contexts[0]]
-        rand_transition = random.choice(single_environment.get_actions())
+        rand_transition = random.randint(0,single_environment.javaEnv.frontierSize())
         single_environment.step(rand_transition)
 
 
@@ -58,7 +56,7 @@ class GAETrainer:
 if __name__ == "__main__":
 
     args = parse_args()
-    breakpoint()
+
     example_exploration = RandomExplorationForGCNTraining(args, "AT", (2,2))
 
     i = 10
