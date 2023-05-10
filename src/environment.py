@@ -33,7 +33,10 @@ class DCSSolverEnv:
                                     )
 
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
-
+        self.transition_labels = set()
+        for transition_label in self.javaEnv.all_transition_labels():
+            self.transition_labels.add(self.getTransitionType(transition_label))
+        breakpoint()
         self.info = {
             "nfeatures": self.nfeatures,
             "n": self.n,
@@ -54,13 +57,7 @@ class DCSSolverEnv:
 
     def step(self, action):
         if self.exploration_graph is not None:
-            child_compostate = self.javaEnv.expandAction(action)
-            child_is_marked = int(child_compostate[3])
-            child_features = [child_is_marked]
-
-            if child_compostate[0] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(child_compostate[0], features = [0])
-            if child_compostate[2] not in self.exploration_graph.nodes():self.exploration_graph.add_node(child_compostate[2], features = child_features)
-            self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
+            self.featured_graph_expansion(action)
         else:
             self.javaEnv.expandAction(action)
 
@@ -68,6 +65,21 @@ class DCSSolverEnv:
             return self.get_actions(), self.reward(), False, {}
         else:
             return None, self.reward(), True, self.get_results()
+
+    def featured_graph_expansion(self, action):
+        self.javaEnv.expandAction(action)
+        child_compostate = self.javaEnv.lastExpandedHashes()
+        child_features = self.compute_node_features(child_compostate)
+        if child_compostate[0] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
+            child_compostate[0], features=[0])
+        if child_compostate[2] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
+            child_compostate[2], features=child_features)
+        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
+
+    def compute_node_features(self, child_compostate):
+        child_is_unmarked = 1 - int(child_compostate[3])
+        child_features = [child_is_unmarked]
+        return child_features
 
     def reward(self):
         return -1 if not self.normalize_reward else -1 / self.problem_size
@@ -86,7 +98,13 @@ class DCSSolverEnv:
             "expanded transitions": int(self.javaEnv.getExpandedTransitions()),
             "expanded states": int(self.javaEnv.getExpandedStates())
         }
-
+    def getTransitionType(self, full_transition_label):
+        i = 0
+        res = ""
+        while(i<len(full_transition_label) and full_transition_label[i]!='.'):
+            res.append(full_transition_label[i])
+            i+=1
+        return res
 
 def save_random_states(problems, n, k, features):
     """ Saves observations from a random policy for all problems in the benchmark """
