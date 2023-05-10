@@ -61,7 +61,7 @@ def best_generalization_agent(problem, file, up_to=None, used_testing_timeout=No
 
 
 def best_generalization_agent_ebudget(df):
-    df = notExceeded(df)
+    df = not_exceeded(df)
     if df.shape[0] == 0:
         return None
     max_idx = df["idx"].max()
@@ -80,11 +80,6 @@ def get_agent_info(path):
     with open(path + "/0.json", "r") as f:
         info = json.load(f)
     return info
-
-
-def uses_feature(path, feature):
-    info = get_agent_info(path)
-    return feature in info.keys() and info[feature]
 
 
 def read_results(lines):
@@ -110,25 +105,9 @@ def read_results(lines):
     return results
 
 
-def solved_by_agent(path):
-    df = pd.read_csv(path)
-    df = notExceeded(df)
-    return df["heuristic"].value_counts(sort=False)
-
-
-def notExceeded(df):
+def not_exceeded(df):
     if "expansion_budget_exceeded" not in df.columns: return df.dropna()
     return df[df["expansion_budget_exceeded"] == False]
-
-
-def fill_df(df, m):
-    added = []
-    for n in range(1, m + 1):
-        for k in range(1, m + 1):
-            if len(df.loc[(df["n"] == n) & (df["k"] == k)]) == 0:
-                added.append({"n": n, "k": k, "expanded transitions": float("inf"), "synthesis time(ms)": float("inf")})
-    df = pd.concat([df, pd.DataFrame(added)], ignore_index=True)
-    return df
 
 
 def parse_java_debug(debug):
@@ -155,15 +134,17 @@ def parse_java_debug(debug):
     return steps
 
 
-def train_instances(problem, max_size=10000):
-    """ Function used to observe the set of instances smaller than a certain size """
-    r = read_monolithic()["expanded transitions", problem]
-    instances = []
-    for n in range(2, 16):
-        for k in range(2, 16):
-            if not np.isnan(r[k][n]) and r[k][n] <= max_size:
-                instances.append((problem, n, k))
-    return instances
+def budget_and_time(series):
+    return series["expansion_budget_exceeded"] == 'false' and not np.isnan(series["synthesis time(ms)"])
+
+def fill_df(df, m):
+    added = []
+    for n in range(1, m + 1):
+        for k in range(1, m + 1):
+            if len(df.loc[(df["n"] == n) & (df["k"] == k)]) == 0:
+                added.append({"n": n, "k": k, "expanded transitions": float("inf"), "synthesis time(ms)": float("inf")})
+    df = pd.concat([df, pd.DataFrame(added)], ignore_index=True)
+    return df
 
 
 def read_monolithic():
@@ -179,7 +160,3 @@ def read_monolithic():
         monolithic_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
         monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
     return monolithic_results
-
-
-def budget_and_time(series):
-    return series["expansion_budget_exceeded"] == 'false' and not np.isnan(series["synthesis time(ms)"])

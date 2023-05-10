@@ -1,7 +1,8 @@
 import jpype
 import jpype.imports
 from util import *
-from plots import read_monolithic
+import os
+import pickle
 import networkx as nx
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])
@@ -32,6 +33,7 @@ class DCSSolverEnv:
                                     )
 
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
+
         self.info = {
             "nfeatures": self.nfeatures,
             "n": self.n,
@@ -39,8 +41,10 @@ class DCSSolverEnv:
             "problem": self.problem,
             "expansion_budget_exceeded": "false"
         }
+
         self.exploration_graph = None
-        if exploration_graph: self.exploration_graph = nx.DiGraph()
+        if exploration_graph:
+            self.exploration_graph = nx.DiGraph()
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
@@ -82,3 +86,33 @@ class DCSSolverEnv:
             "expanded transitions": int(self.javaEnv.getExpandedTransitions()),
             "expanded states": int(self.javaEnv.getExpandedStates())
         }
+
+
+def save_random_states(problems, n, k, features):
+    """ Saves observations from a random policy for all problems in the benchmark """
+    def get_random_states(env, total=20000, sampled=2000):
+        idxs = np.random.choice(range(total), sampled)
+
+        states = []
+        done = True
+        obs = None
+        for i in range(total):
+            if done:
+                obs = env.reset()
+
+            if i in idxs:
+                states.append(np.copy(obs))
+
+            action = np.random.randint(len(obs))
+            obs, reward, done, info = env.step(action)
+
+        return states
+
+    for problem in problems:
+        print("Saving random states for problem", problem)
+        states = get_random_states(DCSSolverEnv(problem, n, k, features))
+
+        file = results_path(problem, n, k, "states_b.pkl")
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        with open(file, "wb") as f:
+            pickle.dump(states, f)
