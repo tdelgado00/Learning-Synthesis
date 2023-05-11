@@ -1,0 +1,11 @@
+ra 0
+labels 1
+context 1
+state_labels 1
+je 1
+nk 0
+prop 0
+visits 0
+ltr 0
+boolean 1
+cbs 0

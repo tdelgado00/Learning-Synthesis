@@ -42,7 +42,6 @@ class DCSSolverEnv:
 
         labels_path = "labels/" + problem + ".txt" if labels_enabled else None
 
-        print(features_path, labels_path)
         self.javaEnv = DCSForPython(features_path,
                                     labels_path,
                                     10000,
@@ -65,10 +64,8 @@ class DCSSolverEnv:
             self.exploration_graph = nx.DiGraph()
 
     def set_transition_types(self):
-        for transition_label in self.javaEnv.all_transition_labels():
+        for transition_label in self.javaEnv.all_transition_types():
             self.transition_labels.add(getTransitionType(transition_label))
-
-
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()

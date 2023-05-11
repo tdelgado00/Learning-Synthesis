@@ -11,6 +11,9 @@ from torch_geometric.nn import GCNConv, GAE, Sequential
 from torch import nn
 from torch_geometric.utils import train_test_split_edges, from_networkx
 from environment import DCSSolverEnv, getTransitionType
+from torch_geometric.utils import from_networkx, train_test_split_edges
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class RandomExplorationForGCNTraining:
@@ -29,7 +32,6 @@ class RandomExplorationForGCNTraining:
         self.env.set_transition_types()
         self.problem = problem
         self.finished = None
-
 
     def graph_snapshot(self):
         return self.env.exploration_graph
@@ -57,19 +59,18 @@ class RandomExplorationForGCNTraining:
         for node in graph.nodes():
             node_label_feature_vector = [0] * len(transition_labels)
             labels = [getTransitionType(graph.get_edge_data(src, dst)['label']) for src, dst in graph.out_edges(node)]
-            print(labels)
-            print(transition_labels)
+
             for i in range(len(transition_labels)):
                 if transition_labels[i] in labels:
                     node_label_feature_vector[i] = 1
             graph.nodes[node]["successor_label_types_OHE"] = node_label_feature_vector
-            print(node_label_feature_vector)
-            print("-------------------------------------------------")
         return graph
+
     def random_exploration(self, full=False):
         raise NotImplementedError
 
-#def labelList()
+
+# def labelList()
 class GCNEncoder(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(GCNEncoder, self).__init__()
@@ -82,8 +83,8 @@ class GCNEncoder(torch.nn.Module):
 
 
 class GraphGenerator:
-
     """Ideas de testing y analisis de la performance del autoencoder"""
+
     def __init__(self, ):
         raise NotImplementedError
 
@@ -108,11 +109,37 @@ class GAETrainer:
         raise NotImplementedError
 
 
-def learn(model, optimizer, x, train_pos_edge_index):
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--exp-name", type=str, default=os.path.basename(__file__).rstrip(".py"),
+                        help="the name of this experiment")
+
+    parser.add_argument("--learning-rate", type=float, default=0.001,
+                        help="The learning rate of the optimizer")
+
+    parser.add_argument("--seed", type=int, default=2,
+                        help="seed of the experiment")
+
+    parser.add_argument("--torch-deterministic", action=argparse.BooleanOptionalAction, default=True,
+                        help="if toggled, `torch.backends.cudnn.deterministic=False`")
+
+    args = parser.parse_args()
+    return args
+
+
+def test(model, x, edges, neg_edges):
+    model.eval()
+    with torch.no_grad():
+        z = model.encode(x.float().to(device), edges)
+    return model.test(z, edges, neg_edges)
+
+
+def learn(model, optimizer, x, edges):
     model.train()
     optimizer.zero_grad()
-    z = model.encode(x, train_pos_edge_index)
-    loss = model.recon_loss(z, train_pos_edge_index)
+    z = model.encode(x.float().to(device), edges)
+    loss = model.recon_loss(z, edges)
     # if args.variational:
     #   loss = loss + (1 / data.num_nodes) * model.kl_loss()
     loss.backward()
@@ -120,34 +147,7 @@ def learn(model, optimizer, x, train_pos_edge_index):
     return float(loss)
 
 
-def test(model, x, train_pos_edge_index, test_pos_edge_index, test_neg_edge_index):
-    model.eval()
-    with torch.no_grad():
-        z = model.encode(x, train_pos_edge_index)
-    return model.test(z, test_pos_edge_index, test_neg_edge_index)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--exp-name", type=str, default=os.path.basename(__file__).rstrip(".py"),
-        help="the name of this experiment")
-
-    parser.add_argument("--learning-rate", type=float, default=0.009,
-                        help="The learning rate of the optimizer")
-
-    parser.add_argument("--seed", type=int, default=1,
-        help="seed of the experiment")
-
-    parser.add_argument("--torch-deterministic", action=argparse.BooleanOptionalAction, default=True,
-        help="if toggled, `torch.backends.cudnn.deterministic=False`")
-
-    args = parser.parse_args()
-    return args
-
-
 def train():
-
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -164,44 +164,54 @@ def train():
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
+    trainable = from_networkx(G, group_node_attrs=["features", "successor_label_types_OHE"])
+    trainable = train_test_split_edges(trainable, val_ratio=0, test_ratio=1)
+    # hack for getting train pos and train neg edges, we use test as train
 
-    trainable = from_networkx(G, group_node_attrs=["features"])
-    trainable = train_test_split_edges(trainable)
-    trainable.x = trainable.x.to(torch.float)
+    # breakpoint()
 
     # parameters
     out_channels = 2
     num_features = trainable.num_features
-    epochs = 10000
+    epochs = 1000
 
     model = GAE(GCNEncoder(num_features, out_channels))
 
     for name, param in model.named_parameters():
         if param.requires_grad:
             print(name, param.data.shape)
+
     # move to GPU (if available)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     x = trainable.x.float().to(device)
-    train_pos_edge_index = trainable.train_pos_edge_index.to(device)
+    edges = trainable.test_pos_edge_index.to(device)
+    neg_edges = trainable.test_neg_edge_index.to(device)
+
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
 
+    print(trainable)
+
     for epoch in range(1, epochs + 1):
-        loss = learn(model, optimizer, x, train_pos_edge_index)
+        loss = learn(model, optimizer, x, edges)
 
         writer.add_scalar("losses/loss", loss, epoch)
         writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
 
-        auc, ap = test(model, x, train_pos_edge_index, trainable.test_pos_edge_index, trainable.test_neg_edge_index)
+        auc, ap = test(model,
+                       x,
+                       edges,
+                       neg_edges
+                       )
 
         writer.add_scalar("charts/AUC", auc, epoch)
         writer.add_scalar("charts/AP", ap, epoch)
 
         print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
 
-    Z = model.encode(x, train_pos_edge_index)
+    print(trainable)
+    # Z = model.encode(x, train_pos_edge_index)
     # print(Z)
 
     writer.close()
@@ -209,4 +219,3 @@ def train():
 
 if __name__ == "__main__":
     train()
-
