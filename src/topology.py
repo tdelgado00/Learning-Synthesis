@@ -3,7 +3,6 @@ import random
 import os
 import argparse
 from torch.utils.tensorboard import SummaryWriter
-
 import experiments
 import torch
 import numpy as np
@@ -11,7 +10,7 @@ import time
 from torch_geometric.nn import GCNConv, GAE, Sequential
 from torch import nn
 from torch_geometric.utils import train_test_split_edges, from_networkx
-from environment import DCSSolverEnv
+from environment import DCSSolverEnv, getTransitionType
 
 
 class RandomExplorationForGCNTraining:
@@ -20,16 +19,17 @@ class RandomExplorationForGCNTraining:
             "Warning 1: this is now working exclusively on one graph being expanded. Pending "
             "round robin and curriculum expansions for GCN training. Be careful with expansions"
             " and snapshots.")
-
+        print("Warning2: Initial state feature set to unmarked by default")
+        self.context = context
         n, k = context
         self.env = DCSSolverEnv(problem, n, k,
                                 "default_features.txt",
                                 exploration_graph=True)
-
+        self.env.reset()
+        self.env.set_transition_types()
         self.problem = problem
         self.finished = None
 
-        print("Warning 2: Initial state feature set to unmarked by default")
 
     def graph_snapshot(self):
         return self.env.exploration_graph
@@ -40,6 +40,7 @@ class RandomExplorationForGCNTraining:
         self.finished = False
         while not self.finished:
             self.expand()
+
         return self.graph_snapshot()
 
     def expand(self):
@@ -47,16 +48,33 @@ class RandomExplorationForGCNTraining:
         res = self.env.step(rand_transition)
         if res[0] is None:
             self.finished = True
+        final_graph = self.graph_snapshot()
+        transition_labels = self.env.transition_labels
+        return self.setNeighborhoodLabelFeatures(final_graph, transition_labels)
 
+    def setNeighborhoodLabelFeatures(self, graph, transition_labels):
+        transition_labels = list(transition_labels)
+        for node in graph.nodes():
+            node_label_feature_vector = [0] * len(transition_labels)
+            labels = [getTransitionType(graph.get_edge_data(src, dst)['label']) for src, dst in graph.out_edges(node)]
+            print(labels)
+            print(transition_labels)
+            for i in range(len(transition_labels)):
+                if transition_labels[i] in labels:
+                    node_label_feature_vector[i] = 1
+            graph.nodes[node]["successor_label_types_OHE"] = node_label_feature_vector
+            print(node_label_feature_vector)
+            print("-------------------------------------------------")
+        return graph
     def random_exploration(self, full=False):
         raise NotImplementedError
 
-
+#def labelList()
 class GCNEncoder(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(GCNEncoder, self).__init__()
-        self.conv1 = GCNConv(in_channels, 15, cached=True) # cached only for transductive learning
-        self.conv2 = GCNConv(15, out_channels, cached=True)  # cached only for transductive learning
+        self.conv1 = GCNConv(in_channels, 20, cached=True)
+        self.conv2 = GCNConv(20, out_channels, cached=True)
 
     def forward(self, x, edge_index):
         x = self.conv1(x, edge_index).relu()
@@ -64,6 +82,8 @@ class GCNEncoder(torch.nn.Module):
 
 
 class GraphGenerator:
+
+    """Ideas de testing y analisis de la performance del autoencoder"""
     def __init__(self, ):
         raise NotImplementedError
 
@@ -85,6 +105,7 @@ class GAETrainer:
 
     def trainOnFirstFullExploration(self):
         graph = self.explorations[0].full_nonblocking_random_exploration()
+        raise NotImplementedError
 
 
 def learn(model, optimizer, x, train_pos_edge_index):
@@ -146,23 +167,23 @@ def train():
 
     trainable = from_networkx(G, group_node_attrs=["features"])
     trainable = train_test_split_edges(trainable)
-
-    # breakpoint()
+    trainable.x = trainable.x.to(torch.float)
 
     # parameters
     out_channels = 2
     num_features = trainable.num_features
-    epochs = 1000
+    epochs = 10000
 
-    # model
     model = GAE(GCNEncoder(num_features, out_channels))
 
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name, param.data.shape)
     # move to GPU (if available)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     x = trainable.x.float().to(device)
     train_pos_edge_index = trainable.train_pos_edge_index.to(device)
-
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
@@ -188,17 +209,4 @@ def train():
 
 if __name__ == "__main__":
     train()
-    """G = example_exploration.graphSnapshot()
-    pos = nx.spring_layout(G)
-    fig, ax = plt.subplots(figsize=(10, 8))
 
-    nx.draw(G, pos, with_labels=False)
-
-    labels = nx.get_edge_attributes(G, 'label')
-    nx.draw_networkx_edges(G, pos, alpha=0.5, width=2, node_size=100)
-
-    nx.draw_networkx_edge_labels(G, pos, ax=ax)
-    ax.set_axis_off()
-    breakpoint()
-    plt.savefig('figure.png')
-"""

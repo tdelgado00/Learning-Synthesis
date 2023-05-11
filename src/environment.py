@@ -1,5 +1,9 @@
+from collections import OrderedDict
+
 import jpype
 import jpype.imports
+from sympy.core.containers import OrderedSet
+
 from util import *
 import os
 import pickle
@@ -46,11 +50,7 @@ class DCSSolverEnv:
                                     )
 
         self.nfeatures = self.javaEnv.getNumberOfFeatures()
-
-        # self.transition_labels = set()
-        # for transition_label in self.javaEnv.all_transition_labels():
-        #     self.transition_labels.add(self.getTransitionType(transition_label))
-        # breakpoint()
+        self.transition_labels = OrderedSet()
 
         self.info = {
             "nfeatures": self.nfeatures,
@@ -63,6 +63,12 @@ class DCSSolverEnv:
         self.exploration_graph = None
         if exploration_graph:
             self.exploration_graph = nx.DiGraph()
+
+    def set_transition_types(self):
+        for transition_label in self.javaEnv.all_transition_labels():
+            self.transition_labels.add(getTransitionType(transition_label))
+
+
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
@@ -83,7 +89,7 @@ class DCSSolverEnv:
 
     def featured_graph_expansion(self, action):
         self.javaEnv.expandAction(action)
-        child_compostate = self.javaEnv.lastExpandedHashes()
+        child_compostate = self.javaEnv.lastExpandedStringIdentifiers()
         child_features = self.compute_node_features(child_compostate)
         if child_compostate[0] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
             child_compostate[0], features=[0])
@@ -92,7 +98,7 @@ class DCSSolverEnv:
         self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
 
     def compute_node_features(self, child_compostate):
-        child_is_unmarked = 1 - int(child_compostate[3])
+        child_is_unmarked = 1 - int(str(child_compostate[3]))
         child_features = [child_is_unmarked]
         return child_features
 
@@ -114,15 +120,13 @@ class DCSSolverEnv:
             "expanded states": int(self.javaEnv.getExpandedStates())
         }
 
-    def getTransitionType(self, full_transition_label):
-        i = 0
-        res = ""
-        while i < len(full_transition_label) and full_transition_label[i] != '.':
-            res.append(full_transition_label[i])
-            i += 1
-        return res
-
-
+def getTransitionType(full_transition_label):
+    i = 0
+    res = ""
+    while(i<len(full_transition_label) and full_transition_label[i]!='.'):
+        res+=(full_transition_label[i])
+        i+=1
+    return res
 def save_random_states(problems, n, k, features):
     """ Saves observations from a random policy for all problems in the benchmark """
 
