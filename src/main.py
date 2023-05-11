@@ -27,7 +27,7 @@ def parse_args():
                         help="The set of target problems: e.g. \"AT-BW-CM-DP-TA-TL\"",
                         default="AT-BW-CM-DP-TA-TL")
 
-    parser.add_argument("--exp-path", type=str,
+    parser.add_argument("--exp-path", type=str, default="test",
                         help="The path of this experiment inside results")
 
     parser.add_argument("--step-2-results", type=str, default="step_2_results.csv",
