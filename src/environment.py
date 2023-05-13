@@ -15,7 +15,7 @@ from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForP
 
 
 class DCSSolverEnv:
-    def __init__(self, problem, n, k, features_path, normalize_reward=False, exploration_graph=False):
+    def __init__(self, problem, n, k, features_path, normalize_reward=False):
         self.problem = problem
         self.n = n
         self.k = k
@@ -59,13 +59,7 @@ class DCSSolverEnv:
             "expansion_budget_exceeded": "false"
         }
 
-        self.exploration_graph = None
-        if exploration_graph:
-            self.exploration_graph = nx.DiGraph()
 
-    def set_transition_types(self):
-        for transition_label in self.javaEnv.all_transition_types():
-            self.transition_labels.add(getTransitionType(transition_label))
 
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
@@ -74,30 +68,13 @@ class DCSSolverEnv:
         return r
 
     def step(self, action):
-        if self.exploration_graph is not None:
-            self.featured_graph_expansion(action)
-        else:
-            self.javaEnv.expandAction(action)
-
+        self.javaEnv.expandAction(action)
         if not self.javaEnv.isFinished():
             return self.get_actions(), self.reward(), False, {}
         else:
             return None, self.reward(), True, self.get_results()
 
-    def featured_graph_expansion(self, action):
-        self.javaEnv.expandAction(action)
-        child_compostate = self.javaEnv.lastExpandedStringIdentifiers()
-        child_features = self.compute_node_features(child_compostate)
-        if child_compostate[0] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
-            child_compostate[0], features=[0])
-        if child_compostate[2] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
-            child_compostate[2], features=child_features)
-        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
 
-    def compute_node_features(self, child_compostate):
-        child_is_unmarked = 1 - int(str(child_compostate[3]))
-        child_features = [child_is_unmarked]
-        return child_features
 
     def reward(self):
         return -1 if not self.normalize_reward else -1 / self.problem_size
@@ -117,13 +94,7 @@ class DCSSolverEnv:
             "expanded states": int(self.javaEnv.getExpandedStates())
         }
 
-def getTransitionType(full_transition_label):
-    i = 0
-    res = ""
-    while(i<len(full_transition_label) and full_transition_label[i]!='.'):
-        res+=(full_transition_label[i])
-        i+=1
-    return res
+
 def save_random_states(problems, n, k, features):
     """ Saves observations from a random policy for all problems in the benchmark """
 
