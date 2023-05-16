@@ -95,9 +95,10 @@ class DCSSolverEnv:
         self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
 
     def compute_node_features(self, child_compostate):
-        child_is_unmarked = 1 - int(str(child_compostate[3]))
-        child_features = [child_is_unmarked]
-        return child_features
+        return [1]
+        # child_is_unmarked = 1 - int(str(child_compostate[3]))
+        # child_features = [child_is_unmarked]
+        # return child_features
 
     def reward(self):
         return -1 if not self.normalize_reward else -1 / self.problem_size
@@ -117,13 +118,16 @@ class DCSSolverEnv:
             "expanded states": int(self.javaEnv.getExpandedStates())
         }
 
+
 def getTransitionType(full_transition_label):
     i = 0
     res = ""
-    while(i<len(full_transition_label) and full_transition_label[i]!='.'):
-        res+=(full_transition_label[i])
-        i+=1
+    while i < len(full_transition_label) and full_transition_label[i] != '.':
+        res += (full_transition_label[i])
+        i += 1
     return res
+
+
 def save_random_states(problems, n, k, features):
     """ Saves observations from a random policy for all problems in the benchmark """
 

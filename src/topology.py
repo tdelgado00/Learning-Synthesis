@@ -2,6 +2,7 @@ import random
 
 import os
 import argparse
+
 from torch.utils.tensorboard import SummaryWriter
 import experiments
 import torch
@@ -52,9 +53,9 @@ class RandomExplorationForGCNTraining:
             self.finished = True
         final_graph = self.graph_snapshot()
         transition_labels = self.env.transition_labels
-        return self.setNeighborhoodLabelFeatures(final_graph, transition_labels)
+        return self.set_neighborhood_label_features(final_graph, transition_labels)
 
-    def setNeighborhoodLabelFeatures(self, graph, transition_labels):
+    def set_neighborhood_label_features(self, graph, transition_labels):
         transition_labels = list(transition_labels)
         for node in graph.nodes():
             node_label_feature_vector = [0] * len(transition_labels)
@@ -74,12 +75,27 @@ class RandomExplorationForGCNTraining:
 class GCNEncoder(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(GCNEncoder, self).__init__()
-        self.conv1 = GCNConv(in_channels, 20, cached=True)
-        self.conv2 = GCNConv(20, out_channels, cached=True)
+        planes = 128
+        self.first_layer = Sequential('x, edge_index', [
+            (GCNConv(in_channels, planes), 'x, edge_index -> x'),
+            nn.ReLU(inplace=True),
+        ])
+
+        def conv_block():
+            return Sequential('x, edge_index', [
+                (GCNConv(planes, planes), 'x, edge_index -> x'),
+                nn.ReLU(inplace=True)
+            ])
+
+        self.conv_blocks = Sequential('x, edge_index', [(conv_block(), 'x, edge_index -> x') for _ in range(7)])
+
+        self.last_linear = nn.Linear(planes, out_channels)
 
     def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index).relu()
-        return self.conv2(x, edge_index)
+        x = self.first_layer(x, edge_index)
+        x = self.conv_blocks(x, edge_index)
+        x = self.last_linear(x)
+        return x
 
 
 class GraphGenerator:
@@ -164,7 +180,7 @@ def train():
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
-    trainable = from_networkx(G, group_node_attrs=["features", "successor_label_types_OHE"])
+    trainable = from_networkx(G, group_node_attrs=["features"])
     trainable = train_test_split_edges(trainable, val_ratio=0, test_ratio=1)
     # hack for getting train pos and train neg edges, we use test as train
 
@@ -173,7 +189,7 @@ def train():
     # parameters
     out_channels = 2
     num_features = trainable.num_features
-    epochs = 1000
+    epochs = 5000
 
     model = GAE(GCNEncoder(num_features, out_channels))
 
