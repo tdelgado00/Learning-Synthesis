@@ -12,7 +12,7 @@ from torch_geometric.nn import GCNConv, GAE, Sequential
 from torch import nn
 from torch_geometric.utils import train_test_split_edges, from_networkx
 from environment import DCSSolverEnv, getTransitionType
-from torch_geometric.utils import from_networkx, train_test_split_edges
+from torch_geometric.transforms import random_link_split
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -53,7 +53,8 @@ class RandomExplorationForGCNTraining:
             self.finished = True
         final_graph = self.graph_snapshot()
         transition_labels = self.env.transition_labels
-        return self.set_neighborhood_label_features(final_graph, transition_labels)
+        return final_graph
+        # return self.set_neighborhood_label_features(final_graph, transition_labels)
 
     def set_neighborhood_label_features(self, graph, transition_labels):
         transition_labels = list(transition_labels)
@@ -98,6 +99,7 @@ class GCNEncoder(torch.nn.Module):
         return x
 
 
+# Not used yet
 class GraphGenerator:
     """Ideas de testing y analisis de la performance del autoencoder"""
 
@@ -105,6 +107,7 @@ class GraphGenerator:
         raise NotImplementedError
 
 
+# Not used yet
 class GAETrainer:
     def __init__(self, gae_graphnet: torch.nn.Module, explorations: list[RandomExplorationForGCNTraining]):
         print(
@@ -163,6 +166,19 @@ def learn(model, optimizer, x, edges):
     return float(loss)
 
 
+def get_neg_edges(data):
+    n = len(data.x)
+    edges = data.edge_index.T.tolist()
+
+    neg_edges = []
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                if [i, j] not in edges:
+                    neg_edges.append((i, j))
+
+    return torch.tensor(neg_edges).T
+
 def train():
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
@@ -180,34 +196,41 @@ def train():
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
-    trainable = from_networkx(G, group_node_attrs=["features"])
-    trainable = train_test_split_edges(trainable, val_ratio=0, test_ratio=1)
-    # hack for getting train pos and train neg edges, we use test as train
+    torch_graph = from_networkx(G, group_node_attrs=["features"])
 
-    # breakpoint()
+    # Not used because we don't split train and test
+    # data, _, _ = random_link_split.RandomLinkSplit(num_val=0.0, num_test=0.0)(torch_graph)
+
+    data = torch_graph
 
     # parameters
     out_channels = 2
-    num_features = trainable.num_features
+    num_features = data.num_features
     epochs = 5000
 
     model = GAE(GCNEncoder(num_features, out_channels))
 
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            print(name, param.data.shape)
+    # for name, param in model.named_parameters():
+    #     if param.requires_grad:
+    #         print(name, param.data.shape)
 
     # move to GPU (if available)
     model = model.to(device)
-    x = trainable.x.float().to(device)
-    edges = trainable.test_pos_edge_index.to(device)
-    neg_edges = trainable.test_neg_edge_index.to(device)
+    x = data.x.float().to(device)
+    # print("Node features")
+    # print(x)
+    edges = data.edge_index.to(device)
+    # print("Edges")
+    # print(edges)
+    neg_edges = get_neg_edges(data)
+    # print("Neg edges")
+    # print(neg_edges)
 
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
 
-    print(trainable)
+    # print(data)
 
     for epoch in range(1, epochs + 1):
         loss = learn(model, optimizer, x, edges)
@@ -226,7 +249,7 @@ def train():
 
         print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
 
-    print(trainable)
+    # print(data)
     # Z = model.encode(x, train_pos_edge_index)
     # print(Z)
 

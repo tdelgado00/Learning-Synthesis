@@ -88,11 +88,13 @@ class DCSSolverEnv:
         self.javaEnv.expandAction(action)
         child_compostate = self.javaEnv.lastExpandedStringIdentifiers()
         child_features = self.compute_node_features(child_compostate)
-        if child_compostate[0] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
-            child_compostate[0], features=[0])
-        if child_compostate[2] not in self.exploration_graph.nodes(): self.exploration_graph.add_node(
-            child_compostate[2], features=child_features)
-        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], label=child_compostate[1])
+        if child_compostate[0] not in self.exploration_graph.nodes():
+            # print(child_compostate[0], type(child_compostate[0]))
+            self.exploration_graph.add_node(child_compostate[0], features=[1])  # TODO: this is hardcoded
+        if child_compostate[2] not in self.exploration_graph.nodes():
+            # print(child_compostate[2], type(child_compostate[2]))
+            self.exploration_graph.add_node(child_compostate[2], features=child_features)
+        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2])  #, label=child_compostate[1])
 
     def compute_node_features(self, child_compostate):
         return [1]
