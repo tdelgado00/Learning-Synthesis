@@ -86,15 +86,16 @@ class DCSSolverEnv:
 
     def featured_graph_expansion(self, action):
         self.javaEnv.expandAction(action)
-        child_compostate = self.javaEnv.lastExpandedStringIdentifiers()
+        child_compostate_java_format = self.javaEnv.lastExpandedStringIdentifiers()
+        child_compostate = [str(e) for e in child_compostate_java_format]
         child_features = self.compute_node_features(child_compostate)
         if child_compostate[0] not in self.exploration_graph.nodes():
             # print(child_compostate[0], type(child_compostate[0]))
-            self.exploration_graph.add_node(child_compostate[0], features=[1])  # TODO: this is hardcoded
+            self.exploration_graph.add_node(child_compostate[0], features=[1], marked = 0)  # TODO: this is hardcoded
         if child_compostate[2] not in self.exploration_graph.nodes():
             # print(child_compostate[2], type(child_compostate[2]))
-            self.exploration_graph.add_node(child_compostate[2], features=child_features)
-        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2])  #, label=child_compostate[1])
+            self.exploration_graph.add_node(child_compostate[2], features=child_features, marked = int(child_compostate[3]))
+        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], controllability=int(child_compostate[4]))  #, label=child_compostate[1])
 
     def compute_node_features(self, child_compostate):
         return [1]
