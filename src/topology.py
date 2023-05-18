@@ -154,13 +154,19 @@ def test(model, x, edges, neg_edges):
     return model.test(z, edges, neg_edges)
 
 
-def learn(model, optimizer, x, edges):
+def learn(model, optimizer, x, edges, neg_edges):
     model.train()
     optimizer.zero_grad()
     z = model.encode(x.float().to(device), edges)
-    loss = model.recon_loss(z, edges)
+
+    # This is not really necessary, recon_loss does it by default
+    perm = torch.randperm(neg_edges.shape[1])
+    neg_edges_loss = neg_edges[:, perm[:edges.shape[1]]]
+    loss = model.recon_loss(z, edges, neg_edges_loss)
+
     # if args.variational:
     #   loss = loss + (1 / data.num_nodes) * model.kl_loss()
+
     loss.backward()
     optimizer.step()
     return float(loss)
@@ -178,6 +184,32 @@ def get_neg_edges(data):
                     neg_edges.append((i, j))
 
     return torch.tensor(neg_edges).T
+
+
+# For debugging purposes
+def get_edge_categories(data):
+    n = len(data.x)
+    edges = data.edge_index.T.tolist()
+
+    symmetric_edges = []
+    disconnected_edges = []
+    one_way_edges = []
+    neg_one_way_edges = []
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                if [i, j] in edges and [j, i] in edges:
+                    symmetric_edges.append((i, j))
+                elif [i, j] in edges and [j, i] not in edges:
+                    one_way_edges.append((i, j))
+                elif [i, j] not in edges and [j, i] not in edges:
+                    disconnected_edges.append((i, j))
+                elif [i, j] not in edges and [j, i] in edges:
+                    neg_one_way_edges.append((i, j))
+
+    return torch.tensor(symmetric_edges).T, torch.tensor(disconnected_edges).T, \
+           torch.tensor(one_way_edges).T, torch.tensor(neg_one_way_edges).T
+
 
 def train():
     args = parse_args()
@@ -204,7 +236,7 @@ def train():
     data = torch_graph
 
     # parameters
-    out_channels = 2
+    out_channels = 32
     num_features = data.num_features
     epochs = 5000
 
@@ -226,6 +258,10 @@ def train():
     # print("Neg edges")
     # print(neg_edges)
 
+    symmetric_edges, disconnected_edges, one_way_edges, neg_one_way_edges = get_edge_categories(data)
+    print(symmetric_edges.shape, disconnected_edges.shape, one_way_edges.shape, neg_one_way_edges.shape)
+
+
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
@@ -233,7 +269,7 @@ def train():
     # print(data)
 
     for epoch in range(1, epochs + 1):
-        loss = learn(model, optimizer, x, edges)
+        loss = learn(model, optimizer, x, edges, neg_edges)
 
         writer.add_scalar("losses/loss", loss, epoch)
         writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
@@ -244,8 +280,29 @@ def train():
                        neg_edges
                        )
 
+        EPS = 1e-15
+
+        with torch.no_grad():
+            z = model.encode(x.float().to(device), edges)
+
+        # symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
+        disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
+        one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
+        neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
+        disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[1]
+        one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
+        neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
+        # symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
+
         writer.add_scalar("charts/AUC", auc, epoch)
         writer.add_scalar("charts/AP", ap, epoch)
+        # writer.add_scalar("losses/symmetric_loss", symmetric_loss, epoch)  # Debería reducirse hacia 0
+        writer.add_scalar("losses/disconnected_loss", disconnected_loss, epoch)  # Debería reducirse hacia 0
+        writer.add_scalar("losses/one_way_loss", one_way_loss, epoch)  # Deberían estancarse, converge?
+        writer.add_scalar("losses/neg_one_way_loss", neg_one_way_loss, epoch)  # Deberían estancarse
+        writer.add_scalar("charts/disconnected_correct", disconnected_correct, epoch)
+        writer.add_scalar("charts/one_way_correct", one_way_correct, epoch)
+        writer.add_scalar("charts/neg_one_way_correct", neg_one_way_correct, epoch)
 
         print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
 
