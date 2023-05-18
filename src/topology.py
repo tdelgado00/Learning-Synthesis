@@ -1,8 +1,10 @@
+import pickle
 import random
 
 import os
 import argparse
 
+import networkx as nx
 from torch.utils.tensorboard import SummaryWriter
 import experiments
 import torch
@@ -10,15 +12,15 @@ import numpy as np
 import time
 from torch_geometric.nn import GCNConv, GAE, Sequential
 from torch import nn
-from torch_geometric.utils import train_test_split_edges, from_networkx
+from torch_geometric.utils import from_networkx
 from environment import DCSSolverEnv, getTransitionType
-from torch_geometric.transforms import random_link_split
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class RandomExplorationForGCNTraining:
     def __init__(self, args, problem: str, context: tuple[int, int]):
+        print("WARNING: Check MTSA DCSNonBlocking is set to full exploration mode if you want to build the full plant")
         print(
             "Warning 1: this is now working exclusively on one graph being expanded. Pending "
             "round robin and curriculum expansions for GCN training. Be careful with expansions"
@@ -41,7 +43,7 @@ class RandomExplorationForGCNTraining:
         print("Warning: Exploration finishes with verdict. Full plant construction pending.")
         self.env.reset()
         self.finished = False
-        while not self.finished:
+        while self.env.javaEnv.frontierSize()>0:
             self.expand()
 
         return self.graph_snapshot()
@@ -211,6 +213,14 @@ def get_edge_categories(data):
            torch.tensor(one_way_edges).T, torch.tensor(neg_one_way_edges).T
 
 
+def build_full_plant_graph(problem, n, k, path):
+    args = parse_args()
+    G = RandomExplorationForGCNTraining(args, problem, (n, k)).full_nonblocking_random_exploration()
+    pickle.dump(G, open(path + f'full_{problem}_{n}_{k}.pkl', 'wb'))
+    print(f"Built {problem}_{n}_{k}")
+    return G
+
+
 def train():
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
@@ -228,8 +238,8 @@ def train():
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
-    torch_graph = from_networkx(G, group_node_attrs=["features"])
 
+    torch_graph = from_networkx(G, group_node_attrs=["features"])
     # Not used because we don't split train and test
     # data, _, _ = random_link_split.RandomLinkSplit(num_val=0.0, num_test=0.0)(torch_graph)
 
@@ -314,4 +324,9 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
+    instances = [(n,k) for n in range(1,5) for k in range(1,5)]
+    graph_path = "/home/marco/Desktop/Learning-Synthesis/experiments/plants/"
+    for p in problems:
+        for instance in instances:
+            g = build_full_plant_graph(p,instance[0], instance[1], graph_path)
