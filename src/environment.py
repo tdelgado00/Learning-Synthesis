@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 
 import jpype
@@ -42,9 +43,10 @@ class DCSSolverEnv:
 
         labels_path = "labels/" + problem + ".txt" if labels_enabled else None
 
+        warnings.warn("Warning: max frontier size modified to 1000000, remember baseline uses 10000")
         self.javaEnv = DCSForPython(features_path,
                                     labels_path,
-                                    10000,
+                                    1000000,
                                     self.detached_initial_componentwise_info
                                     )
 

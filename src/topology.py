@@ -40,10 +40,10 @@ class RandomExplorationForGCNTraining:
         return self.env.exploration_graph
 
     def full_nonblocking_random_exploration(self):
-        print("Warning: Exploration finishes with verdict. Full plant construction pending.")
+        print("WARNING: Check MTSA DCSNonBlocking is set to full exploration mode if you want to build the full plant")
         self.env.reset()
         self.finished = False
-        while self.env.javaEnv.frontierSize()>0:
+        while not self.env.javaEnv.isFinished():
             self.expand()
 
         return self.graph_snapshot()
@@ -62,12 +62,12 @@ class RandomExplorationForGCNTraining:
         transition_labels = list(transition_labels)
         for node in graph.nodes():
             node_label_feature_vector = [0] * len(transition_labels)
-            labels = [getTransitionType(graph.get_edge_data(src, dst)['label']) for src, dst in graph.out_edges(node)]
+            labels = [getTransitionType(graph.get_edge_data(src, dst)['label']) for src, dst in graph.in_edges(node)]
 
             for i in range(len(transition_labels)):
                 if transition_labels[i] in labels:
                     node_label_feature_vector[i] = 1
-            graph.nodes[node]["successor_label_types_OHE"] = node_label_feature_vector
+            graph.nodes[node]["predecessor_label_types_OHE"] = node_label_feature_vector
         return graph
 
     def random_exploration(self, full=False):
@@ -212,7 +212,6 @@ def get_edge_categories(data):
     return torch.tensor(symmetric_edges).T, torch.tensor(disconnected_edges).T, \
            torch.tensor(one_way_edges).T, torch.tensor(neg_one_way_edges).T
 
-
 def build_full_plant_graph(problem, n, k, path):
     args = parse_args()
     G = RandomExplorationForGCNTraining(args, problem, (n, k)).full_nonblocking_random_exploration()
@@ -221,7 +220,7 @@ def build_full_plant_graph(problem, n, k, path):
     return G
 
 
-def train():
+def train(graph_path = None):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -237,7 +236,12 @@ def train():
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
-    G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
+    G = None
+    if graph_path is not None:
+        with open(graph_path, 'rb') as f:
+            G = pickle.load(f)
+    else:
+        G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
 
     torch_graph = from_networkx(G, group_node_attrs=["features"])
     # Not used because we don't split train and test
@@ -304,6 +308,10 @@ def train():
         neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
         # symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
 
+        print("disconnected correct: ", disconnected_correct, "disconnected loss: ", disconnected_loss)
+        print("one_way correct: ", one_way_correct, "one_way loss: ", one_way_loss)
+        print("neg_one_way correct: ", neg_one_way_correct, "neg_one_way loss: ", neg_one_way_loss)
+
         writer.add_scalar("charts/AUC", auc, epoch)
         writer.add_scalar("charts/AP", ap, epoch)
         # writer.add_scalar("losses/symmetric_loss", symmetric_loss, epoch)  # Debería reducirse hacia 0
@@ -323,10 +331,6 @@ def train():
     writer.close()
 
 
+
 if __name__ == "__main__":
-    problems = ["AT", "BW", "CM", "DP", "TA", "TL"]
-    instances = [(n,k) for n in range(1,5) for k in range(1,5)]
-    graph_path = "/home/marco/Desktop/Learning-Synthesis/experiments/plants/"
-    for p in problems:
-        for instance in instances:
-            g = build_full_plant_graph(p,instance[0], instance[1], graph_path)
+    train("/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_AT_3_3.pkl")
