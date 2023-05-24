@@ -220,7 +220,7 @@ def build_full_plant_graph(problem, n, k, path):
     return G
 
 
-def train(graph_path = None):
+def train(graph_path = None, model_name = "sample_graphnet"):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -252,9 +252,12 @@ def train(graph_path = None):
     # parameters
     out_channels = 32
     num_features = data.num_features
-    epochs = 5000
+    epochs = 100
 
-    model = GAE(GCNEncoder(num_features, out_channels))
+    #the following is useful for storing the constructor image corresponding to the state_dict of the trained parameters
+    graphnet_constructor_image = f"GAE(GCNEncoder({num_features},{out_channels}))"
+    model = eval(graphnet_constructor_image)
+
 
     # for name, param in model.named_parameters():
     #     if param.requires_grad:
@@ -328,8 +331,19 @@ def train(graph_path = None):
     # Z = model.encode(x, train_pos_edge_index)
     # print(Z)
 
+    save_graphnet(graphnet_constructor_image, model, model_name)
+    breakpoint()
     writer.close()
 
+
+def save_graphnet(graphnet_constructor_image, model, model_name):
+    """
+    Stores at experiments/graphnets the parameters in model_name.pkl and the corresponding constructor in model_name.txt.
+    """
+    torch.save(model.state_dict(), "experiments/graphnets/" + model_name + ".pkl")
+    file = open("experiments/graphnets/" + model_name + "_image.txt", "w")
+    file.write(graphnet_constructor_image)
+    file.close()
 
 
 if __name__ == "__main__":
