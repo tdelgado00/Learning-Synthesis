@@ -244,6 +244,7 @@ def train(graph_path = None, model_name = "sample_graphnet"):
         G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
 
     torch_graph = from_networkx(G, group_node_attrs=["features"])
+    breakpoint()
     # Not used because we don't split train and test
     # data, _, _ = random_link_split.RandomLinkSplit(num_val=0.0, num_test=0.0)(torch_graph)
 

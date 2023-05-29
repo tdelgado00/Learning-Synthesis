@@ -141,6 +141,8 @@ class PreSelectionTesting(Experiment):
         df = pd.DataFrame(df)
         df.to_csv(self.results_path + self.args.step_2_results)
 
+class TrainingExperimentWithGNN(TrainingExperiment):
+    raise NotImplementedError
 
 class BestAgentEvaluation(Experiment):
 
