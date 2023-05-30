@@ -355,21 +355,26 @@ class CompostateEmbedding:
         self.vector = vector
 
 def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module):
-    torch_graph = from_networkx(G, group_node_attrs=["features"])
+
+    torch_graph = from_networkx(G, group_node_attrs=["features", "marked"], group_edge_attrs=["controllability"])
     torch_graph = torch_graph.to(device)
     x = torch_graph.x.float().to(device)
     edges = torch_graph.edge_index.to(device)
-    embeds = graphnet.encode(x.float().to(device), edges)
+    edge_controllability = torch_graph.edge_attr.view(-1)
+
+
+    featured_edge_list = [(edge, is_controllable) for (edge, is_controllable) in zip(edges.T, edge_controllability)]
+    breakpoint()
+    embeds = graphnet.encode((x.T[1].view(-1,1)).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
-    assert x.shape[1] == 1, "Only marked vs unmarked is plottable."
-    compostate_embeds = [CompostateEmbedding(int(features[0]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
-    visualize_embeddings(compostate_embeds)
+    compostate_embeds = [CompostateEmbedding(int(features[1]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
+    visualize_embeddings(compostate_embeds) # featured_edge_list
 
 
 
 
 
-def visualize_embeddings(embeds: list[CompostateEmbedding]):
+def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None):
     print("Warning: edge plotting yet not supported.")
     marking_to_color = {True: "deepskyblue", False: "black"}
     x, y, z = [n.vector[0] for n in embeds], [n.vector[1] for n in embeds], [n.vector[2] for n in embeds]
@@ -380,16 +385,16 @@ def visualize_embeddings(embeds: list[CompostateEmbedding]):
 
     # Plot points
     ax.scatter(x, y, z, c=colors)
-    """
-    print as fully connected digraph example
-    for i in range(len(x)):
-        if i + 1 < len(x):
-            dx = x[i + 1] - x[i]
-            dy = y[i + 1] - y[i]
-            dz = z[i + 1] - z[i]
-            ax.plot([x[i], x[i + 1]], [y[i], y[i + 1]], [z[i], z[i + 1]], color='darkblue')
-            ax.quiver(x[i], y[i], z[i], dx, dy, dz, length=0.1, normalize=True, color='darkblue')
-    """
+
+    if edge_attrs is not None:
+        for ea in edge_attrs:
+                breakpoint()
+                dx = x[ea[0][1]] - x[ea[0][0]]
+                dy = y[ea[0][1]] - y[ea[0][0]]
+                dz = z[ea[0][1]] - z[ea[0][0]]
+                ax.plot([x[ea[0][1]], x[ea[0][0]]], [y[ea[0][1]], y[ea[0][0]]], [z[ea[0][1]], z[ea[0][0]]], color='darkblue')
+                ax.quiver(x[ea[0][0]], y[ea[0][0]], z[ea[0][0]], dx, dy, dz, length=0.1, normalize=True, color='darkblue')
+
     # Set labels and title
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
@@ -403,6 +408,6 @@ def visualize_embeddings(embeds: list[CompostateEmbedding]):
 # visualize_embeddings([CompostateEmbedding(True, np.array([0.5,0.5,0.5])), CompostateEmbedding(False, np.array([1,1,1]))])
 
 if __name__ == "__main__":
-    G, model_in_device = train("/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_AT_3_3.pkl")
+    G, model_in_device = train("/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_AT_2_2.pkl")
 
     plot_graph_embeddings(G, model_in_device)
