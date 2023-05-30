@@ -142,7 +142,8 @@ class PreSelectionTesting(Experiment):
         df.to_csv(self.results_path + self.args.step_2_results)
 
 class TrainingExperimentWithGNN(TrainingExperiment):
-    raise NotImplementedError
+    def __init__(self):
+        raise NotImplementedError
 
 class BestAgentEvaluation(Experiment):
 

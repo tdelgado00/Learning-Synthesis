@@ -1,6 +1,7 @@
 import pickle
 import random
-
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import os
 import argparse
 
@@ -244,14 +245,15 @@ def train(graph_path = None, model_name = "sample_graphnet"):
         G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
 
     torch_graph = from_networkx(G, group_node_attrs=["features"])
-    breakpoint()
+
+
     # Not used because we don't split train and test
     # data, _, _ = random_link_split.RandomLinkSplit(num_val=0.0, num_test=0.0)(torch_graph)
 
     data = torch_graph
 
     # parameters
-    out_channels = 32
+    out_channels = 3
     num_features = data.num_features
     epochs = 100
 
@@ -268,7 +270,7 @@ def train(graph_path = None, model_name = "sample_graphnet"):
     model = model.to(device)
     x = data.x.float().to(device)
     # print("Node features")
-    # print(x)
+
     edges = data.edge_index.to(device)
     # print("Edges")
     # print(edges)
@@ -333,8 +335,9 @@ def train(graph_path = None, model_name = "sample_graphnet"):
     # print(Z)
 
     save_graphnet(graphnet_constructor_image, model, model_name)
-    breakpoint()
+
     writer.close()
+    return G, model
 
 
 def save_graphnet(graphnet_constructor_image, model, model_name):
@@ -346,6 +349,60 @@ def save_graphnet(graphnet_constructor_image, model, model_name):
     file.write(graphnet_constructor_image)
     file.close()
 
+class CompostateEmbedding:
+    def __init__(self, is_marked : bool, vector : np.array):
+        self.is_marked = is_marked
+        self.vector = vector
+
+def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module):
+    torch_graph = from_networkx(G, group_node_attrs=["features"])
+    torch_graph = torch_graph.to(device)
+    x = torch_graph.x.float().to(device)
+    edges = torch_graph.edge_index.to(device)
+    embeds = graphnet.encode(x.float().to(device), edges)
+    assert embeds.shape[1]==3, "Only R^3 is plottable"
+    assert x.shape[1] == 1, "Only marked vs unmarked is plottable."
+    compostate_embeds = [CompostateEmbedding(int(features[0]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
+    visualize_embeddings(compostate_embeds)
+
+
+
+
+
+def visualize_embeddings(embeds: list[CompostateEmbedding]):
+    print("Warning: edge plotting yet not supported.")
+    marking_to_color = {True: "deepskyblue", False: "black"}
+    x, y, z = [n.vector[0] for n in embeds], [n.vector[1] for n in embeds], [n.vector[2] for n in embeds]
+    colors = [marking_to_color[n.is_marked] for n in embeds]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot points
+    ax.scatter(x, y, z, c=colors)
+    """
+    print as fully connected digraph example
+    for i in range(len(x)):
+        if i + 1 < len(x):
+            dx = x[i + 1] - x[i]
+            dy = y[i + 1] - y[i]
+            dz = z[i + 1] - z[i]
+            ax.plot([x[i], x[i + 1]], [y[i], y[i + 1]], [z[i], z[i + 1]], color='darkblue')
+            ax.quiver(x[i], y[i], z[i], dx, dy, dz, length=0.1, normalize=True, color='darkblue')
+    """
+    # Set labels and title
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('3D Scatter Plot')
+
+    # Show the plot
+    plt.show()
+
+
+# visualize_embeddings([CompostateEmbedding(True, np.array([0.5,0.5,0.5])), CompostateEmbedding(False, np.array([1,1,1]))])
 
 if __name__ == "__main__":
-    train("/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_AT_3_3.pkl")
+    G, model_in_device = train("/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_AT_3_3.pkl")
+
+    plot_graph_embeddings(G, model_in_device)

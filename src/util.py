@@ -1,7 +1,9 @@
+import networkx as nx
 import numpy as np
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from mpl_toolkits.mplot3d import Axes3D
 
 def results_path(problem, n=2, k=2, file=""):
@@ -163,37 +165,7 @@ def read_monolithic():
     return monolithic_results
 
 
-class CompostateEmbedding:
-    def __init__(self, is_marked : bool, vector : np.array):
-        self.is_marked = is_marked
-        self.vector = vector
 
 
-def visualize_embeddings(embeds : list[CompostateEmbedding]):
-    marking_to_color = {True: "deepskyblue", False: "black"}
-    x, y, z = [n.vector[0] for n in embeds], [n.vector[1] for n in embeds], [n.vector[2] for n in embeds]
-    colors = [marking_to_color[n.is_marked] for n in embeds]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
 
-    # Plot points
-    ax.scatter(x, y, z, c=colors)
-    for i in range(len(x)):
-        if i + 1 < len(x):
-            dx = x[i + 1] - x[i]
-            dy = y[i + 1] - y[i]
-            dz = z[i + 1] - z[i]
-            ax.plot([x[i], x[i + 1]], [y[i], y[i + 1]], [z[i], z[i + 1]], color='darkblue')
-            ax.quiver(x[i], y[i], z[i], dx, dy, dz, length=0.1, normalize=True, color='darkblue')
-
-    # Set labels and title
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_title('3D Scatter Plot')
-
-    # Show the plot
-    plt.show()
-
-visualize_embeddings([CompostateEmbedding(True, np.array([0.5,0.5,0.5])), CompostateEmbedding(False, np.array([1,1,1]))])
