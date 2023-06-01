@@ -407,7 +407,21 @@ def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None):
 
 # visualize_embeddings([CompostateEmbedding(True, np.array([0.5,0.5,0.5])), CompostateEmbedding(False, np.array([1,1,1]))])
 
-if __name__ == "__main__":
-    G, model_in_device = train("/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_AT_2_2.pkl")
+def checkSolutionIsSubgraphOfPlant(problem,n,k):
+    print("warning: hardcoded plant path")
+    S = RandomExplorationForGCNTraining(None,problem, (n,k)).full_nonblocking_random_exploration()
+    plant_name  = f"full_{problem}_{n}_{k}.pkl"
+    plants_path = r'C:\Users\msoro\Desktop\Learning-Synthesis\experiments\plants'
+    G_plant = None
+    with open(r"C:\Users\msoro\Desktop\Learning-Synthesis\experiments\plants\full_AT_3_3.pkl", 'rb') as f:
+        G_plant = pickle.load(f)
 
-    plot_graph_embeddings(G, model_in_device)
+    breakpoint()
+
+
+
+if __name__ == "__main__":
+    checkSolutionIsSubgraphOfPlant("AT", 3, 3)
+    #G, model_in_device = train(r"C:\Users\msoro\Desktop\Learning-Synthesis\experiments\plants\full_AT_2_2.pkl")
+
+    #plot_graph_embeddings(G, model_in_device)
