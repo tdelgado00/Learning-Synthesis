@@ -255,7 +255,7 @@ def train(graph_path = None, model_name = "sample_graphnet"):
     # parameters
     out_channels = 3
     num_features = data.num_features
-    epochs = 100
+    epochs = 1000
 
     #the following is useful for storing the constructor image corresponding to the state_dict of the trained parameters
     graphnet_constructor_image = f"GAE(GCNEncoder({num_features},{out_channels}))"
@@ -354,7 +354,7 @@ class CompostateEmbedding:
         self.is_marked = is_marked
         self.vector = vector
 
-def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module):
+def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str):
 
     torch_graph = from_networkx(G, group_node_attrs=["features", "marked"], group_edge_attrs=["controllability"])
     torch_graph = torch_graph.to(device)
@@ -368,13 +368,13 @@ def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module):
     embeds = graphnet.encode((x.T[1].view(-1,1)).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
     compostate_embeds = [CompostateEmbedding(int(features[1]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
-    visualize_embeddings(compostate_embeds) # featured_edge_list
+    visualize_embeddings(compostate_embeds, context=context) # featured_edge_list
 
 
 
 
 
-def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None):
+def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None, context = ""):
     print("Warning: edge plotting yet not supported.")
     marking_to_color = {True: "deepskyblue", False: "black"}
     x, y, z = [n.vector[0] for n in embeds], [n.vector[1] for n in embeds], [n.vector[2] for n in embeds]
@@ -399,7 +399,7 @@ def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    ax.set_title('3D Scatter Plot')
+    ax.set_title(context)
 
     # Show the plot
     plt.show()
@@ -408,20 +408,50 @@ def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None):
 # visualize_embeddings([CompostateEmbedding(True, np.array([0.5,0.5,0.5])), CompostateEmbedding(False, np.array([1,1,1]))])
 
 def checkSolutionIsSubgraphOfPlant(problem,n,k):
-    print("warning: hardcoded plant path")
+
     S = RandomExplorationForGCNTraining(None,problem, (n,k)).full_nonblocking_random_exploration()
-    plant_name  = f"full_{problem}_{n}_{k}.pkl"
-    plants_path = r'C:\Users\msoro\Desktop\Learning-Synthesis\experiments\plants'
-    G_plant = None
-    with open(r"C:\Users\msoro\Desktop\Learning-Synthesis\experiments\plants\full_AT_3_3.pkl", 'rb') as f:
+    plant_name  = f"full_{problem}_{n}_{k}"
+    plants_path = r'/home/marco/Desktop/Learning-Synthesis/experiments/plants'
+
+    with open(plants_path + f"/{plant_name}.pkl", 'rb') as f:
         G_plant = pickle.load(f)
 
-    breakpoint()
+    for node in S.nodes(): assert node in G_plant.nodes(), "Plant should include all solution nodes"
+    for edge in S.edges(): assert edge in G_plant.edges(), "Plant should include all solution nodes"
 
+
+
+def get_winning_cycles(G : nx.DiGraph):
+    cycles = list(nx.simple_cycles(nx.line_graph(G)))
+
+    for cycle in cycles:
+        for node in cycle:
+            check
+
+class visualTestsForGraphEmbeddings:
+    def __init__(self, problem, n, k,graphnet):
+        raise NotImplementedError
+
+    def testWinningExpansion(self):
+        raise NotImplementedError
+    def testLosingExpansion(self):
+        """Hallar todos los ciclos no controlables, seleccionar uno, prunearlo -> plot -> recuperar arista -> plot"""
+        raise NotImplementedError
+    def testSCCArtificialUnion(self):
+        raise NotImplementedError
+
+    def testAddingInverseEdgeEffects(self):
+        raise NotImplementedError
+    def testSimilarNodesDistant(self):
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
-    checkSolutionIsSubgraphOfPlant("AT", 3, 3)
-    #G, model_in_device = train(r"C:\Users\msoro\Desktop\Learning-Synthesis\experiments\plants\full_AT_2_2.pkl")
-
-    #plot_graph_embeddings(G, model_in_device)
+    problem = "DP"
+    n = 3
+    k = 3
+    """for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
+        checkSolutionIsSubgraphOfPlant(problem, 2, 2)"""
+    G, model_in_device = train(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl")
+    S = RandomExplorationForGCNTraining(None,problem, (n,k)).full_nonblocking_random_exploration()
+    plot_graph_embeddings(S, model_in_device, f"{problem,n,k}")
