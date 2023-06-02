@@ -91,14 +91,14 @@ class DCSSolverEnv:
         child_features = self.compute_node_features(child_compostate)
         if child_compostate[0] not in self.exploration_graph.nodes():
             # print(child_compostate[0], type(child_compostate[0]))
-            self.exploration_graph.add_node(child_compostate[0], features=[np.random.rand()*2-0.5, np.random.rand()*2-0.5], marked=0)  # TODO: this is hardcoded
+            self.exploration_graph.add_node(child_compostate[0], features=[1], marked=0)  # TODO: this is hardcoded
         if child_compostate[2] not in self.exploration_graph.nodes():
             # print(child_compostate[2], type(child_compostate[2]))
             self.exploration_graph.add_node(child_compostate[2], features=child_features, marked=int(child_compostate[3]))
         self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], controllability=int(child_compostate[4]))  #, label=child_compostate[1])
 
     def compute_node_features(self, child_compostate):
-        return [np.random.rand()*2-0.5, np.random.rand()*2-0.5]
+        return [1]
         # child_is_unmarked = 1 - int(str(child_compostate[3]))
         # child_features = [child_is_unmarked]
         # return child_features
