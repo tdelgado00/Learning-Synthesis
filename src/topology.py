@@ -1,12 +1,15 @@
 import copy
 import pickle
 import random
+from typing import Tuple
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 import argparse
 
 import networkx as nx
+from sklearn.metrics import accuracy_score
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.transforms import RandomLinkSplit
 
@@ -153,12 +156,6 @@ def parse_args():
     return args
 
 
-def test(model, x, edges, neg_edges):
-    model.eval()
-    with torch.no_grad():
-        z = model.encode(x.float().to(device), edges)
-    return model.test(z, edges, neg_edges)
-
 
 def learn(model, optimizer, x, edges, neg_edges):
     model.train()
@@ -166,9 +163,9 @@ def learn(model, optimizer, x, edges, neg_edges):
     z = model.encode(x.float().to(device), edges)
 
     # This is not really necessary, recon_loss does it by default
-    perm = torch.randperm(neg_edges.shape[1])
-    neg_edges_loss = neg_edges[:, perm[:edges.shape[1]]]
-    loss = model.recon_loss(z, edges, neg_edges_loss)
+    #perm = torch.randperm(neg_edges.shape[1])
+    #neg_edges_loss = neg_edges[:, perm[:edges.shape[1]]]
+    loss = model.recon_loss(z, edges, neg_edges)
 
     # if args.variational:
     #   loss = loss + (1 / data.num_nodes) * model.kl_loss()
@@ -223,142 +220,25 @@ def build_full_plant_graph(problem, n, k, path):
     print(f"Built {problem}_{n}_{k}")
     return G
 
+def test_model(model,z: torch.Tensor, pos_edge_index: torch.Tensor,
+             neg_edge_index: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        from sklearn.metrics import average_precision_score, roc_auc_score
 
-def train(graph_path = None, model_name = "sample_graphnet", as_graph = False):
-    args = parse_args()
-    run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
+        pos_y = z.new_ones(pos_edge_index.size(1))
+        neg_y = z.new_zeros(neg_edge_index.size(1))
+        y = torch.cat([pos_y, neg_y], dim=0)
 
-    writer = SummaryWriter(f"runs/{run_name}")
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    )
-
-    # seeding
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.backends.cudnn.deterministic = args.torch_deterministic
-
-    G = None
-    if graph_path is not None:
-        with open(graph_path, 'rb') as f:
-            G = pickle.load(f)
-    else:
-        G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
-
-    if as_graph: G = G.to_undirected()
-    torch_graph = from_networkx(G, group_node_attrs=["features"])
-
-
-    # Not used because we don't split train and test
-    # data, _, _ = random_link_split.RandomLinkSplit(num_val=0.0, num_test=0.0)(torch_graph)
-
-    data = torch_graph
-
-    # parameters
-    out_channels = 3
-    num_features = data.num_features
-    epochs = 1000
-
-    #the following is useful for storing the constructor image corresponding to the state_dict of the trained parameters
-    graphnet_constructor_image = f"GAE(GCNEncoder({num_features},{out_channels}))"
-    model = eval(graphnet_constructor_image)
-
-
-    # for name, param in model.named_parameters():
-    #     if param.requires_grad:
-    #         print(name, param.data.shape)
-
-    # move to GPU (if available)
-    model = model.to(device)
-    x = data.x.float().to(device)
-    # print("Node features")
-
-    edges = data.edge_index.to(device)
-    # print("Edges")
-    # print(edges)
-    neg_edges = get_neg_edges(data)
-    # print("Neg edges")
-    # print(neg_edges)
-
-    #symmetric_edges, disconnected_edges, one_way_edges, neg_one_way_edges = get_edge_categories(data)
-    #print(symmetric_edges.shape, disconnected_edges.shape, one_way_edges.shape, neg_one_way_edges.shape)
-
-
-    # initialize the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    start_time = time.time()
-
-    # print(data)
-
-    for epoch in range(1, epochs + 1):
-        loss = learn(model, optimizer, x, edges, neg_edges)
-
-        writer.add_scalar("losses/loss", loss, epoch)
-        writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
-
-        auc, ap = test(model,
-                       x,
-                       edges,
-                       neg_edges
-                       )
-
-        EPS = 1e-15
-
-        with torch.no_grad():
-            z = model.encode(x.float().to(device), edges)
-
-        """ symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
-       disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
-       one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
-       neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
-       disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[1]
-       one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
-       neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
-        symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
-
-        print("disconnected correct: ", disconnected_correct, "disconnected loss: ", disconnected_loss)
-        print("one_way correct: ", one_way_correct, "one_way loss: ", one_way_loss)
-        print("neg_one_way correct: ", neg_one_way_correct, "neg_one_way loss: ", neg_one_way_loss)
-
-        writer.add_scalar("charts/AUC", auc, epoch)
-        writer.add_scalar("charts/AP", ap, epoch)
-        # writer.add_scalar("losses/symmetric_loss", symmetric_loss, epoch)  # Debería reducirse hacia 0
-        writer.add_scalar("losses/disconnected_loss", disconnected_loss, epoch)  # Debería reducirse hacia 0
-        writer.add_scalar("losses/one_way_loss", one_way_loss, epoch)  # Deberían estancarse, converge?
-        writer.add_scalar("losses/neg_one_way_loss", neg_one_way_loss, epoch)  # Deberían estancarse
-        writer.add_scalar("charts/disconnected_correct", disconnected_correct, epoch)
-        writer.add_scalar("charts/one_way_correct", one_way_correct, epoch)
-        writer.add_scalar("charts/neg_one_way_correct", neg_one_way_correct, epoch)
-    """
-        print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
-
-    # print(data)
-    # Z = model.encode(x, train_pos_edge_index)
-    # print(Z)
-
-    save_graphnet(graphnet_constructor_image, model, model_name)
-
-    writer.close()
-    return G, model
-
-def test_old(model, x, edges, neg_edges):
+        pos_pred = model.decoder(z, pos_edge_index, sigmoid=True)
+        neg_pred = model.decoder(z, neg_edge_index, sigmoid=True)
+        pred = torch.cat([pos_pred, neg_pred], dim=0)
+        y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
+        test_acc = accuracy_score(y, np.round(pred))
+        return roc_auc_score(y, pred), average_precision_score(y, pred), test_acc
+def test(model, x, edges, neg_edges):
     model.eval()
     with torch.no_grad():
         z = model.encode(x.float().to(device), edges)
-    return model.test(z, edges, neg_edges)
-
-def learn_old(model, optimizer, x, edges):
-    model.train()
-    optimizer.zero_grad()
-    z = model.encode(x.float().to(device), edges)
-    loss = model.recon_loss(z, edges)
-    # if args.variational:
-    #   loss = loss + (1 / data.num_nodes) * model.kl_loss()
-    loss.backward()
-    optimizer.step()
-    return float(loss)
+    return test_model(model,z, edges, neg_edges)
 
 def digraph_both_ways(G):
     U = nx.DiGraph()
@@ -370,7 +250,7 @@ def digraph_both_ways(G):
         U.add_edge(u, v, controllability=attr["controllability"])
         U.add_edge(v,u, controllability=attr["controllability"])
     return U
-def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1):
+def train(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1.0):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -394,7 +274,7 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
 
     to_split = G if not both_ways else digraph_both_ways(G)
     trainable = from_networkx(to_split, group_node_attrs=["features"])
-    breakpoint()
+
 
     neg_edges = get_neg_edges(trainable)
     num_neg_edges = neg_edges.size(1)
@@ -430,21 +310,45 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
 
         random_neg_indices = torch.randperm(num_neg_edges)[:int(neg_edges_sample_proportion_to_pos * edges.shape[1])]
         random_sample_neg_edges = neg_edges[:, random_neg_indices]
-        loss = learn_old(model, optimizer, x, edges)#random_sample_neg_edges
+        loss = learn(model, optimizer, x, edges,random_sample_neg_edges)
 
         writer.add_scalar("losses/loss", loss, epoch)
         writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
 
-        auc, ap = test_old(model,
+        auc, ap, acc = test(model,
                            x,
                            edges,
-                           random_sample_neg_edges
+                           neg_edges
                            )
 
         writer.add_scalar("charts/AUC", auc, epoch)
         writer.add_scalar("charts/AP", ap, epoch)
+        writer.add_scalar("charts/ACC", acc, epoch)
 
-        print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
+        """ symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
+               disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
+               one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
+               neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
+               disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[1]
+               one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
+               neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
+                symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
+
+                print("disconnected correct: ", disconnected_correct, "disconnected loss: ", disconnected_loss)
+                print("one_way correct: ", one_way_correct, "one_way loss: ", one_way_loss)
+                print("neg_one_way correct: ", neg_one_way_correct, "neg_one_way loss: ", neg_one_way_loss)
+
+                writer.add_scalar("charts/AUC", auc, epoch)
+                writer.add_scalar("charts/AP", ap, epoch)
+                # writer.add_scalar("losses/symmetric_loss", symmetric_loss, epoch)  # Debería reducirse hacia 0
+                writer.add_scalar("losses/disconnected_loss", disconnected_loss, epoch)  # Debería reducirse hacia 0
+                writer.add_scalar("losses/one_way_loss", one_way_loss, epoch)  # Deberían estancarse, converge?
+                writer.add_scalar("losses/neg_one_way_loss", neg_one_way_loss, epoch)  # Deberían estancarse
+                writer.add_scalar("charts/disconnected_correct", disconnected_correct, epoch)
+                writer.add_scalar("charts/one_way_correct", one_way_correct, epoch)
+                writer.add_scalar("charts/neg_one_way_correct", neg_one_way_correct, epoch)
+            """
+        print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f} , ACC: {:.4f}'.format(epoch, auc, ap, acc))
 
     # Z = model.encode(x, train_pos_edge_index)
     # print(Z)
@@ -569,12 +473,13 @@ if __name__ == "__main__":
 
     S = RandomExplorationForGCNTraining(None, problem, (n, k)).full_nonblocking_random_exploration()
 
-    train_old(problem, n, k, G, both_ways=False,neg_edges_sample_proportion_to_pos=1)
+    train(problem, n, k, G, both_ways=False)
 
     breakpoint()
     """for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         checkSolutionIsSubgraphOfPlant(problem, 2, 2)"""
     G, model_in_device = train(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl")
+
     S = RandomExplorationForGCNTraining(None,problem, (n,k)).full_nonblocking_random_exploration()
     plot_graph_embeddings(S, model_in_device, f"{problem,n,k}")
 
