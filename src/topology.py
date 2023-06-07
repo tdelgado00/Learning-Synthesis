@@ -1,3 +1,4 @@
+import copy
 import pickle
 import random
 import matplotlib.pyplot as plt
@@ -7,13 +8,15 @@ import argparse
 
 import networkx as nx
 from torch.utils.tensorboard import SummaryWriter
+from torch_geometric.transforms import RandomLinkSplit
+
 import experiments
 import torch
 import numpy as np
 import time
 from torch_geometric.nn import GCNConv, GAE, Sequential
 from torch import nn
-from torch_geometric.utils import from_networkx
+from torch_geometric.utils import from_networkx, train_test_split_edges
 from environment import DCSSolverEnv, getTransitionType
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -175,7 +178,7 @@ def learn(model, optimizer, x, edges, neg_edges):
     return float(loss)
 
 
-def get_neg_edges(data):
+def get_neg_edges(data, percentage = 0.05):
     n = len(data.x)
     edges = data.edge_index.T.tolist()
 
@@ -185,7 +188,8 @@ def get_neg_edges(data):
             if i != j:
                 if [i, j] not in edges:
                     neg_edges.append((i, j))
-
+    breakpoint()
+    neg_edges = random.sample(neg_edges, int(percentage * len(neg_edges)))
     return torch.tensor(neg_edges).T
 
 
@@ -221,7 +225,7 @@ def build_full_plant_graph(problem, n, k, path):
     return G
 
 
-def train(graph_path = None, model_name = "sample_graphnet"):
+def train(graph_path = None, model_name = "sample_graphnet", as_graph = False):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -244,6 +248,7 @@ def train(graph_path = None, model_name = "sample_graphnet"):
     else:
         G = RandomExplorationForGCNTraining(args, "AT", (3, 3)).full_nonblocking_random_exploration()
 
+    if as_graph: G = G.to_undirected()
     torch_graph = from_networkx(G, group_node_attrs=["features"])
 
 
@@ -278,8 +283,8 @@ def train(graph_path = None, model_name = "sample_graphnet"):
     # print("Neg edges")
     # print(neg_edges)
 
-    symmetric_edges, disconnected_edges, one_way_edges, neg_one_way_edges = get_edge_categories(data)
-    print(symmetric_edges.shape, disconnected_edges.shape, one_way_edges.shape, neg_one_way_edges.shape)
+    #symmetric_edges, disconnected_edges, one_way_edges, neg_one_way_edges = get_edge_categories(data)
+    #print(symmetric_edges.shape, disconnected_edges.shape, one_way_edges.shape, neg_one_way_edges.shape)
 
 
     # initialize the optimizer
@@ -305,14 +310,14 @@ def train(graph_path = None, model_name = "sample_graphnet"):
         with torch.no_grad():
             z = model.encode(x.float().to(device), edges)
 
-        # symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
-        disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
-        one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
-        neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
-        disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[1]
-        one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
-        neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
-        # symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
+        """ symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
+       disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
+       one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
+       neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
+       disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[1]
+       one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
+       neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
+        symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
 
         print("disconnected correct: ", disconnected_correct, "disconnected loss: ", disconnected_loss)
         print("one_way correct: ", one_way_correct, "one_way loss: ", one_way_loss)
@@ -327,7 +332,7 @@ def train(graph_path = None, model_name = "sample_graphnet"):
         writer.add_scalar("charts/disconnected_correct", disconnected_correct, epoch)
         writer.add_scalar("charts/one_way_correct", one_way_correct, epoch)
         writer.add_scalar("charts/neg_one_way_correct", neg_one_way_correct, epoch)
-
+    """
         print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
 
     # print(data)
@@ -338,6 +343,108 @@ def train(graph_path = None, model_name = "sample_graphnet"):
 
     writer.close()
     return G, model
+
+def test_old(model, x, edges, neg_edges):
+    model.eval()
+    with torch.no_grad():
+        z = model.encode(x.float().to(device), edges)
+    return model.test(z, edges, neg_edges)
+
+def learn_old(model, optimizer, x, edges):
+    model.train()
+    optimizer.zero_grad()
+    z = model.encode(x.float().to(device), edges)
+    loss = model.recon_loss(z, edges)
+    # if args.variational:
+    #   loss = loss + (1 / data.num_nodes) * model.kl_loss()
+    loss.backward()
+    optimizer.step()
+    return float(loss)
+
+def digraph_both_ways(G):
+    U = nx.DiGraph()
+    for u, v, attr in G.edges(data=True):
+
+        if u not in U.nodes: U.add_node(u, features = G.nodes[u]["features"], marked = G.nodes[u]["marked"])
+        if v not in U.nodes: U.add_node(v, features = G.nodes[v]["features"], marked = G.nodes[v]["marked"])
+        edge_name = attr.get('name')
+        U.add_edge(u, v, controllability=attr["controllability"])
+        U.add_edge(v,u, controllability=attr["controllability"])
+    return U
+def train_old(problem, n, k, G = None, both_ways=False):
+    args = parse_args()
+    run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
+
+    writer = SummaryWriter(f"runs/{run_name}")
+    writer.add_text(
+        "hyperparameters",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
+    )
+
+    # seeding
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = args.torch_deterministic
+
+    print("Warn: using random exploration, cuts at solution")
+
+    if G is None: G = RandomExplorationForGCNTraining(args, problem, (n, k)).full_nonblocking_random_exploration()
+
+
+    G_both_ways = digraph_both_ways(G)
+    trainable_no_split = None
+    if both_ways: trainable_no_split = from_networkx(G_both_ways, group_node_attrs=["features"])
+    else: trainable_no_split = from_networkx(G, group_node_attrs=["features"])
+
+    neg_edges = get_neg_edges(trainable_no_split)
+    breakpoint()
+
+    # hack for getting train pos and train neg edges, we use test as train
+
+    # parameters
+    out_channels = 32
+    num_features = trainable_no_split.num_features
+    epochs = 5000
+
+    model = GAE(GCNEncoder(num_features, out_channels))
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print(name, param.data.shape)
+
+    # move to GPU (if available)
+
+    model = model.to(device)
+    x = trainable_no_split.x.float().to(device)
+    edges = trainable_no_split.edge_index.to(device)
+    neg_edges = neg_edges.to(device)
+
+    # initialize the optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    start_time = time.time()
+
+    for epoch in range(1, epochs + 1):
+        loss = learn_old(model, optimizer, x, edges)
+
+        writer.add_scalar("losses/loss", loss, epoch)
+        writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
+
+        auc, ap = test_old(model,
+                           x,
+                           edges,
+                           neg_edges
+                           )
+
+        writer.add_scalar("charts/AUC", auc, epoch)
+        writer.add_scalar("charts/AP", ap, epoch)
+
+        print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f}'.format(epoch, auc, ap))
+
+    # Z = model.encode(x, train_pos_edge_index)
+    # print(Z)
+
+    writer.close()
 
 
 def save_graphnet(graphnet_constructor_image, model, model_name):
@@ -364,7 +471,6 @@ def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str):
 
 
     featured_edge_list = [(edge, is_controllable) for (edge, is_controllable) in zip(edges.T, edge_controllability)]
-    breakpoint()
     embeds = graphnet.encode((x.T[1].view(-1,1)).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
     compostate_embeds = [CompostateEmbedding(int(features[1]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
@@ -424,14 +530,17 @@ def checkSolutionIsSubgraphOfPlant(problem,n,k):
 def get_winning_cycles(G : nx.DiGraph):
     cycles = list(nx.simple_cycles(nx.line_graph(G)))
 
-    for cycle in cycles:
+    """for cycle in cycles:
         for node in cycle:
-            check
-
+            #check
+"""
+    raise NotImplementedError
 class visualTestsForGraphEmbeddings:
     def __init__(self, problem, n, k,graphnet):
         raise NotImplementedError
 
+    def testExpansionEvolution(self):
+        raise NotImplementedError
     def testWinningExpansion(self):
         raise NotImplementedError
     def testLosingExpansion(self):
@@ -447,11 +556,20 @@ class visualTestsForGraphEmbeddings:
 
 
 if __name__ == "__main__":
-    problem = "DP"
+    problem = "AT"
     n = 3
     k = 3
+    with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
+        G = pickle.load(f)
+
+    S = RandomExplorationForGCNTraining(None, problem, (n, k)).full_nonblocking_random_exploration()
+
+    train_old(problem, n, k, G, both_ways=True)
+
+    breakpoint()
     """for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
         checkSolutionIsSubgraphOfPlant(problem, 2, 2)"""
     G, model_in_device = train(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl")
     S = RandomExplorationForGCNTraining(None,problem, (n,k)).full_nonblocking_random_exploration()
     plot_graph_embeddings(S, model_in_device, f"{problem,n,k}")
+
