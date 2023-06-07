@@ -386,6 +386,7 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
+
     print("Warn: using random exploration, cuts at solution")
 
     if G is None: G = RandomExplorationForGCNTraining(args, problem, (n, k)).full_nonblocking_random_exploration()
@@ -393,7 +394,7 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
 
     to_split = G if not both_ways else digraph_both_ways(G)
     trainable = from_networkx(to_split, group_node_attrs=["features"])
-
+    breakpoint()
 
     neg_edges = get_neg_edges(trainable)
     num_neg_edges = neg_edges.size(1)
@@ -429,8 +430,7 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
 
         random_neg_indices = torch.randperm(num_neg_edges)[:int(neg_edges_sample_proportion_to_pos * edges.shape[1])]
         random_sample_neg_edges = neg_edges[:, random_neg_indices]
-
-        loss = learn(model, optimizer, x, edges, random_sample_neg_edges)
+        loss = learn_old(model, optimizer, x, edges)#random_sample_neg_edges
 
         writer.add_scalar("losses/loss", loss, epoch)
         writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
@@ -438,7 +438,7 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
         auc, ap = test_old(model,
                            x,
                            edges,
-                           neg_edges
+                           random_sample_neg_edges
                            )
 
         writer.add_scalar("charts/AUC", auc, epoch)
@@ -569,7 +569,7 @@ if __name__ == "__main__":
 
     S = RandomExplorationForGCNTraining(None, problem, (n, k)).full_nonblocking_random_exploration()
 
-    train_old(problem, n, k, G, both_ways=False)
+    train_old(problem, n, k, G, both_ways=False,neg_edges_sample_proportion_to_pos=1)
 
     breakpoint()
     """for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
