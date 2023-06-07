@@ -391,12 +391,11 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
     if G is None: G = RandomExplorationForGCNTraining(args, problem, (n, k)).full_nonblocking_random_exploration()
 
 
-    G_both_ways = digraph_both_ways(G)
-    trainable_no_split = None
-    if both_ways: trainable_no_split = from_networkx(G_both_ways, group_node_attrs=["features"])
-    else: trainable_no_split = from_networkx(G, group_node_attrs=["features"])
+    to_split = G if not both_ways else digraph_both_ways(G)
+    trainable = from_networkx(to_split, group_node_attrs=["features"])
 
-    neg_edges = get_neg_edges(trainable_no_split)
+
+    neg_edges = get_neg_edges(trainable)
     num_neg_edges = neg_edges.size(1)
 
 
@@ -404,7 +403,7 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
 
     # parameters
     out_channels = 32
-    num_features = trainable_no_split.num_features
+    num_features = trainable.num_features
     epochs = 5000
 
     model = GAE(GCNEncoder(num_features, out_channels))
@@ -416,15 +415,14 @@ def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proport
     # move to GPU (if available)
 
     model = model.to(device)
-    x = trainable_no_split.x.float().to(device)
-    edges = trainable_no_split.edge_index.to(device)
+    x = trainable.x.float().to(device)
+    edges = trainable.edge_index.to(device)
     neg_edges = neg_edges.to(device)
 
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
-    breakpoint()
-    print((neg_edges_sample_proportion_to_pos * edges.shape[1]))
+
     for epoch in range(1, epochs + 1):
 
         # Generate random indices
@@ -571,7 +569,7 @@ if __name__ == "__main__":
 
     S = RandomExplorationForGCNTraining(None, problem, (n, k)).full_nonblocking_random_exploration()
 
-    train_old(problem, n, k, G, both_ways=True)
+    train_old(problem, n, k, G, both_ways=False)
 
     breakpoint()
     """for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
