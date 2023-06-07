@@ -178,7 +178,8 @@ def learn(model, optimizer, x, edges, neg_edges):
     return float(loss)
 
 
-def get_neg_edges(data, percentage = 0.05):
+
+def get_neg_edges(data):
     n = len(data.x)
     edges = data.edge_index.T.tolist()
 
@@ -188,8 +189,6 @@ def get_neg_edges(data, percentage = 0.05):
             if i != j:
                 if [i, j] not in edges:
                     neg_edges.append((i, j))
-    breakpoint()
-    neg_edges = random.sample(neg_edges, int(percentage * len(neg_edges)))
     return torch.tensor(neg_edges).T
 
 
@@ -371,7 +370,7 @@ def digraph_both_ways(G):
         U.add_edge(u, v, controllability=attr["controllability"])
         U.add_edge(v,u, controllability=attr["controllability"])
     return U
-def train_old(problem, n, k, G = None, both_ways=False):
+def train_old(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -398,7 +397,8 @@ def train_old(problem, n, k, G = None, both_ways=False):
     else: trainable_no_split = from_networkx(G, group_node_attrs=["features"])
 
     neg_edges = get_neg_edges(trainable_no_split)
-    breakpoint()
+    num_neg_edges = neg_edges.size(1)
+
 
     # hack for getting train pos and train neg edges, we use test as train
 
@@ -423,9 +423,16 @@ def train_old(problem, n, k, G = None, both_ways=False):
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
-
+    breakpoint()
+    print((neg_edges_sample_proportion_to_pos * edges.shape[1]))
     for epoch in range(1, epochs + 1):
-        loss = learn_old(model, optimizer, x, edges)
+
+        # Generate random indices
+
+        random_neg_indices = torch.randperm(num_neg_edges)[:int(neg_edges_sample_proportion_to_pos * edges.shape[1])]
+        random_sample_neg_edges = neg_edges[:, random_neg_indices]
+
+        loss = learn(model, optimizer, x, edges, random_sample_neg_edges)
 
         writer.add_scalar("losses/loss", loss, epoch)
         writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
