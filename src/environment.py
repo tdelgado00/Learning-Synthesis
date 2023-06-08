@@ -97,7 +97,7 @@ class DCSSolverEnv:
         if child_compostate[2] not in self.exploration_graph.nodes():
             # print(child_compostate[2], type(child_compostate[2]))
             self.exploration_graph.add_node(child_compostate[2], features=child_features, marked=int(child_compostate[3]))
-        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], controllability=int(child_compostate[4]))  #, label=child_compostate[1])
+        self.exploration_graph.add_edge(child_compostate[0], child_compostate[2], controllability=int(child_compostate[4]), label=getTransitionType(child_compostate[1]))
 
     def compute_node_features(self, child_compostate):
         return [1]

@@ -1,6 +1,7 @@
 import copy
 import pickle
 import random
+import warnings
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -28,10 +29,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class RandomExplorationForGCNTraining:
     def __init__(self, args, problem: str, context: tuple[int, int]):
         print("WARNING: Check MTSA DCSNonBlocking is set to full exploration mode if you want to build the full plant")
-        print(
-            "Warning 1: this is now working exclusively on one graph being expanded. Pending "
-            "round robin and curriculum expansions for GCN training. Be careful with expansions"
-            " and snapshots.")
         print("Warning2: Initial state feature set to unmarked by default")
         self.context = context
         n, k = context
@@ -54,6 +51,15 @@ class RandomExplorationForGCNTraining:
             self.expand()
 
         return self.graph_snapshot()
+    def full_random_exploration(self):
+        warnings.warn("Check MTSA version has the corrupted DCSNonBlocking explorator")
+        print("WARNING: Check MTSA DCSNonBlocking is set to full exploration mode if you want to build the full plant")
+        self.env.reset()
+        self.finished = False
+        while self.env.javaEnv.frontierSize()>0:
+            self.expand()
+
+        return self.graph_snapshot()
 
     def expand(self):
         rand_transition = random.randint(0, self.env.javaEnv.frontierSize() - 1)
@@ -61,21 +67,31 @@ class RandomExplorationForGCNTraining:
         if res[0] is None:
             self.finished = True
         final_graph = self.graph_snapshot()
-        transition_labels = self.env.transition_labels
         return final_graph
-        # return self.set_neighborhood_label_features(final_graph, transition_labels)
+        #return self.set_neighborhood_label_features(final_graph, transition_labels)
 
-    def set_neighborhood_label_features(self, graph, transition_labels):
+    def set_neighborhood_label_features(self, graph, incoming = True, outcoming = True):
+        transition_labels = self.env.transition_labels
         transition_labels = list(transition_labels)
         for node in graph.nodes():
-            node_label_feature_vector = [0] * len(transition_labels)
-            labels = [getTransitionType(graph.get_edge_data(src, dst)['label']) for src, dst in graph.in_edges(node)]
-
-            for i in range(len(transition_labels)):
-                if transition_labels[i] in labels:
-                    node_label_feature_vector[i] = 1
-            graph.nodes[node]["predecessor_label_types_OHE"] = node_label_feature_vector
+            if incoming: self.set_incoming_transition_type_ohe_feature(graph, node, transition_labels)
+            if outcoming: self.set_outcoming_transition_type_ohe_feature(graph, node, transition_labels)
         return graph
+
+    def set_incoming_transition_type_ohe_feature(self, graph, node, transition_labels):
+        node_label_feature_vector = [0] * len(transition_labels)
+        labels = [getTransitionType(e[2]['label']) for e in graph.in_edges(node, data=True)]
+        for i in range(len(transition_labels)):
+            if transition_labels[i] in labels:
+                node_label_feature_vector[i] = 1
+        graph.nodes[node]["predecessor_label_types_OHE"] = node_label_feature_vector
+    def set_outcoming_transition_type_ohe_feature(self, graph, node, transition_labels):
+        node_label_feature_vector = [0] * len(transition_labels)
+        labels = [getTransitionType(e[2]['label']) for e in graph.out_edges(node, data=True)]
+        for i in range(len(transition_labels)):
+            if transition_labels[i] in labels:
+                node_label_feature_vector[i] = 1
+        graph.nodes[node]["successor_label_types_OHE"] = node_label_feature_vector
 
     def random_exploration(self, full=False):
         raise NotImplementedError
@@ -215,7 +231,10 @@ def get_edge_categories(data):
 
 def build_full_plant_graph(problem, n, k, path):
     args = parse_args()
-    G = RandomExplorationForGCNTraining(args, problem, (n, k)).full_nonblocking_random_exploration()
+    explor = RandomExplorationForGCNTraining(args, problem, (n, k))
+    G = explor.full_random_exploration()
+
+    explor.set_neighborhood_label_features(G)
     pickle.dump(G, open(path + f'full_{problem}_{n}_{k}.pkl', 'wb'))
     print(f"Built {problem}_{n}_{k}")
     return G
@@ -233,6 +252,7 @@ def test_model(model,z: torch.Tensor, pos_edge_index: torch.Tensor,
         pred = torch.cat([pos_pred, neg_pred], dim=0)
         y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
         test_acc = accuracy_score(y, np.round(pred))
+
         return roc_auc_score(y, pred), average_precision_score(y, pred), test_acc
 def test(model, x, edges, neg_edges):
     model.eval()
@@ -250,7 +270,7 @@ def digraph_both_ways(G):
         U.add_edge(u, v, controllability=attr["controllability"])
         U.add_edge(v,u, controllability=attr["controllability"])
     return U
-def train(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1.0):
+def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1.0):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
@@ -273,8 +293,7 @@ def train(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_
 
 
     to_split = G if not both_ways else digraph_both_ways(G)
-    trainable = from_networkx(to_split, group_node_attrs=["features"])
-
+    trainable = from_networkx(to_split, group_node_attrs=["features","predecessor_label_types_OHE","successor_label_types_OHE"])
 
     neg_edges = get_neg_edges(trainable)
     num_neg_edges = neg_edges.size(1)
@@ -283,9 +302,9 @@ def train(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_
     # hack for getting train pos and train neg edges, we use test as train
 
     # parameters
-    out_channels = 32
+    out_channels = 3
     num_features = trainable.num_features
-    epochs = 5000
+    epochs = 1000
 
     model = GAE(GCNEncoder(num_features, out_channels))
 
@@ -354,6 +373,7 @@ def train(problem, n, k, G = None, both_ways=False, neg_edges_sample_proportion_
     # print(Z)
 
     writer.close()
+    return G,model
 
 
 def save_graphnet(graphnet_constructor_image, model, model_name):
@@ -372,7 +392,7 @@ class CompostateEmbedding:
 
 def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str):
 
-    torch_graph = from_networkx(G, group_node_attrs=["features", "marked"], group_edge_attrs=["controllability"])
+    torch_graph = from_networkx(G, group_node_attrs=["marked","features", "predecessor_label_types_OHE", "successor_label_types_OHE"], group_edge_attrs=["controllability"])
     torch_graph = torch_graph.to(device)
     x = torch_graph.x.float().to(device)
     edges = torch_graph.edge_index.to(device)
@@ -380,9 +400,10 @@ def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str):
 
 
     featured_edge_list = [(edge, is_controllable) for (edge, is_controllable) in zip(edges.T, edge_controllability)]
-    embeds = graphnet.encode((x.T[1].view(-1,1)).float().to(device), edges)
+
+    embeds = graphnet.encode((x.T[1:].T).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
-    compostate_embeds = [CompostateEmbedding(int(features[1]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
+    compostate_embeds = [CompostateEmbedding(int(features[0]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
     visualize_embeddings(compostate_embeds, context=context) # featured_edge_list
 
 
@@ -463,23 +484,30 @@ class visualTestsForGraphEmbeddings:
     def testSimilarNodesDistant(self):
         raise NotImplementedError
 
+def multi_instance_training(Gs : list[str]):
+    raise NotImplementedError
+
 
 if __name__ == "__main__":
-    problem = "AT"
-    n = 3
-    k = 3
+    """problems = ["AT","BW","CM","DP", "TA", "TL"]
+    for problem in problems:
+        for n in range(1,4):
+            for k in range(1,4):
+                D = build_full_plant_graph(problem,n,k, "/home/marco/Desktop/Learning-Synthesis/experiments/plants/")
+"""
+    problem = "TA"
+    n = 2
+    k = 2
     with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
-        G = pickle.load(f)
+       G_train = pickle.load(f)
 
-    S = RandomExplorationForGCNTraining(None, problem, (n, k)).full_nonblocking_random_exploration()
 
-    train(problem, n, k, G, both_ways=False)
+    n_test = 3
+    k_test = 3
+    D, model_in_device = train(problem, G=G_train)
+    random_exploration = RandomExplorationForGCNTraining(None,problem, (n_test,k_test))
+    S = random_exploration.full_nonblocking_random_exploration()
 
-    breakpoint()
-    """for problem in ["AT", "BW", "CM", "DP", "TA", "TL"]:
-        checkSolutionIsSubgraphOfPlant(problem, 2, 2)"""
-    G, model_in_device = train(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl")
-
-    S = RandomExplorationForGCNTraining(None,problem, (n,k)).full_nonblocking_random_exploration()
-    plot_graph_embeddings(S, model_in_device, f"{problem,n,k}")
+    S = random_exploration.set_neighborhood_label_features(S)
+    plot_graph_embeddings(S, model_in_device, f"{problem,n_test,k_test}")
 
