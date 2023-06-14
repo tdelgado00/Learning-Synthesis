@@ -3,11 +3,12 @@ import pickle
 import random
 import warnings
 from typing import Tuple
-
+from concurrent.futures import ProcessPoolExecutor
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
 import argparse
+from multiprocessing import Pool
 
 import networkx as nx
 from sklearn.metrics import accuracy_score
@@ -304,7 +305,7 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
     # parameters
     out_channels = 3
     num_features = trainable.num_features
-    epochs = 1000
+    epochs = 10
 
     model = GAE(GCNEncoder(num_features, out_channels))
 
@@ -437,7 +438,8 @@ def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None, c
     ax.set_zlabel('Z')
     ax.set_title(context)
 
-    # Show the plot
+    with open(context, "wb") as f:
+        pickle.dump(fig, f)
     plt.show()
 
 
@@ -488,26 +490,36 @@ def multi_instance_training(Gs : list[str]):
     raise NotImplementedError
 
 
-if __name__ == "__main__":
-    """problems = ["AT","BW","CM","DP", "TA", "TL"]
-    for problem in problems:
-        for n in range(1,4):
-            for k in range(1,4):
-                D = build_full_plant_graph(problem,n,k, "/home/marco/Desktop/Learning-Synthesis/experiments/plants/")
-"""
-    problem = "TA"
-    n = 2
-    k = 2
+def train_and_plot(problem = "TA",n = 2, k = 2,n_test = 3,k_test = 3, model_in_device = None):
     with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
        G_train = pickle.load(f)
-
-
-    n_test = 3
-    k_test = 3
-    D, model_in_device = train(problem, G=G_train)
-    random_exploration = RandomExplorationForGCNTraining(None,problem, (n_test,k_test))
+    D = None
+    if model_in_device is None: D, model_in_device = train(problem, G=G_train)
+    else: D, _ = train(problem, G=G_train)
+    random_exploration = RandomExplorationForGCNTraining(None, problem, (n_test, k_test))
     S = random_exploration.full_nonblocking_random_exploration()
-
     S = random_exploration.set_neighborhood_label_features(S)
-    plot_graph_embeddings(S, model_in_device, f"{problem,n_test,k_test}")
+    plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}")
+
+def train_and_plot_wrapper(parameters):
+    train_and_plot(*parameters)
+def load_interactive_plot(filename):
+    with open(filename, "rb") as f:
+        fig = pickle.load(f)
+
+    # Display the loaded interactive plot
+    plt.show()
+
+if __name__ == "__main__":
+    """parameters = [("TA", 2, 2, 2, 2), ("TA", 2, 2, 3, 3)]
+    train_and_plot_wrapper(parameters[1])"""
+
+    parameters = ["('TA', 2, 2)", "('TA', 3, 3)"]
+
+    with Pool(processes=len(parameters)) as pool:
+        pool.map(load_interactive_plot, parameters)
+
+
+
+
 
