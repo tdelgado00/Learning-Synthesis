@@ -1,0 +1,2 @@
+GAE(GCNEncoder(17, 3))
+11.018299102783203 seconds

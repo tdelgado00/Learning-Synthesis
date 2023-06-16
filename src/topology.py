@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 import argparse
 from multiprocessing import Pool
-
+import multiprocessing
 import networkx as nx
 from sklearn.metrics import accuracy_score
 from torch.utils.tensorboard import SummaryWriter
@@ -103,6 +103,8 @@ class GCNEncoder(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(GCNEncoder, self).__init__()
         planes = 128
+        self.in_channels = in_channels
+        self.out_channels = out_channels
         self.first_layer = Sequential('x, edge_index', [
             (GCNConv(in_channels, planes), 'x, edge_index -> x'),
             nn.ReLU(inplace=True),
@@ -305,10 +307,10 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
     # parameters
     out_channels = 3
     num_features = trainable.num_features
-    epochs = 10
+    epochs = 1000
 
     model = GAE(GCNEncoder(num_features, out_channels))
-
+    breakpoint()
     for name, param in model.named_parameters():
         if param.requires_grad:
             print(name, param.data.shape)
@@ -377,13 +379,14 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
     return G,model
 
 
-def save_graphnet(graphnet_constructor_image, model, model_name):
+def save_graphnet(graphnet_constructor_image, model, model_name, training_time):
     """
     Stores at experiments/graphnets the parameters in model_name.pkl and the corresponding constructor in model_name.txt.
     """
     torch.save(model.state_dict(), "experiments/graphnets/" + model_name + ".pkl")
     file = open("experiments/graphnets/" + model_name + "_image.txt", "w")
     file.write(graphnet_constructor_image)
+    file.write(f"\n{training_time} seconds")
     file.close()
 
 class CompostateEmbedding:
@@ -391,7 +394,7 @@ class CompostateEmbedding:
         self.is_marked = is_marked
         self.vector = vector
 
-def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str):
+def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str, plot_path = None):
 
     torch_graph = from_networkx(G, group_node_attrs=["marked","features", "predecessor_label_types_OHE", "successor_label_types_OHE"], group_edge_attrs=["controllability"])
     torch_graph = torch_graph.to(device)
@@ -405,13 +408,13 @@ def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str):
     embeds = graphnet.encode((x.T[1:].T).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
     compostate_embeds = [CompostateEmbedding(int(features[0]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
-    visualize_embeddings(compostate_embeds, context=context) # featured_edge_list
+    generate_space_embeddings_plot(compostate_embeds, context=context, show=False, plot_path=plot_path) # featured_edge_list
 
 
 
 
 
-def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None, context = ""):
+def generate_space_embeddings_plot(embeds: list[CompostateEmbedding], edge_attrs = None, context ="", show = True, plot_path=None):
     print("Warning: edge plotting yet not supported.")
     marking_to_color = {True: "deepskyblue", False: "black"}
     x, y, z = [n.vector[0] for n in embeds], [n.vector[1] for n in embeds], [n.vector[2] for n in embeds]
@@ -438,9 +441,9 @@ def visualize_embeddings(embeds: list[CompostateEmbedding], edge_attrs = None, c
     ax.set_zlabel('Z')
     ax.set_title(context)
 
-    with open(context, "wb") as f:
+    with open(plot_path+context, "wb") as f:
         pickle.dump(fig, f)
-    plt.show()
+    if show: plt.show()
 
 
 # visualize_embeddings([CompostateEmbedding(True, np.array([0.5,0.5,0.5])), CompostateEmbedding(False, np.array([1,1,1]))])
@@ -489,35 +492,65 @@ class visualTestsForGraphEmbeddings:
 def multi_instance_training(Gs : list[str]):
     raise NotImplementedError
 
-
-def train_and_plot(problem = "TA",n = 2, k = 2,n_test = 3,k_test = 3, model_in_device = None):
+def train_and_save_gae(problem,n,k, both_ways=False):
     with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
-       G_train = pickle.load(f)
-    D = None
-    if model_in_device is None: D, model_in_device = train(problem, G=G_train)
-    else: D, _ = train(problem, G=G_train)
-    random_exploration = RandomExplorationForGCNTraining(None, problem, (n_test, k_test))
-    S = random_exploration.full_nonblocking_random_exploration()
-    S = random_exploration.set_neighborhood_label_features(S)
-    plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}")
+        prefix = "one_way" if not both_ways else "both_ways"
+        G_train = pickle.load(f)
+        start = time.time()
+        D, model_in_device = train(problem, G=G_train, both_ways=both_ways)
+        training_time = time.time() - start
+        save_graphnet(f"GAE(GCNEncoder({model_in_device.encoder.in_channels}, {model_in_device.encoder.out_channels}))", model_in_device, f"{prefix}_full_plant_{problem, n, k}_1000_epochs", training_time)
+    return D,model_in_device
 
-def train_and_plot_wrapper(parameters):
-    train_and_plot(*parameters)
-def load_interactive_plot(filename):
+
+def show_interactive_plot(filename):
     with open(filename, "rb") as f:
         fig = pickle.load(f)
 
     # Display the loaded interactive plot
     plt.show()
+def show_interactive_plots_in_parallel(problems, n_tests, k_tests):
+    parameters = [f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/plots/('{problem}', {n}, {k})" for
+                  problem in problems for n, k in zip(n_tests, k_tests)]
+    with Pool(processes=len(parameters)) as pool:
+        pool.map(show_interactive_plot, parameters)
+
+def evalate_and_plot_gae_on_random_exploration(gae_path : str, n_test : int , k_test : int, plot_path = "/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/plots/"):
+    gae_image_path = gae_path[:-4] + ".txt"
+    with open(gae_image_path, 'r') as f:
+        state_dict = torch.load(gae_path)
+        gae_constructor_image = f.readlines()[0]
+        model_in_device = eval(gae_constructor_image).to(device)
+        model_in_device.load_state_dict(state_dict)
+        random_exploration = RandomExplorationForGCNTraining(None, problem, (n_test, k_test))
+        S = random_exploration.full_nonblocking_random_exploration()
+        S = random_exploration.set_neighborhood_label_features(S)
+        plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}", plot_path = plot_path)
+
+
 
 if __name__ == "__main__":
-    """parameters = [("TA", 2, 2, 2, 2), ("TA", 2, 2, 3, 3)]
-    train_and_plot_wrapper(parameters[1])"""
+    #parameters = [("TA", 2, 2, 2, 2), ("TA", 2, 2, 3, 3)]
+    #train_and_plot_wrapper(parameters[1])
+    """
+    uncomment for parallel plotting
+    n_tests = [2, 3]
+    k_tests = [2, 3]
+    problems = ["AT","BW", "DP", "TA", "TL"]
+    show_interactive_plots_in_parallel(problems,n_tests,k_tests)
+    """
 
-    parameters = ["('TA', 2, 2)", "('TA', 3, 3)"]
+    for problem in ["TA", "TL", "DP", "BW", "CM"]:
+        gae_path = f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/one_way_full_plant_('{problem}', {2}, {2})_image_1000_epochs.pkl"
+        gae_paths = [gae_path for _ in range(3)]
+        n_tests = [4]
+        k_tests = [4]
+        parameter_combinations = zip(gae_paths, n_tests, k_tests)
 
-    with Pool(processes=len(parameters)) as pool:
-        pool.map(load_interactive_plot, parameters)
+        for gae_path, n_test,k_test in parameter_combinations:
+            evalate_and_plot_gae_on_random_exploration(gae_path,n_test, k_test)
+            print(f"Done for {problem,n_test,k_test}")
+
 
 
 
