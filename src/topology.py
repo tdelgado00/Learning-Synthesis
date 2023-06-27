@@ -416,7 +416,7 @@ def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str, plo
     embeds = graphnet.encode((x.T[1:].T).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
     compostate_embeds = [CompostateEmbedding(int(features[0]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
-    generate_space_embeddings_plot(compostate_embeds, context=context, show=False, plot_path=plot_path) # featured_edge_list
+    generate_space_embeddings_plot(compostate_embeds, context=context, show=True, plot_path=plot_path) # featured_edge_list
 
 
 
@@ -533,7 +533,17 @@ def evalate_and_plot_gae_on_random_exploration(gae_path : str, n_test : int , k_
         S = random_exploration.full_nonblocking_random_exploration()
         S = random_exploration.set_neighborhood_label_features(S)
         plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}", plot_path = plot_path)
-
+def evalate_and_plot_gae_on_random_graph(gae_path : str, graph_path : str, plot_path = "/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/plots/"):
+    gae_image_path = gae_path[:-4] + ".txt"
+    with open(gae_image_path, 'r') as f:
+        state_dict = torch.load(gae_path)
+        gae_constructor_image = f.readlines()[0]
+        model_in_device = eval(gae_constructor_image).to(device)
+        model_in_device.load_state_dict(state_dict)
+        with open(graph_path, 'rb') as f:
+            S = pickle.load(f)
+            breakpoint()
+        plot_graph_embeddings(S, model_in_device, f"random", plot_path = plot_path)
 def generate_and_save_feature_compatible_random_graphs(problem):
 
     def generate_random_features(sample_attr_dict : dict()):
@@ -553,15 +563,17 @@ def generate_and_save_feature_compatible_random_graphs(problem):
         iter_edges = G_train.edges(data=True).__iter__()
         src_str, dst_str , edge_attr_dict= iter_edges.__next__()
 
-        ns = range(1000,3000, 1000)
-        ps = [0.3]
+        ns = range(1000,4000, 1000)
+        ps = [0.1,0.4,0.7]
 
         graphs_info = []
         for n in ns:
             for p in ps:
-                graphs_info.append((n,p,nx.fast_gnp_random_graph(n,p)))
+                print(f"generating {problem} compatible {n} {p}")
+                graphs_info.append((n,p,nx.fast_gnp_random_graph(n,p,directed=True)))
 
         for n,p,graph in graphs_info:
+            print(f"inserting random features in {problem} compatible {n} {p}")
             for node in graph.nodes():
                 graph.nodes()[node].update(generate_random_features(node_attr_dict))
             for edge in graph.edges():
@@ -576,7 +588,8 @@ if __name__ == "__main__":
     # tensorboard command >> tensorboard --logdir /home/marco/Desktop/Learning-Synthesis/runs
 
 
-    #generate_and_save_feature_compatible_random_graphs("AT")
+    for problem in ["AT","BW","DP", "TA", "TL"]:
+        generate_and_save_feature_compatible_random_graphs(problem)
     #train_and_save_gae("AT", 2, 2, both_ways=False, neg_edges_sample_proportion_to_pos=1.0)
 
     """
@@ -588,9 +601,10 @@ if __name__ == "__main__":
     k_tests = [e[1] for e in combinations]
     problems = ["DP"]
     show_interactive_plots_in_parallel(problems,n_tests,k_tests)
+"""
+"""
 
-------------
-    for problem in ["TA","TL", "DP", "CM","BW"]:
+    for problem in ["AT"]:
         gae_path = f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/one_way_full_plant_('{problem}', {2}, {2})_image_1000_epochs.pkl"
         gae_paths = [gae_path for _ in range(3)]
         more_instances = [(gae_path,n,k) for n in range(1,5) for k in range(1,5) if k!=n or k==1]
@@ -598,7 +612,7 @@ if __name__ == "__main__":
         k_tests = [4]
         parameter_combinations = zip(gae_paths, n_tests, k_tests)
         for gae_path, n_test,k_test in more_instances:
-            evalate_and_plot_gae_on_random_exploration(gae_path,n_test, k_test)
+            evalate_and_plot_gae_on_random_graph(gae_path, "experiments/plants/random_compatible_graphs/AT_compatible_1000_0.3.pkl")
             print(f"Done for {problem,n_test,k_test}")
 """
 
