@@ -26,7 +26,7 @@ from environment import DCSSolverEnv, getTransitionType
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
+EPS = 10^-6
 class RandomExplorationForGCNTraining:
     def __init__(self, args, problem: str, context: tuple[int, int]):
         print("WARNING: Check MTSA DCSNonBlocking is set to full exploration mode if you want to build the full plant")
@@ -244,7 +244,7 @@ def build_full_plant_graph(problem, n, k, path):
 
 def test_model(model,z: torch.Tensor, pos_edge_index: torch.Tensor,
              neg_edge_index: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        from sklearn.metrics import average_precision_score, roc_auc_score
+        from sklearn.metrics import average_precision_score, roc_auc_score, recall_score
 
         pos_y = z.new_ones(pos_edge_index.size(1))
         neg_y = z.new_zeros(neg_edge_index.size(1))
@@ -256,7 +256,7 @@ def test_model(model,z: torch.Tensor, pos_edge_index: torch.Tensor,
         y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
         test_acc = accuracy_score(y, np.round(pred))
 
-        return roc_auc_score(y, pred), average_precision_score(y, pred), test_acc
+        return roc_auc_score(y, pred), average_precision_score(y, pred), test_acc, recall_score(y,np.where(pred >= 0.7, 1, 0))
 def test(model, x, edges, neg_edges):
     model.eval()
     with torch.no_grad():
@@ -273,11 +273,12 @@ def digraph_both_ways(G):
         U.add_edge(u, v, controllability=attr["controllability"])
         U.add_edge(v,u, controllability=attr["controllability"])
     return U
-def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1.0):
+def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proportion_to_pos = 1.0, do_edgewise_analysis = False):
     args = parse_args()
     run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
 
     writer = SummaryWriter(f"runs/{run_name}")
+
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -307,10 +308,9 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
     # parameters
     out_channels = 3
     num_features = trainable.num_features
-    epochs = 1000
+    epochs = 10000
 
     model = GAE(GCNEncoder(num_features, out_channels))
-    breakpoint()
     for name, param in model.named_parameters():
         if param.requires_grad:
             print(name, param.data.shape)
@@ -321,13 +321,12 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
     x = trainable.x.float().to(device)
     edges = trainable.edge_index.to(device)
     neg_edges = neg_edges.to(device)
-
+    if do_edgewise_analysis: symmetric_edges, disconnected_edges, one_way_edges, neg_one_way_edges = get_edge_categories(x)
     # initialize the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     start_time = time.time()
 
     for epoch in range(1, epochs + 1):
-
         # Generate random indices
 
         random_neg_indices = torch.randperm(num_neg_edges)[:int(neg_edges_sample_proportion_to_pos * edges.shape[1])]
@@ -337,7 +336,7 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
         writer.add_scalar("losses/loss", loss, epoch)
         writer.add_scalar("charts/SPS", int(epoch / (time.time() - start_time)), epoch)
 
-        auc, ap, acc = test(model,
+        auc, ap, acc, recall = test(model,
                            x,
                            edges,
                            neg_edges
@@ -346,37 +345,46 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
         writer.add_scalar("charts/AUC", auc, epoch)
         writer.add_scalar("charts/AP", ap, epoch)
         writer.add_scalar("charts/ACC", acc, epoch)
+        writer.add_scalar("charts/recall", recall, epoch)
 
-        """ symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
-               disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
-               one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
-               neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
-               disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[1]
-               one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
-               neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
-                symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
+        if do_edgewise_analysis: edgewise_analysis(acc, ap, auc, disconnected_edges, epoch, model, neg_one_way_edges, one_way_edges,
+                          symmetric_edges, writer) #TODO see what to do with this
+        print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f} , ACC: {:.4f}, REC: {:.4f}'.format(epoch, auc, ap, acc, recall))
 
-                print("disconnected correct: ", disconnected_correct, "disconnected loss: ", disconnected_loss)
-                print("one_way correct: ", one_way_correct, "one_way loss: ", one_way_loss)
-                print("neg_one_way correct: ", neg_one_way_correct, "neg_one_way loss: ", neg_one_way_loss)
-
-                writer.add_scalar("charts/AUC", auc, epoch)
-                writer.add_scalar("charts/AP", ap, epoch)
-                # writer.add_scalar("losses/symmetric_loss", symmetric_loss, epoch)  # Debería reducirse hacia 0
-                writer.add_scalar("losses/disconnected_loss", disconnected_loss, epoch)  # Debería reducirse hacia 0
-                writer.add_scalar("losses/one_way_loss", one_way_loss, epoch)  # Deberían estancarse, converge?
-                writer.add_scalar("losses/neg_one_way_loss", neg_one_way_loss, epoch)  # Deberían estancarse
-                writer.add_scalar("charts/disconnected_correct", disconnected_correct, epoch)
-                writer.add_scalar("charts/one_way_correct", one_way_correct, epoch)
-                writer.add_scalar("charts/neg_one_way_correct", neg_one_way_correct, epoch)
-            """
-        print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f} , ACC: {:.4f}'.format(epoch, auc, ap, acc))
 
     # Z = model.encode(x, train_pos_edge_index)
     # print(Z)
 
     writer.close()
     return G,model
+
+
+def edgewise_analysis(acc, ap, auc, disconnected_edges, epoch, model, neg_one_way_edges, one_way_edges, symmetric_edges,
+                      writer):
+    warnings.warn("edgewise_analysis not working temporally, Z set to None")
+    z = None
+    symmetric_loss = -torch.log(model.decoder(z, symmetric_edges, sigmoid=True) + EPS).mean()
+    disconnected_loss = -torch.log(1 - model.decoder(z, disconnected_edges, sigmoid=True) + EPS).mean()
+    one_way_loss = -torch.log(model.decoder(z, one_way_edges, sigmoid=True) + EPS).mean()
+    neg_one_way_loss = -torch.log(1 - model.decoder(z, neg_one_way_edges, sigmoid=True) + EPS).mean()
+    disconnected_correct = (model.decoder(z, disconnected_edges, sigmoid=True) <= 0.5).sum() / disconnected_edges.shape[
+        1]
+    one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum() / one_way_edges.shape[1]
+    neg_one_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) <= 0.5).sum() / neg_one_way_edges.shape[1]
+    symmetric_way_correct = (model.decoder(z, one_way_edges, sigmoid=True) > 0.5).sum()
+    print("disconnected correct: ", disconnected_correct, "disconnected loss: ", disconnected_loss)
+    print("one_way correct: ", one_way_correct, "one_way loss: ", one_way_loss)
+    print("neg_one_way correct: ", neg_one_way_correct, "neg_one_way loss: ", neg_one_way_loss)
+    writer.add_scalar("charts/AUC", auc, epoch)
+    writer.add_scalar("charts/AP", ap, epoch)
+    # writer.add_scalar("losses/symmetric_loss", symmetric_loss, epoch)  # Debería reducirse hacia 0
+    writer.add_scalar("losses/disconnected_loss", disconnected_loss, epoch)  # Debería reducirse hacia 0
+    writer.add_scalar("losses/one_way_loss", one_way_loss, epoch)  # Deberían estancarse, converge?
+    writer.add_scalar("losses/neg_one_way_loss", neg_one_way_loss, epoch)  # Deberían estancarse
+    writer.add_scalar("charts/disconnected_correct", disconnected_correct, epoch)
+    writer.add_scalar("charts/one_way_correct", one_way_correct, epoch)
+    writer.add_scalar("charts/neg_one_way_correct", neg_one_way_correct, epoch)
+    print('Epoch: {:03d}, AUC: {:.4f}, AP: {:.4f} , ACC: {:.4f}'.format(epoch, auc, ap, acc))
 
 
 def save_graphnet(graphnet_constructor_image, model, model_name, training_time):
@@ -492,12 +500,12 @@ class visualTestsForGraphEmbeddings:
 def multi_instance_training(Gs : list[str]):
     raise NotImplementedError
 
-def train_and_save_gae(problem,n,k, both_ways=False):
+def train_and_save_gae(problem,n,k, both_ways=False, neg_edges_sample_proportion_to_pos=1.0):
     with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
         prefix = "one_way" if not both_ways else "both_ways"
         G_train = pickle.load(f)
         start = time.time()
-        D, model_in_device = train(problem, G=G_train, both_ways=both_ways)
+        D, model_in_device = train(problem, G=G_train, both_ways=both_ways, neg_edges_sample_proportion_to_pos=neg_edges_sample_proportion_to_pos)
         training_time = time.time() - start
         save_graphnet(f"GAE(GCNEncoder({model_in_device.encoder.in_channels}, {model_in_device.encoder.out_channels}))", model_in_device, f"{prefix}_full_plant_{problem, n, k}_1000_epochs", training_time)
     return D,model_in_device
@@ -527,29 +535,35 @@ def evalate_and_plot_gae_on_random_exploration(gae_path : str, n_test : int , k_
         S = random_exploration.set_neighborhood_label_features(S)
         plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}", plot_path = plot_path)
 
-
+#def generate_random_featured_graph(feature_names)
 
 if __name__ == "__main__":
     #parameters = [("TA", 2, 2, 2, 2), ("TA", 2, 2, 3, 3)]
     #train_and_plot_wrapper(parameters[1])
+    # tensorboard command >> tensorboard --logdir /home/marco/Desktop/Learning-Synthesis/runs
+    train_and_save_gae("AT", 2, 2, both_ways=False, neg_edges_sample_proportion_to_pos=1.0)
     """
-    uncomment for parallel plotting
-    n_tests = [2, 3]
-    k_tests = [2, 3]
-    problems = ["AT","BW", "DP", "TA", "TL"]
+    n_tests = [2, 3, 4]
+    k_tests = [2, 3, 4]
+    missing = [(4,4)]
+    combinations = [(n,k) for n in range(1,5) for k in range(1,5) if (n,k) not in missing]
+    n_tests = [e[0] for e in combinations]
+    k_tests = [e[1] for e in combinations]
+    problems = ["DP"]
     show_interactive_plots_in_parallel(problems,n_tests,k_tests)
-    """
 
-    for problem in ["TA", "TL", "DP", "BW", "CM"]:
+
+    for problem in ["TA","TL", "DP", "CM","BW"]:
         gae_path = f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/one_way_full_plant_('{problem}', {2}, {2})_image_1000_epochs.pkl"
         gae_paths = [gae_path for _ in range(3)]
+        more_instances = [(gae_path,n,k) for n in range(1,5) for k in range(1,5) if k!=n or k==1]
         n_tests = [4]
         k_tests = [4]
         parameter_combinations = zip(gae_paths, n_tests, k_tests)
-
-        for gae_path, n_test,k_test in parameter_combinations:
+        for gae_path, n_test,k_test in more_instances:
             evalate_and_plot_gae_on_random_exploration(gae_path,n_test, k_test)
             print(f"Done for {problem,n_test,k_test}")
+"""
 
 
 
