@@ -436,7 +436,6 @@ def generate_space_embeddings_plot(embeds: list[CompostateEmbedding], edge_attrs
 
     if edge_attrs is not None:
         for ea in edge_attrs:
-                breakpoint()
                 dx = x[ea[0][1]] - x[ea[0][0]]
                 dy = y[ea[0][1]] - y[ea[0][0]]
                 dz = z[ea[0][1]] - z[ea[0][0]]
@@ -535,13 +534,51 @@ def evalate_and_plot_gae_on_random_exploration(gae_path : str, n_test : int , k_
         S = random_exploration.set_neighborhood_label_features(S)
         plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}", plot_path = plot_path)
 
-#def generate_random_featured_graph(feature_names)
+def generate_and_save_feature_compatible_random_graphs(problem):
+
+    def generate_random_features(sample_attr_dict : dict()):
+        res = dict()
+        for pair in sample_attr_dict.items():
+            if type(pair[1])==list: res[pair[0]] = [random.choice([0,1]) for _ in pair[1]]
+            elif type(pair[1])==int: res[pair[0]] = random.choice([0,1])
+            elif type(pair[1]) == str:
+                res[pair[0]] = pair[1]
+        return res
+
+    with open(f"experiments/plants/full_{problem}_1_1.pkl","rb") as f:
+        G_train = pickle.load(f)
+        iter_nodes = G_train.nodes(data=True).__iter__()
+        state_str , node_attr_dict= iter_nodes.__next__()
+
+        iter_edges = G_train.edges(data=True).__iter__()
+        src_str, dst_str , edge_attr_dict= iter_edges.__next__()
+
+        ns = range(1000,3000, 1000)
+        ps = [0.3]
+
+        graphs_info = []
+        for n in ns:
+            for p in ps:
+                graphs_info.append((n,p,nx.fast_gnp_random_graph(n,p)))
+
+        for n,p,graph in graphs_info:
+            for node in graph.nodes():
+                graph.nodes()[node].update(generate_random_features(node_attr_dict))
+            for edge in graph.edges():
+                graph.edges()[edge].update(generate_random_features(edge_attr_dict))
+            pickle.dump(graph,open(f"experiments/plants/random_compatible_graphs/{problem}_compatible_{n}_{p}.pkl", 'wb'))
+
+
 
 if __name__ == "__main__":
     #parameters = [("TA", 2, 2, 2, 2), ("TA", 2, 2, 3, 3)]
     #train_and_plot_wrapper(parameters[1])
     # tensorboard command >> tensorboard --logdir /home/marco/Desktop/Learning-Synthesis/runs
-    train_and_save_gae("AT", 2, 2, both_ways=False, neg_edges_sample_proportion_to_pos=1.0)
+
+
+    #generate_and_save_feature_compatible_random_graphs("AT")
+    #train_and_save_gae("AT", 2, 2, both_ways=False, neg_edges_sample_proportion_to_pos=1.0)
+
     """
     n_tests = [2, 3, 4]
     k_tests = [2, 3, 4]
@@ -552,7 +589,7 @@ if __name__ == "__main__":
     problems = ["DP"]
     show_interactive_plots_in_parallel(problems,n_tests,k_tests)
 
-
+------------
     for problem in ["TA","TL", "DP", "CM","BW"]:
         gae_path = f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/one_way_full_plant_('{problem}', {2}, {2})_image_1000_epochs.pkl"
         gae_paths = [gae_path for _ in range(3)]
