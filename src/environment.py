@@ -9,7 +9,6 @@ from util import *
 import os
 import pickle
 import networkx as nx
-
 if not jpype.isJVMStarted():
     jpype.startJVM(classpath=['mtsa.jar'])
 from MTSTools.ac.ic.doc.mtstools.model.operations.DCS.nonblocking import DCSForPython, FeatureBasedExplorationHeuristic
@@ -44,9 +43,10 @@ class DCSSolverEnv:
         labels_path = "labels/" + problem + ".txt" if labels_enabled else None
 
         print("Warning: max frontier size modified to 1000000, remember baseline uses 10000")
+
         self.javaEnv = DCSForPython(features_path,
                                     labels_path,
-                                    1000000,
+                                    10000,
                                     self.detached_initial_componentwise_info
                                     )
 
@@ -72,6 +72,8 @@ class DCSSolverEnv:
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
         actions = np.asarray(self.javaEnv.input_buffer)
+        breakpoint()
+        print("HOW DO YOU ITERATE OVER THE FRONTIER INSIDE THE NX.GRAPH TO MATCH THE CORRESPONDING INDEX?")
         r = actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures)).copy()
         return r
 

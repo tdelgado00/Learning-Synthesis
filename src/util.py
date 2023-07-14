@@ -3,7 +3,8 @@ import numpy as np
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from torch import load as torch_load
+from torch_geometric.nn.models import GAE
 from mpl_toolkits.mplot3d import Axes3D
 
 def results_path(problem, n=2, k=2, file=""):
@@ -163,8 +164,6 @@ def read_monolithic():
         monolithic_results["expanded transitions", problem] = df.pivot("n", "k", "expanded transitions")
         monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
     return monolithic_results
-
-
 
 
 

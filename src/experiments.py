@@ -8,6 +8,7 @@ import time
 import pickle
 import os
 import json
+from topology import get_compatible_autoencoder_graphnet
 
 
 class Experiment:
@@ -15,7 +16,7 @@ class Experiment:
         self.args = args
         self.problem = problem
         self.results_path = "./experiments/results/" + args.exp_path + "/" + self.problem + "/"
-
+        if args.enable_autoencoder: assert(args.exploration_graph)
 
 class TrainingExperiment(Experiment):
     def __init__(self, args, problem: str, context: tuple[int, int]):
@@ -23,7 +24,9 @@ class TrainingExperiment(Experiment):
         self.save_features()
         self.training_contexts = [context]
         self.env = self.init_envs()
-        self.nfeatures = self.env[context].javaEnv.getNumberOfFeatures()
+        breakpoint()
+        self.autoencoder, self.latent_space_dim = get_compatible_autoencoder_graphnet(problem, context, enabled = args.enable_autoencoder)
+        self.nfeatures = self.env[context].javaEnv.getNumberOfFeatures() + int(args.enable_autoencoder) * self.latent_space_dim
         self.problem = problem
         self.agent = self.init_agent()
         self.partially_trained = False
@@ -105,7 +108,7 @@ class PreSelectionTesting(Experiment):
 
     def run(self,
             timeout="10h",
-            max_frontier=1000000,
+            max_frontier=10000,
             solved_crit=budget_and_time,
             verbose=True):
 

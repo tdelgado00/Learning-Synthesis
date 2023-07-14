@@ -140,6 +140,9 @@ def parse_args():
     parser.add_argument("--exploration-graph", action=argparse.BooleanOptionalAction, default=False,
                         help="Enables the re-construction of the exploration graph in python, to be used by an agent.")
 
+    parser.add_argument("--enable-autoencoder", action=argparse.BooleanOptionalAction, default=False,
+                        help="Enables usage of graph embeddings as feature")
+
     args = parser.parse_args()
     args.nn_size = (20,)
 

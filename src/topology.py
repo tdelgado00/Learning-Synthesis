@@ -306,7 +306,7 @@ def train(problem, n=2, k=2, G = None, both_ways=False, neg_edges_sample_proport
     # hack for getting train pos and train neg edges, we use test as train
 
     # parameters
-    out_channels = 3
+    out_channels = 32
     num_features = trainable.num_features
     epochs = 10000
 
@@ -409,14 +409,11 @@ def plot_graph_embeddings(G: nx.DiGraph, graphnet: nn.Module, context : str, plo
     x = torch_graph.x.float().to(device)
     edges = torch_graph.edge_index.to(device)
     edge_controllability = torch_graph.edge_attr.view(-1)
-
-
     featured_edge_list = [(edge, is_controllable) for (edge, is_controllable) in zip(edges.T, edge_controllability)]
-
     embeds = graphnet.encode((x.T[1:].T).float().to(device), edges)
     assert embeds.shape[1]==3, "Only R^3 is plottable"
     compostate_embeds = [CompostateEmbedding(int(features[0]), embed.detach().numpy()) for (embed, features) in zip(embeds,x)]
-    generate_space_embeddings_plot(compostate_embeds, context=context, show=True, plot_path=plot_path) # featured_edge_list
+    generate_space_embeddings_plot(compostate_embeds, context=context, show=False, plot_path=plot_path) # featured_edge_list
 
 
 
@@ -498,6 +495,25 @@ class visualTestsForGraphEmbeddings:
 
 def multi_instance_training(Gs : list[str]):
     raise NotImplementedError
+def feature_distinction_power(problem,n,k, both_ways=False):
+    with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
+        prefix = "one_way" if not both_ways else "both_ways"
+        G_train = pickle.load(f)
+
+    feature_appearences_dict = dict()
+    feature_attributes = ["features", "predecessor_label_types_OHE", "successor_label_types_OHE"]
+    nodes = G_train.nodes(data=True)
+    for edge in G_train.edges(data=True):
+        src = edge[0]
+        dst = edge[1]
+        print("-----------------------------------------")
+        print(nodes[src])
+        print(nodes[dst])
+        # agarrar cada par de vector de features para cada arista y fijarse cuantos pares de nodos con esas features estan conectados
+        # fijarse lo mismo pero para todos los pares de nodos (conectados o no)
+        """f_ve = []
+        for feature in feature_attributes:
+            f_vec = f_vec + node[feature]"""
 
 def train_and_save_gae(problem,n,k, both_ways=False, neg_edges_sample_proportion_to_pos=1.0):
     with open(f"/home/marco/Desktop/Learning-Synthesis/experiments/plants/full_{problem}_{n}_{k}.pkl", 'rb') as f:
@@ -533,8 +549,9 @@ def evalate_and_plot_gae_on_random_exploration(gae_path : str, n_test : int , k_
         S = random_exploration.full_nonblocking_random_exploration()
         S = random_exploration.set_neighborhood_label_features(S)
         plot_graph_embeddings(S, model_in_device, f"{problem, n_test, k_test}", plot_path = plot_path)
-def evalate_and_plot_gae_on_random_graph(gae_path : str, graph_path : str, plot_path = "/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/plots/"):
+def evalate_and_plot_gae_on_random_graph(gae_path : str, problem, n, p, graph_path : str, plot_path = "/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/plots/"):
     gae_image_path = gae_path[:-4] + ".txt"
+
     with open(gae_image_path, 'r') as f:
         state_dict = torch.load(gae_path)
         gae_constructor_image = f.readlines()[0]
@@ -542,8 +559,7 @@ def evalate_and_plot_gae_on_random_graph(gae_path : str, graph_path : str, plot_
         model_in_device.load_state_dict(state_dict)
         with open(graph_path, 'rb') as f:
             S = pickle.load(f)
-            breakpoint()
-        plot_graph_embeddings(S, model_in_device, f"random", plot_path = plot_path)
+        plot_graph_embeddings(S, model_in_device, f"random_{problem}_{n}_{p}", plot_path = plot_path)
 def generate_and_save_feature_compatible_random_graphs(problem):
 
     def generate_random_features(sample_attr_dict : dict()):
@@ -566,19 +582,30 @@ def generate_and_save_feature_compatible_random_graphs(problem):
         ns = range(1000,4000, 1000)
         ps = [0.1,0.4,0.7]
 
-        graphs_info = []
         for n in ns:
             for p in ps:
                 print(f"generating {problem} compatible {n} {p}")
-                graphs_info.append((n,p,nx.fast_gnp_random_graph(n,p,directed=True)))
+                graph = nx.fast_gnp_random_graph(n,p,directed=True)
+                for node in graph.nodes():
+                    graph.nodes()[node].update(generate_random_features(node_attr_dict))
+                for edge in graph.edges():
+                    graph.edges()[edge].update(generate_random_features(edge_attr_dict))
+                pickle.dump(graph,open(f"experiments/plants/random_compatible_graphs/{problem}_compatible_{n}_{p}.pkl", 'wb'))
 
-        for n,p,graph in graphs_info:
-            print(f"inserting random features in {problem} compatible {n} {p}")
-            for node in graph.nodes():
-                graph.nodes()[node].update(generate_random_features(node_attr_dict))
-            for edge in graph.edges():
-                graph.edges()[edge].update(generate_random_features(edge_attr_dict))
-            pickle.dump(graph,open(f"experiments/plants/random_compatible_graphs/{problem}_compatible_{n}_{p}.pkl", 'wb'))
+def get_compatible_autoencoder_graphnet(problem: str, context : tuple[int,int], device : str = "cpu", enabled = True):
+    if not enabled: return None,0
+    gae_path = f"experiments/graphnets/one_way_full_plant_('{problem}', {context[0]}, {context[1]})_image_1000_epochs.pkl"
+    gae_image_path = gae_path[:-4] + ".txt"
+    with open(gae_image_path, 'r') as f:
+        state_dict = torch.load(gae_path)
+        gae_constructor_image = f.readlines()[0]
+        model_in_device = eval(gae_constructor_image).to(device)
+        model_in_device.load_state_dict(state_dict)
+        latent_space_dim = model_in_device.encoder.out_channels
+    return model_in_device, latent_space_dim
+
+
+
 
 
 
@@ -586,12 +613,22 @@ if __name__ == "__main__":
     #parameters = [("TA", 2, 2, 2, 2), ("TA", 2, 2, 3, 3)]
     #train_and_plot_wrapper(parameters[1])
     # tensorboard command >> tensorboard --logdir /home/marco/Desktop/Learning-Synthesis/runs
-
-
-    for problem in ["AT","BW","DP", "TA", "TL"]:
-        generate_and_save_feature_compatible_random_graphs(problem)
+    feature_distinction_power("AT",2,2)
     #train_and_save_gae("AT", 2, 2, both_ways=False, neg_edges_sample_proportion_to_pos=1.0)
 
+
+    """problems = [ "DP", "TA", "TL"]
+    for problem in problems:
+        gae_path = f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/one_way_full_plant_('{problem}', {2}, {2})_image_1000_epochs.pkl"
+        gae_paths = [gae_path for _ in range(3)]
+        n_tests = [1000,2000,2000]
+        p_tests = [0.1,0.4,0.7]
+        parameter_combinations = [(gae_path, n_test, p_test) for n_test in n_tests for p_test in p_tests]
+        for gae_path, n_test,p_test in parameter_combinations:
+            evalate_and_plot_gae_on_random_graph(gae_path, problem, n_test,p_test , graph_path=f"experiments/plants/random_compatible_graphs/{problem}_compatible_{n_test}_{p_test}.pkl")
+            print(f"Done for {problem,n_test,p_test}")
+
+"""
     """
     n_tests = [2, 3, 4]
     k_tests = [2, 3, 4]
@@ -602,19 +639,9 @@ if __name__ == "__main__":
     problems = ["DP"]
     show_interactive_plots_in_parallel(problems,n_tests,k_tests)
 """
-"""
 
-    for problem in ["AT"]:
-        gae_path = f"/home/marco/Desktop/Learning-Synthesis/experiments/graphnets/one_way_full_plant_('{problem}', {2}, {2})_image_1000_epochs.pkl"
-        gae_paths = [gae_path for _ in range(3)]
-        more_instances = [(gae_path,n,k) for n in range(1,5) for k in range(1,5) if k!=n or k==1]
-        n_tests = [4]
-        k_tests = [4]
-        parameter_combinations = zip(gae_paths, n_tests, k_tests)
-        for gae_path, n_test,k_test in more_instances:
-            evalate_and_plot_gae_on_random_graph(gae_path, "experiments/plants/random_compatible_graphs/AT_compatible_1000_0.3.pkl")
-            print(f"Done for {problem,n_test,k_test}")
-"""
+
+
 
 
 
