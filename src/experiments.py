@@ -24,7 +24,6 @@ class TrainingExperiment(Experiment):
         self.save_features()
         self.training_contexts = [context]
         self.env = self.init_envs()
-        breakpoint()
         self.autoencoder, self.latent_space_dim = get_compatible_autoencoder_graphnet(problem, context, enabled = args.enable_autoencoder)
         self.nfeatures = self.env[context].javaEnv.getNumberOfFeatures() + int(args.enable_autoencoder) * self.latent_space_dim
         self.problem = problem
@@ -166,6 +165,10 @@ class BestAgentEvaluation(Experiment):
 
         return self.results_path + str(agent) + ".onnx", agent
 
+    def write_total_solved(self, df):
+        total_solved = sum(df["expansion_budget_exceeded"])
+        with open(self.results_path + "total_solved.txt",'w') as f:
+            f.write(total_solved)
     def run(self):
         best_agent_path, _ = self.get_best()
 
@@ -178,6 +181,7 @@ class BestAgentEvaluation(Experiment):
 
         df = pd.DataFrame(step_3_results)
         df.to_csv(self.results_path + self.args.step_3_results)
+        self.write_total_solved(df)
 
 
 class AllInstancesEvaluation(Experiment):
