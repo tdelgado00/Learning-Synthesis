@@ -1,8 +1,15 @@
+import random
+import warnings
+
+import onnx
+import onnxruntime
+
+from environment import CompositionGraph
 from util import *
 import subprocess
 import time
 from util import parse_java_debug
-
+import sys
 
 class Synthesizer:
     """ Wrapper for the execution of a command that evaluates a synthesis technique in a given instance of a problem
@@ -22,6 +29,7 @@ class Synthesizer:
 
     def algorithm_name(self):
         raise NotImplementedError()
+
 
     def test(self, n, k, ebudget=-1, timeout="10h", verbose=False):
         command = self.base_command()
@@ -159,6 +167,25 @@ class OnTheFlyRL(OnTheFlyFeatureBased):
                 arg += ["-l", "./labels/" + self.problem + ".txt"]
         return arg
 
+class OnTheFlyRLFromPython(OnTheFlyRL):
+    def __init__(self, path, features_path, problem, max_frontier=1000000, debug=False):
+        super().__init__(path, features_path, problem, max_frontier=1000000, debug=False)
+        self.model = onnxruntime.InferenceSession(self.path)
+    def test_from_python(self, n, k):
+        warnings.warn("Still testing")
+        composition = CompositionGraph(self.problem,n,k)
+        composition.start_composition()
+
+        while (len(composition.getFrontier())>0 and not composition.finished()):
+            frontier = composition.getFrontier()
+            composition.expand(random.randint(0,len(frontier)-1))
+
+        breakpoint()
+        print("finished!", len(composition.nodes), " ",  len(composition.edges))
+
+        #outputs = ort_session.run(None,{"X": np.random.randn(batch_size, 34).astype(np.float32)},)
+
+
 
 class OnTheFlyRandom(OnTheFlyFeatureBased):
     def heuristic_name(self):
@@ -209,3 +236,7 @@ class Monolithic(Synthesizer):
 
     def read_results(self, lines, err_lines, command_run):
         return read_results(lines)
+
+if __name__=="__main__":
+    at_otf_rl = OnTheFlyRLFromPython("experiments/results/check_correct_solutions/AT/8.onnx",features_path="experiments/results/check_correct_solutions/AT/features.txt",problem="AT")
+    at_otf_rl.test_from_python(3,3)
