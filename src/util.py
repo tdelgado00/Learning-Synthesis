@@ -165,6 +165,7 @@ def read_monolithic():
         monolithic_results["synthesis time(ms)", problem] = df.pivot("n", "k", "synthesisTimeMs")
     return monolithic_results
 
-
+FSP_PATH = "./fsp"
+BENCHMARK_PROBLEMS = ["AT", "BW", "CM", "DP","TA","TL"]
 
 
