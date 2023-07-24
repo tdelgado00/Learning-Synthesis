@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from torch import load as torch_load
 from torch_geometric.nn.models import GAE
 from mpl_toolkits.mplot3d import Axes3D
-
+from bidict import bidict
 def results_path(problem, n=2, k=2, file=""):
     return "experiments/results/" + filename([problem, n, k]) + "/" + file
 

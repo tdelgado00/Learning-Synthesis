@@ -168,8 +168,8 @@ class OnTheFlyRL(OnTheFlyFeatureBased):
         return arg
 
 class OnTheFlyRLFromPython(OnTheFlyRL):
-    def __init__(self, path, features_path, problem, max_frontier=1000000, debug=False):
-        super().__init__(path, features_path, problem, max_frontier=1000000, debug=False)
+    def __init__(self, path, features_path, problem, max_frontier=10000, debug=False):
+        super().__init__(path, features_path, problem, max_frontier=10000, debug=False)
         self.model = onnxruntime.InferenceSession(self.path)
     def test_from_python(self, n, k):
         warnings.warn("Still testing")
