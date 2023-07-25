@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 from replay_buffer import ReplayBuffer
-from model import OnnxModel
+from model import OnnxModel, NeuralNetwork
 
 
 class Agent:
@@ -62,6 +62,7 @@ class Agent:
                 self.buffer.add(action_features, reward, obs2)
 
         print("Done.")
+        env.c
 
     def train(self, env, seconds=None, max_steps=None, max_eps=None, save_freq=200000, last_obs=None,
               early_stopping=False, save_at_end=False, results_path=None, n_agents_budget=1000):
@@ -75,8 +76,12 @@ class Agent:
         epsilon_step = (self.args.first_epsilon - self.args.last_epsilon)
         epsilon_step /= self.args.epsilon_decay_steps
 
-        obs = env.reset() if (last_obs is None) else last_obs
-
+        breakpoint()
+        if (last_obs is None): env.reset()
+        obs = env.get_frontier_features() if (last_obs is None) else last_obs
+        #check = env.reset()
+        print("Warning: self.model being overwritten by hand, remember to refactor")
+        self.model = NeuralNetwork(len(obs), self.args.nn_size).to("cpu")
         last_steps = []
         while n_agents_budget:
             a = self.get_action(obs, self.epsilon)
@@ -155,13 +160,6 @@ class Agent:
 
         return obs.copy()
 
-    def get_action(self, s, epsilon):
-        """ Gets epsilon-greedy action using self.model """
-        if np.random.rand() <= epsilon:
-            return np.random.randint(len(s))
-        else:
-            return self.model.best(s)
-
     def update(self, obs, action, reward, obs2):
         """ Gets epsilon-greedy action using self.model """
         if self.target is not None:
@@ -173,6 +171,13 @@ class Agent:
 
         if self.verbose:
             print("Single update. Value:", value+reward)
+
+    def get_action(self, s, epsilon):
+        """ Gets epsilon-greedy action using self.model """
+        if np.random.rand() <= epsilon:
+            return np.random.randint(len(s))
+        else:
+            return self.model.best(s)
 
     def batch_update(self):
         action_featuress, rewards, obss2 = self.buffer.sample(self.args.batch_size)

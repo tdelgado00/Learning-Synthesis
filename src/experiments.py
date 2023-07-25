@@ -1,7 +1,7 @@
 from synthesizers import OnTheFlyRL, OnTheFlyRandom
 import copy
 from agent import Agent
-from environment import DCSSolverEnv
+from environment_from_python import DCSSolverEnv
 from model import TorchModel, NeuralNetwork
 from util import *
 import time

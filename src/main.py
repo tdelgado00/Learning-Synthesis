@@ -1,7 +1,9 @@
 import os
 import argparse
 from experiments import TrainingExperiment, PreSelectionTesting, BestAgentEvaluation
-
+import warnings
+# Ignore FutureWarning
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 def run_current_baseline():
     args = parse_args()

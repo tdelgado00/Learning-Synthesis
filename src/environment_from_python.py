@@ -24,6 +24,7 @@ class DCSSolverEnv:
         self.problem_size = read_monolithic()[("expanded transitions", problem)][k][n]
         self.detached_initial_componentwise_info = None
         self.composition_dg = CompositionGraph(problem,n,k).start_composition()
+        self.composition_analyzer = CompositionAnalyzer(self.composition_dg)
         cbs_enabled = False
         labels_enabled = False
         with open(features_path, "r+") as f:
@@ -72,18 +73,19 @@ class DCSSolverEnv:
     def get_actions(self):
         nactions = self.javaEnv.frontierSize()
         actions = np.asarray(self.javaEnv.input_buffer)
-        print("HOW DO YOU ITERATE OVER THE FRONTIER INSIDE THE NX.GRAPH TO MATCH THE CORRESPONDING INDEX?")
         r = actions[:nactions * self.nfeatures].reshape((nactions, self.nfeatures)).copy()
         return r
 
-    def step(self, action):
-        if self.exploration_graph is not None:
-            self.featured_graph_expansion(action)
-        else:
-            self.javaEnv.expandAction(action)
 
-        if not self.javaEnv.isFinished():
-            return self.get_actions(), self.reward(), False, {}
+    def get_frontier_features(self):
+        features = [self.composition_analyzer.test_features_on_transition(transition) for transition in self.composition_dg.getFrontier()]
+        return np.asarray(features.copy())
+
+    def step(self, action):
+        self.composition_dg.expand(action)
+
+        if not self.composition_dg.finished():
+            return self.get_frontier_features(), self.reward(), False, {}
         else:
             return None, self.reward(), True, self.get_results()
 
@@ -121,7 +123,7 @@ class DCSSolverEnv:
         return {
             "synthesis time(ms)": float(self.composition_dg._javaEnv.getSynthesisTime()),
             "expanded transitions": int(self.composition_dg._javaEnv.getExpandedTransitions()),
-            "expanded states": int(self.composition_dg._javaEnv.getExpandedStates())
+            "expanded states": int(self.javaEnv.getExpandedStates())
         }
 
 
@@ -195,10 +197,12 @@ class CompositionGraph(nx.DiGraph):
         self.add_node(self._initial_state)
         self._alphabet = [e for e in self._javaEnv.dcs.alphabet.actions]
         self._alphabet.sort()
+        return self
 
 
 
     def expand(self, idx):
+        breakpoint()
         assert(not self._javaEnv.isFinished()), "Invalid expansion, composition is already solved"
         assert (idx<len(self.getFrontier()) and idx>=0), "Invalid index"
         self._javaEnv.expandAction(idx)
@@ -249,7 +253,9 @@ class CompositionAnalyzer:
 
 
     def test_features_on_transition(self, transition):
-        [compute_feature(transition) for compute_feature in self._feature_methods]
+        res = []
+        for compute_feature in self._feature_methods: res.extend(compute_feature(transition))
+        return res
     def event_label_feature(self, transition):
         """
         Determines the label of ℓ in A E p .
@@ -310,7 +316,6 @@ class CompositionAnalyzer:
                 int(transition.child is not None and len(self.composition.out_edges(transition.child))!= transition.state.unexploredTransitions)]
 
     def isLastExpanded(self, transition):
-        warnings.warn("For some reason, sometimes no edge in the entire graph was the las one expanded!")
         return [int(self.composition.getLastExpanded()==transition)]
 
     def remove_indices(self, transition_label : str):
