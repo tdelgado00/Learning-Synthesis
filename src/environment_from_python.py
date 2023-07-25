@@ -112,6 +112,8 @@ class DCSSolverEnv:
         return -1 if not self.normalize_reward else -1 / self.problem_size
 
     def reset(self):
+        self.composition_dg = CompositionGraph(self.problem,self.n,self.k).start_composition()
+        self.composition_analyzer = CompositionAnalyzer(self.composition_dg)
         self.javaEnv.startSynthesis(
             "fsp/" + self.problem + "/" + "-".join([self.problem, str(self.n), str(self.k)]) + ".fsp")
         return self.get_actions()
@@ -202,7 +204,6 @@ class CompositionGraph(nx.DiGraph):
 
 
     def expand(self, idx):
-        breakpoint()
         assert(not self._javaEnv.isFinished()), "Invalid expansion, composition is already solved"
         assert (idx<len(self.getFrontier()) and idx>=0), "Invalid index"
         self._javaEnv.expandAction(idx)

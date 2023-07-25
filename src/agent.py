@@ -60,9 +60,8 @@ class Agent:
                                                                                nstep=self.args.n_step)
             for action_features, reward, obs2 in random_experience:
                 self.buffer.add(action_features, reward, obs2)
-
         print("Done.")
-        env.c
+
 
     def train(self, env, seconds=None, max_steps=None, max_eps=None, save_freq=200000, last_obs=None,
               early_stopping=False, save_at_end=False, results_path=None, n_agents_budget=1000):
@@ -81,7 +80,7 @@ class Agent:
         obs = env.get_frontier_features() if (last_obs is None) else last_obs
         #check = env.reset()
         print("Warning: self.model being overwritten by hand, remember to refactor")
-        self.model = NeuralNetwork(len(obs), self.args.nn_size).to("cpu")
+        self.model.model = NeuralNetwork(len(obs), self.args.nn_size).to("cpu")
         last_steps = []
         while n_agents_budget:
             a = self.get_action(obs, self.epsilon)
