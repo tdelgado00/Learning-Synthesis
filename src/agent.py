@@ -75,12 +75,11 @@ class Agent:
         epsilon_step = (self.args.first_epsilon - self.args.last_epsilon)
         epsilon_step /= self.args.epsilon_decay_steps
 
-        breakpoint()
         if (last_obs is None): env.reset()
         obs = env.get_frontier_features() if (last_obs is None) else last_obs
         #check = env.reset()
         print("Warning: self.model being overwritten by hand, remember to refactor")
-        self.model.model = NeuralNetwork(len(obs), self.args.nn_size).to("cpu")
+        self.model.model = NeuralNetwork(len(obs[0]), self.args.nn_size).to("cpu")
         last_steps = []
         while n_agents_budget:
             a = self.get_action(obs, self.epsilon)
@@ -187,7 +186,7 @@ class Agent:
 
         if self.verbose:
             print("Batch update. Values:", rewards+values)
-
+        breakpoint()
         self.model.batch_update(np.array(action_featuress), rewards + values)
 
     def save(self, env_info, path):

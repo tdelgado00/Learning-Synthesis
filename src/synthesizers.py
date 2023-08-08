@@ -180,7 +180,6 @@ class OnTheFlyRLFromPython(OnTheFlyRL):
             frontier = composition.getFrontier()
             composition.expand(random.randint(0,len(frontier)-1))
 
-        breakpoint()
         print("finished!", len(composition.nodes), " ",  len(composition.edges))
 
         #outputs = ort_session.run(None,{"X": np.random.randn(batch_size, 34).astype(np.float32)},)
