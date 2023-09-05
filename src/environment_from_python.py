@@ -44,7 +44,7 @@ class DCSSolverEnv:
         labels_path = "labels/" + problem + ".txt" if labels_enabled else None
 
         self.javaEnv = DCSForPython(features_path,
-                                    labels_path,
+                                    labels_path
                                     10000,
                                     self.detached_initial_componentwise_info
                                     )
